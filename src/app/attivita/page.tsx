@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { motion, AnimatePresence } from 'framer-motion'
+import { containerVariants, itemVariants } from '@/lib/animations'
 
 interface Filters {
   search: string
@@ -38,14 +40,16 @@ export default function AttivitaPage() {
   const [zone, setZone] = useState<string[]>([])
   const [cause, setCause] = useState<string[]>([])
   const [tipiProgetto, setTipiProgetto] = useState<string[]>([])
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
+    setIsClient(true)
     loadFilterOptions()
   }, [])
 
   useEffect(() => {
-    loadAttivita()
-  }, [filters])
+    if (isClient) loadAttivita()
+  }, [filters, isClient])
 
   async function loadFilterOptions() {
     const { data: zoneData } = await supabase
@@ -136,163 +140,199 @@ export default function AttivitaPage() {
     })
   }
 
+  if (!isClient) return null
+
   return (
-    <main className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Attività di Servizio</h1>
+    <motion.main 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="container mx-auto p-4 sm:p-8"
+    >
+      <motion.h1 
+        variants={itemVariants}
+        className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent"
+      >
+        Attività di Servizio
+      </motion.h1>
       
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Filtri di Ricerca</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
-            <Input
-              placeholder="Cerca per titolo, descrizione..."
-              value={filters.search}
-              onChange={(e) => setFilters({...filters, search: e.target.value})}
-            />
-            
-            <Select value={filters.stato} onValueChange={(v: string | null) => setFilters({...filters, stato: v ?? ""})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Stato" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Tutti</SelectItem>
-                <SelectItem value="Completato">Completato</SelectItem>
-                <SelectItem value="In corso">In corso</SelectItem>
-                <SelectItem value="Pianificato">Pianificato</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.zona} onValueChange={(v: string | null) => setFilters({...filters, zona: v ?? ""})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Zona" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Tutte</SelectItem>
-                {zone.map(z => (
-                  <SelectItem key={z} value={z}>{z}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.causa} onValueChange={(v: string | null) => setFilters({...filters, causa: v ?? ""})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Causa" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Tutte</SelectItem>
-                {cause.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.tipoProgetto} onValueChange={(v: string | null) => setFilters({...filters, tipoProgetto: v ?? ""})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tipo Progetto" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Tutti</SelectItem>
-                {tipiProgetto.map(t => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Min Fondi (€)</label>
+      <motion.div variants={itemVariants}>
+        <Card className="mb-6 sm:mb-8 border-2 hover:border-primary/30 transition-all duration-300">
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="text-lg sm:text-xl">Filtri di Ricerca</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
               <Input
-                type="number"
-                placeholder="0"
-                value={filters.minFondi}
-                onChange={(e) => setFilters({...filters, minFondi: e.target.value})}
+                placeholder="Cerca titolo, descrizione..."
+                value={filters.search}
+                onChange={(e) => setFilters({...filters, search: e.target.value})}
+                className="sm:col-span-2"
               />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Max Fondi (€)</label>
-              <Input
-                type="number"
-                placeholder="100000"
-                value={filters.maxFondi}
-                onChange={(e) => setFilters({...filters, maxFondi: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Min Persone</label>
-              <Input
-                type="number"
-                placeholder="0"
-                value={filters.minPersone}
-                onChange={(e) => setFilters({...filters, minPersone: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Max Persone</label>
-              <Input
-                type="number"
-                placeholder="1000"
-                value={filters.maxPersone}
-                onChange={(e) => setFilters({...filters, maxPersone: e.target.value})}
-              />
-            </div>
-          </div>
+              
+              <Select value={filters.stato} onValueChange={(v: string | null) => setFilters({...filters, stato: v ?? ""})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Stato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tutti</SelectItem>
+                  <SelectItem value="Completato">Completato</SelectItem>
+                  <SelectItem value="In corso">In corso</SelectItem>
+                  <SelectItem value="Pianificato">Pianificato</SelectItem>
+                </SelectContent>
+              </Select>
 
-          <Button variant="outline" onClick={clearFilters}>
-            Cancella Filtri
-          </Button>
-        </CardContent>
-      </Card>
+              <Select value={filters.zona} onValueChange={(v: string | null) => setFilters({...filters, zona: v ?? ""})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Zona" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tutte</SelectItem>
+                  {zone.map(z => (
+                    <SelectItem key={z} value={z}>{z}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Elenco Attività ({attivita.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p>Caricamento...</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titolo</TableHead>
-                  <TableHead>Club</TableHead>
-                  <TableHead>Zona</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Causa</TableHead>
-                  <TableHead>Persone</TableHead>
-                  <TableHead>Ore</TableHead>
-                  <TableHead>Fondi Raccolti</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {attivita.map((att: any) => (
-                  <TableRow key={att.id_attivita}>
-                    <TableCell className="font-medium max-w-[200px] truncate">
-                      {att.titolo}
-                    </TableCell>
-                    <TableCell>{att.sponsor_nome_account}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{att.sponsor_zona}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={att.stato === 'Completato' ? 'default' : 'secondary'}>
-                        {att.stato}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{att.causa}</TableCell>
-                    <TableCell>{att.persone_servite}</TableCell>
-                    <TableCell>{att.totale_ore_servizio}</TableCell>
-                    <TableCell>€ {att.totale_fondi_raccolti}</TableCell>
+              <Select value={filters.causa} onValueChange={(v: string | null) => setFilters({...filters, causa: v ?? ""})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Causa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tutte</SelectItem>
+                  {cause.map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.tipoProgetto} onValueChange={(v: string | null) => setFilters({...filters, tipoProgetto: v ?? ""})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo Progetto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tutti</SelectItem>
+                  {tipiProgetto.map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Min Fondi (€)</label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={filters.minFondi}
+                  onChange={(e) => setFilters({...filters, minFondi: e.target.value})}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Max Fondi (€)</label>
+                <Input
+                  type="number"
+                  placeholder="100000"
+                  value={filters.maxFondi}
+                  onChange={(e) => setFilters({...filters, maxFondi: e.target.value})}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Min Persone</label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={filters.minPersone}
+                  onChange={(e) => setFilters({...filters, minPersone: e.target.value})}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Max Persone</label>
+                <Input
+                  type="number"
+                  placeholder="1000"
+                  value={filters.maxPersone}
+                  onChange={(e) => setFilters({...filters, maxPersone: e.target.value})}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            <Button variant="outline" className="w-full sm:w-auto" onClick={clearFilters}>
+              Cancella Filtri
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <Card className="border-2 hover:border-primary/30 transition-all duration-300">
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="text-lg sm:text-xl">Elenco Attività ({attivita.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            {loading ? (
+              <div className="flex justify-center items-center h-32">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
+                />
+              </div>
+            ) : (
+              <table className="w-full min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">Titolo</TableHead>
+                    <TableHead className="hidden sm:table-cell">Club</TableHead>
+                    <TableHead>Zona</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead className="hidden md:table-cell">Causa</TableHead>
+                    <TableHead>Persone</TableHead>
+                    <TableHead className="hidden sm:table-cell">Ore</TableHead>
+                    <TableHead>Fondi</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </main>
+                </TableHeader>
+                <TableBody>
+                  <AnimatePresence>
+                    {attivita.map((att: any, index: number) => (
+                      <motion.tr
+                        key={att.id_attivita}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ delay: index * 0.03, type: "spring", stiffness: 100 }}
+                        className="hover:bg-muted/50"
+                      >
+                        <TableCell className="font-medium max-w-[150px] sm:max-w-[200px] truncate">
+                          {att.titolo}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">{att.sponsor_nome_account}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{att.sponsor_zona}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={att.stato === 'Completato' ? 'default' : 'secondary'} className="text-xs">
+                            {att.stato}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-xs">{att.causa}</TableCell>
+                        <TableCell className="text-sm">{att.persone_servite}</TableCell>
+                        <TableCell className="hidden sm:table-cell text-sm">{att.totale_ore_servizio}</TableCell>
+                        <TableCell className="text-sm">€ {att.totale_fondi_raccolti}</TableCell>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </TableBody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.main>
   )
 }
