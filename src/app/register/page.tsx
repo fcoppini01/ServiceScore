@@ -22,20 +22,12 @@ export default function RegisterPage() {
     setLoading(true)
     setMessage('')
 
-    if (!matricola) {
-      setMessage('Inserisci la tua matricola socio')
-      setLoading(false)
-      return
-    }
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${location.origin}/auth/callback?matricola=${encodeURIComponent(matricola)}`,
-        data: {
-          matricola_socio: matricola
-        }
+        emailRedirectTo: `${location.origin}/auth/callback${matricola ? `?matricola=${encodeURIComponent(matricola)}` : ''}`,
+        data: matricola ? { matricola_socio: matricola } : {}
       },
     })
 
@@ -50,7 +42,8 @@ export default function RegisterPage() {
     } else if (data.user && data.user.identities?.length === 0) {
       setMessage('Utente già registrato ma non confermato. Controlla la tua email.')
     } else {
-      setMessage('Registrazione completata! Controlla la tua email per confermare. Dopo il login, verrai associato al socio ' + matricola)
+      setMessage('Registrazione completata! Controlla la tua email per confermare. ' + 
+        (matricola ? `Dopo il login, verrai associato al socio ${matricola}` : 'Registrato come sviluppatore.'))
     }
     setLoading(false)
   }
