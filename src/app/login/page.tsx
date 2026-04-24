@@ -26,7 +26,11 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setMessage(error.message)
+      if (error.message.includes('Invalid login credentials')) {
+        setMessage('Credenziali non valide. Controlla email e password.')
+      } else {
+        setMessage(error.message)
+      }
     } else {
       router.push('/')
     }
@@ -69,6 +73,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nome@esempio.com"
                 required
+                autoComplete="email"
               />
             </div>
             <div>
@@ -79,6 +84,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                autoComplete="current-password"
               />
             </div>
             {message && (

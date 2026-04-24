@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [matricola, setMatricola] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const router = useRouter()
@@ -20,27 +22,51 @@ export default function RegisterPage() {
     setLoading(true)
     setMessage('')
 
-    const { error } = await supabase.auth.signUp({
+    if (!matricola) {
+      setMessage('Inserisci la tua matricola socio')
+      setLoading(false)
+      return
+    }
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
+        emailRedirectTo: `${location.origin}/auth/callback?matricola=${encodeURIComponent(matricola)}`,
+        data: {
+          matricola_socio: matricola
+        }
       },
     })
 
     if (error) {
-      setMessage(error.message)
+      if (error.message.includes('Database error')) {
+        setMessage('ERRORE DATABASE: Vai su Supabase > Database > Logs per dettagli. Possibili cause: trigger falliti, RLS attiva, conferma email abilitata senza SMTP.')
+      } else if (error.message.includes('already registered')) {
+        setMessage('Utente già registrato. Prova il recupero password o il login.')
+      } else {
+        setMessage(error.message)
+      }
+    } else if (data.user && data.user.identities?.length === 0) {
+      setMessage('Utente già registrato ma non confermato. Controlla la tua email.')
     } else {
-      setMessage('Registrazione completata! Controlla la tua email.')
+      setMessage('Registrazione completata! Controlla la tua email per confermare. Dopo il login, verrai associato al socio ' + matricola)
     }
     setLoading(false)
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-8">
-      <Card className="w-full max-w-md">
+    <motion.main 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 100 }}
+      className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8"
+    >
+      <Card className="w-full max-w-md border-2 hover:border-primary/30 transition-all duration-300">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Registrati</CardTitle>
+          <CardTitle className="text-2xl text-center bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent">
+            Registrati
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
@@ -52,6 +78,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nome@esempio.com"
                 required
+                autoComplete="email"
               />
             </div>
             <div>
@@ -63,14 +90,29 @@ export default function RegisterPage() {
                 placeholder="Min 6 caratteri"
                 minLength={6}
                 required
+                autoComplete="new-password"
               />
             </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Matricola Socio</label>
+              <Input
+                type="text"
+                value={matricola}
+                onChange={(e) => setMatricola(e.target.value)}
+                placeholder="Es: 12345"
+                required
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Inserisci la tua matricola per associare l'account al socio
+              </p>
+            </div>
             {message && (
-              <p className={`text-sm ${message.includes('completata') ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-sm ${message.includes('completata') || message.includes('confermata') ? 'text-green-600' : 'text-red-600'}`}>
                 {message}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#0055ff] hover:from-[#0044cc] hover:to-[#0044cc]" disabled={loading}>
               {loading ? 'Registrazione...' : 'Registrati'}
             </Button>
           </form>
@@ -82,6 +124,6 @@ export default function RegisterPage() {
           </p>
         </CardContent>
       </Card>
-    </main>
+    </motion.main>
   )
 }

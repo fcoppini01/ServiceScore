@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const matricola = searchParams.get("matricola");
   // if "next" is in param, use it, otherwise use the base URL
   const next = searchParams.get("next") ?? "/";
 
@@ -25,7 +26,17 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    
+    if (!error && matricola) {
+      // Link user to socio after email confirmation
+      const { error: linkError } = await supabase
+        .rpc('link_user_to_socio', { p_matricola_socio: matricola });
+      
+      if (linkError) {
+        console.error('Error linking user to socio:', linkError);
+      }
+    }
   }
 
   return NextResponse.redirect(new URL(next, request.url));
