@@ -26,7 +26,26 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getSession();
+  // Refresh session
+  const { data: { session } } = await supabase.auth.getSession();
+
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+
+  // Protected routes
+  const protectedRoutes = ['/soci', '/attivita', '/officer'];
+  const authRoutes = ['/login', '/register'];
+
+  // If user is not authenticated and tries to access protected routes
+  if (!session && protectedRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // If user is authenticated and tries to access auth routes
+  if (session && authRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
   return response;
 }
 
