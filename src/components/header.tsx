@@ -30,6 +30,7 @@ export function Header() {
   }
 
   const navLinks = [
+    { href: "/dashboard", label: "Dashboard" },
     { href: "/soci", label: "Soci" },
     { href: "/attivita", label: "Attività" },
     { href: "/officer", label: "Officer" },

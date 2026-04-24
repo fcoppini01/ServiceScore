@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
   const pathname = url.pathname;
 
   // Protected routes
-  const protectedRoutes = ['/soci', '/attivita', '/officer'];
+  const protectedRoutes = ['/soci', '/attivita', '/officer', '/dashboard'];
   const authRoutes = ['/login', '/register'];
 
   // If user is not authenticated and tries to access protected routes
