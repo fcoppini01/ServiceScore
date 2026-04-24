@@ -1,0 +1,461 @@
+Relazione Tecnica
+Relazione Tecnica Dettagliata: Migrazione e Normalizzazione Dati Lions Club
+1. Introduzione e Obiettivi
+Il progetto nasce dalla necessità di centralizzare e strutturare i dati gestionali di un Lions Club (nello specifico del Distretto 108 LA), originariamente frammentati in diversi fogli di calcolo Excel. La dispersione dei dati in file "piatti" causava ridondanza, rischio di incoerenza e difficoltà nell'estrazione di statistiche aggregate.
+Obiettivi raggiunti:
+Creazione di un database relazionale su Supabase (PostgreSQL).
+Normalizzazione dei dati per eliminare la ripetizione di informazioni (Club, Soci, Incarichi).
+Automazione della pulizia e trasformazione dei dati tramite script Python.
+Garanzia di integrità referenziale tramite vincoli di chiave esterna (Foreign Keys).
+2. Architettura del Database (Data Modeling)
+Abbiamo abbandonato la struttura a tabelle indipendenti a favore di uno schema normalizzato che riflette la gerarchia reale dell'organizzazione.
+2.1 Schema delle Tabelle
+club: È l'anagrafica principale. Memorizza i dati strutturali (ID Account, Nome Locale, Circoscrizione, Zona, Distretto). Questo evita che il nome di un club o la sua zona debbano essere corretti in centinaia di righe diverse.
+soci: Tabella anagrafica dettagliata. Include campi per contatti multipli (email personali/lavoro, telefoni cellulari/abitazione), dati personali (professione, coniuge) e stato associativo.
+officer_club: Una tabella di "transizione" o storico. Mette in relazione un socio con una carica specifica (Presidente, Segretario, ecc.) definendo un intervallo temporale (data_inizio, data_conclusione).
+attivita_report: Tabella transazionale che raccoglie le attività di servizio. Include metriche di impatto (persone servite, ore di volontariato) e flussi finanziari (fondi raccolti e donati).
+2.2 Relazioni e Integrità
+Le tabelle sono collegate tramite Foreign Keys:
+soci.identificativo_lions_club → club.identificativo_lions
+officer_club.matricola_socio → soci.matricola_socio
+attivita_report.id_account_club → club.id_account
+È stato impostato il vincolo ON DELETE CASCADE sulle tabelle dipendenti: se un club o un socio vengono rimossi, i relativi incarichi o report vengono eliminati automaticamente per evitare dati orfani.
+3. Logica di Trasformazione (ETL - Extract, Transform, Load)
+Per la preparazione dei dati è stato utilizzato lo script convertitore_csv.py, basato sulla libreria Pandas.
+3.1 Gestione delle Incompatibilità Regionali
+I file CSV esportati da Excel in ambiente italiano presentano due ostacoli principali:
+Separatore di colonna: Utilizzo del punto e virgola (;) anziché della virgola (,).
+Encoding: Utilizzo di latin1 (ISO-8859-1) anziché UTF-8, che causava errori nella lettura di caratteri come "à", "°", "è".
+3.2 Funzioni di Pulizia Specializzate
+pulisci_numero(): Una funzione personalizzata che normalizza le stringhe numeriche. Rimuove simboli di valuta (€), spazi e trasforma i decimali italiani (virgola) in decimali SQL (punto), gestendo correttamente anche i separatori delle migliaia.
+Normalizzazione Date: Le date italiane (14/06/1955) vengono convertite nel formato ISO PostgreSQL (1955-06-14) utilizzando pd.to_datetime con il parametro dayfirst=True.
+Deduplicazione Multi-Sorgente: Poiché alcuni club comparivano solo nel file dei report e altri solo in quello degli officer, lo script aggrega gli ID da entrambe le fonti per creare una tabella club onnicomprensiva.
+4. Log di Risoluzione Problemi (Troubleshooting)
+Errore Riscontrato
+Causa Tecnica
+Soluzione Applicata
+UnicodeDecodeError
+Caratteri speciali non UTF-8
+Impostato encoding='latin1' nello script Python.
+22008: Date out of range
+Formato data DD/MM/YYYY non accettato
+Conversione in YYYY-MM-DD tramite Pandas.
+22001: Value too long
+Campi come sesso o titolo superavano i 10/20 caratteri
+Eseguito ALTER TABLE per espandere le colonne a VARCHAR(255).
+23503: Foreign Key Violation
+Report legati a club non censiti nell'anagrafica
+Aggiornato lo script per estrarre i club anche dal file report.csv.
+22P02: Invalid syntax for numeric
+Presenza di virgole nei campi decimali
+Creata funzione pulisci_numero per sostituire , con ..
+Invalid input for integer
+Valori decimali (es. 1.5 ore) in colonne INT
+Modificati i tipi colonna in NUMERIC su Supabase.
+5. Manuale Operativo per l'Utente
+Caricamento dei Dati
+Dalla dashboard di Supabase (Table Editor), utilizzare la funzione "Import data from CSV" caricando i file in questo ordine:
+1_club_supabase.csv
+2_soci_supabase.csv
+3_officer_supabase.csv
+4_report_supabase.csv
+Comandi di Manutenzione Utili (SQL Editor)
+Svuotare il database per un nuovo import:
+TRUNCATE TABLE club CASCADE;
+Esempio di query: Calcolare le ore totali di un club specifico:
+SELECT nome_club, SUM(totale_ore_servizio) as ore_totali
+FROM attivita_report
+JOIN club ON attivita_report.id_account_club = club.id_account
+GROUP BY nome_club;
+6. Conclusioni
+L'adozione di questa struttura permette ora una scalabilità senza precedenti. È possibile aggiungere nuovi club o annate sociali semplicemente facendo girare lo script sui nuovi file esportati. Il sistema è pronto per essere integrato con frontend moderni (React, Vue) o strumenti di Business Intelligence per la visualizzazione dell'impatto sociale del Distretto.
+Convertitore
+import pandas as pd
+import numpy as np
+def pulisci_numero(valore):
+    """Sostituisce la virgola con il punto e rimuove eventuali punti delle migliaia."""
+    if pd.isna(valore) or str(valore).strip() == '':
+        return '0'
+    # Rimuove spazi, simboli valuta o altri caratteri non numerici comuni
+    s = str(valore).replace(' ', '').replace('€', '').strip()
+   
+    # Gestione formati europei (es. 1.234,56 -> 1234.56)
+    if '.' in s and ',' in s:
+        s = s.replace('.', '').replace(',', '.')
+    # Gestione solo virgola (es. 1234,56 -> 1234.56)
+    elif ',' in s:
+        s = s.replace(',', '.')
+   
+    # Verifica che sia un numero valido, altrimenti ritorna 0
+    try:
+        float(s)
+        return s
+    except ValueError:
+        return '0'
+def converti_dati_lions():
+    print("Inizio l'elaborazione dei file CSV...")
+    try:
+        # 1. LEGGI I FILE ORIGINALI
+        df_officer_raw = pd.read_csv('officer.csv', dtype=str, encoding='latin1', sep=';')
+        df_soci_raw = pd.read_csv('soci.csv', dtype=str, encoding='latin1', sep=';')
+        df_report_raw = pd.read_csv('report.csv', dtype=str, encoding='latin1', sep=';')
+        # Pulizia automatica delle intestazioni
+        df_officer_raw.columns = df_officer_raw.columns.str.strip()
+        df_soci_raw.columns = df_soci_raw.columns.str.strip()
+        df_report_raw.columns = df_report_raw.columns.str.strip()
+        # ---------------------------------------------------------
+        # TABELLA 1: CLUB (MIGLIORATA)
+        # Estraiamo i club da TUTTI i file per evitare errori di Foreign Key
+        # ---------------------------------------------------------
+        print("Elaborazione tabella 'club' (unione dati da Officer e Report)...")
+       
+        # Estrazione da Officer
+        mapping_club_off = {
+            'ID account': 'id_account',
+            'Nome account': 'nome_club',
+            'Nome account (locale)': 'nome_account_locale',
+            'Identificativo Lions': 'identificativo_lions',
+            'Tipo': 'tipo',
+            'Circoscrizione di appartenenza': 'circoscrizione',
+            'Zona di appartenenza': 'zona',
+            'Distretto di appartenenza': 'distretto',
+            'Multidistretto di appartenenza': 'multidistretto',
+            'ID dell?organizzazione di appartenenza': 'id_organizzazione_appartenenza',
+            'Parent Parent Id': 'parent_parent_id',
+            'Parent District Id': 'parent_district_id',
+            'Identificativo del MD di appartenenza': 'id_md_appartenenza',
+            'Identificativo Lions Affiliato': 'identificativo_lions_affiliato'
+        }
+        cols_club_off = [c for c in mapping_club_off.keys() if c in df_officer_raw.columns]
+        df_c1 = df_officer_raw[cols_club_off].copy().rename(columns=mapping_club_off)
+        # Estrazione da Report (per i club che non hanno officer ma hanno attività)
+        mapping_club_rep = {
+            'Sponsor: ID dell?organizzazione di appartenenza': 'id_account_club',
+            'Sponsor: Nome account': 'nome_club',
+            'Zona dello sponsor': 'zona',
+            'Circoscrizione sponsor': 'circoscrizione',
+            'Distretto sponsor': 'distretto',
+            'MD sponsor': 'multidistretto'
+        }
+        cols_club_rep = [c for c in mapping_club_rep.keys() if c in df_report_raw.columns]
+        df_c2 = df_report_raw[cols_club_rep].copy().rename(columns={
+            'Sponsor: ID dell?organizzazione di appartenenza': 'id_account',
+            'Sponsor: Nome account': 'nome_club',
+            'Zona dello sponsor': 'zona',
+            'Circoscrizione sponsor': 'circoscrizione',
+            'Distretto sponsor': 'distretto',
+            'MD sponsor': 'multidistretto'
+        })
+        # Unione dei dati dei club e rimozione duplicati
+        df_club = pd.concat([df_c1, df_c2], ignore_index=True)
+        df_club.drop_duplicates(subset=['id_account'], keep='first', inplace=True)
+        df_club.to_csv('1_club_supabase.csv', index=False)
+        # ---------------------------------------------------------
+        # TABELLA 2: SOCI
+        # ---------------------------------------------------------
+        print("Elaborazione tabella 'soci'...")
+        mapping_soci = {
+            'Contatto: Matricola socio': 'matricola_socio',
+            'Identificativo Lions': 'identificativo_lions_club',
+            'Contatto: Nome': 'nome',
+            'Contatto: Secondo nome': 'secondo_nome',
+            'Contatto: Cognome': 'cognome',
+            'Contatto: Nome (locale)': 'nome_locale',
+            'Contatto: Secondo nome (locale)': 'secondo_nome_locale',
+            'Contatto: Cognome (locale)': 'cognome_locale',
+            'Contatto: Suffisso': 'suffisso',
+            'Contatto: Soprannome': 'soprannome',
+            'Contatto: Titolo': 'titolo',
+            'Contatto: Genere': 'sesso',
+            'Contatto: Compleanno': 'data_nascita',
+            'Data di ingresso nell?associazione': 'data_ingresso',
+            'Tipo associazione intera': 'tipo_associazione_intera',
+            'Categoria associativa': 'categoria_associativa',
+            'Programma': 'programma',
+            'Nome dello sponsor del socio': 'nome_sponsor',
+            'Contatto: Preferred Email': 'email_preferita',
+            'Contatto: Personal Email': 'email_personale',
+            'Contatto: Work Email': 'email_lavoro',
+            'Contatto: Alternate Email': 'email_alternativa',
+            'Contatto: Preferred Phone': 'telefono_preferito',
+            'Contatto: Cellulare': 'telefono_cellulare',
+            'Contatto: Telefono (abit.)': 'telefono_abitazione',
+            'Contatto: Altro telefono': 'altro_telefono',
+            'Contatto: Fax': 'fax',
+            'Contatto: Indirizzo postale (riga 1)': 'indirizzo_riga1',
+            'Contatto: Indirizzo postale (riga 2)': 'indirizzo_riga2',
+            'Contatto: Indirizzo postale (riga 3)': 'indirizzo_riga3',
+            'Contatto: Indirizzo': 'indirizzo_locale',
+            'Contatto: Città indirizzo postale': 'citta',
+            'Contatto: Stato/Provincia indirizzo postale': 'stato_provincia',
+            'Contatto: CAP indirizzo postale': 'cap',
+            'Contatto: Paese indirizzo postale': 'paese',
+            'Contatto: Nome del coniuge': 'nome_coniuge',
+            'Contatto: Stato del coniuge': 'stato_coniuge',
+            'Contatto: Professione': 'professione'
+        }
+       
+        cols_soci = [c for c in mapping_soci.keys() if c in df_soci_raw.columns]
+        df_soci = df_soci_raw[cols_soci].copy()
+        df_soci.rename(columns=mapping_soci, inplace=True)
+       
+        for col in ['data_nascita', 'data_ingresso']:
+            if col in df_soci.columns:
+                df_soci[col] = pd.to_datetime(df_soci[col], dayfirst=True, errors='coerce').dt.strftime('%Y-%m-%d')
+           
+        df_soci.drop_duplicates(subset=['matricola_socio'], keep='first', inplace=True)
+        df_soci.to_csv('2_soci_supabase.csv', index=False)
+        # ---------------------------------------------------------
+        # TABELLA 3: OFFICER CLUB
+        # ---------------------------------------------------------
+        print("Elaborazione tabella 'officer'...")
+        mapping_officer = {
+            'Socio: Matricola socio': 'matricola_socio',
+            'Titolo ufficiale': 'titolo_ufficiale',
+            "Data d'inizio": 'data_inizio',
+            'Data di conclusione': 'data_conclusione'
+        }
+       
+        cols_off = [c for c in mapping_officer.keys() if c in df_officer_raw.columns]
+        df_officer = df_officer_raw[cols_off].copy()
+        df_officer.rename(columns=mapping_officer, inplace=True)
+       
+        for col in ['data_inizio', 'data_conclusione']:
+            if col in df_officer.columns:
+                df_officer[col] = pd.to_datetime(df_officer[col], dayfirst=True, errors='coerce').dt.strftime('%Y-%m-%d')
+           
+        df_officer.dropna(subset=['matricola_socio'], inplace=True)
+        df_officer.to_csv('3_officer_supabase.csv', index=False)
+        # ---------------------------------------------------------
+        # TABELLA 4: REPORT ATTIVITA'
+        # ---------------------------------------------------------
+        print("Elaborazione tabella 'report'...")
+        mapping_report = {
+            'ID attività di servizio': 'id_attivita',
+            'Sponsor: ID dell?organizzazione di appartenenza': 'id_account_club',
+            'Titolo': 'titolo', 'Descrizione': 'descrizione', 'Stato': 'stato',
+            'Rapporto completo': 'rapporto_completo', 'Livello dell\'attività': 'livello_attivita',
+            'Causa': 'causa', 'Tipo di progetto': 'tipo_progetto',
+            'Attività distintiva': 'attivita_distintiva',
+            'Finanziata con il contributo della LCIF': 'finanziata_lcif',
+            "Data d'inizio": 'data_inizio', 'Data di conclusione': 'data_conclusione',
+            'Persone servite': 'persone_servite',
+            'Persone servite - Limite massimo': 'persone_servite_limite',
+            'Totale volontari': 'totale_volontari',
+            'Totale ore di servizio': 'totale_ore_servizio',
+            'Total Volunteer Hours - Capped': 'totale_ore_servizio_capped',
+            'Alberi piantati/curati': 'alberi_piantati',
+            'Totale fondi donati Valuta': 'valuta_fondi_donati',
+            'Totale fondi donati': 'totale_fondi_donati',
+            'Total Funds Donated (USD) - Capped': 'fondi_donati_usd_capped',
+            'Donazione alla LCIF': 'donazione_lcif',
+            'Organizzazione beneficiata': 'organizzazione_beneficiata',
+            'Totale fondi raccolti Valuta': 'valuta_fondi_raccolti',
+            'Totale fondi raccolti': 'totale_fondi_raccolti',
+            'Total Funds Raised (USD) - Capped': 'fondi_raccolti_usd_capped',
+            'Creato da: Nome completo': 'creato_da'
+        }
+       
+        cols_rep = [c for c in mapping_report.keys() if c in df_report_raw.columns]
+        df_report = df_report_raw[cols_rep].copy()
+        df_report.rename(columns=mapping_report, inplace=True)
+       
+        for col in ['data_inizio', 'data_conclusione']:
+            if col in df_report.columns:
+                df_report[col] = pd.to_datetime(df_report[col], dayfirst=True, errors='coerce').dt.strftime('%Y-%m-%d')
+           
+        num_cols = [
+            'persone_servite', 'persone_servite_limite', 'totale_volontari',
+            'totale_ore_servizio', 'totale_ore_servizio_capped', 'alberi_piantati',
+            'totale_fondi_donati', 'fondi_donati_usd_capped', 'donazione_lcif',
+            'totale_fondi_raccolti', 'fondi_raccolti_usd_capped'
+        ]
+        for col in num_cols:
+            if col in df_report.columns:
+                df_report[col] = df_report[col].apply(pulisci_numero)
+        bool_cols = ['rapporto_completo', 'attivita_distintiva', 'finanziata_lcif']
+        for col in bool_cols:
+            if col in df_report.columns:
+                df_report[col] = df_report[col].apply(lambda x: 'TRUE' if str(x).strip() == '1' else ('FALSE' if str(x).strip() == '0' else ''))
+        df_report.to_csv('4_report_supabase.csv', index=False)
+        print("--------------------------------------------------")
+        print("OPERAZIONE COMPLETATA CON SUCCESSO!")
+        print("1. Svuota la tabella 'club' su Supabase (TRUNCATE TABLE club CASCADE).")
+        print("2. Re-importa i file in ordine: 1_club, 2_soci, 3_officer, 4_report.")
+        print("--------------------------------------------------")
+    except Exception as e:
+        print(f"\nERRORE DURANTE L'ELABORAZIONE: {e}")
+if __name__ == "__main__":
+    converti_dati_lions()
+Schema-sql
+-- SCHEMA DATABASE LIONS CLUB - VERSIONE FINALE PER SUPABASE (POSTGRESQL)
+-- 1. TABELLA CLUB (Anagrafica Strutturale)
+-- Contiene le informazioni di base sui club e la gerarchia territoriale.
+CREATE TABLE club (
+    id_account VARCHAR(100) PRIMARY KEY,             -- ID di sistema (Salesforce/Lions)
+    nome_club VARCHAR(255) NOT NULL,
+    nome_account_locale VARCHAR(255),
+    identificativo_lions VARCHAR(100) UNIQUE,        -- ID numerico del club (es. 21163)
+    tipo VARCHAR(100),
+    circoscrizione VARCHAR(100),
+    zona VARCHAR(100),
+    distretto VARCHAR(100),
+    multidistretto VARCHAR(100),
+    id_organizzazione_appartenenza VARCHAR(100),
+    parent_parent_id VARCHAR(100),
+    parent_district_id VARCHAR(100),
+    id_md_appartenenza VARCHAR(100),
+    identificativo_lions_affiliato VARCHAR(100)
+);
+-- 2. TABELLA SOCI (Anagrafica Membri)
+-- Contiene i dati personali e di contatto dei soci.
+CREATE TABLE soci (
+    matricola_socio VARCHAR(100) PRIMARY KEY,        -- Identificativo univoco mondiale
+    identificativo_lions_club VARCHAR(100),          -- FK verso club.identificativo_lions
+    nome VARCHAR(255),
+    secondo_nome VARCHAR(255),
+    cognome VARCHAR(255),
+    nome_locale VARCHAR(255),
+    secondo_nome_locale VARCHAR(255),
+    cognome_locale VARCHAR(255),
+    suffisso VARCHAR(255),
+    soprannome VARCHAR(255),
+    titolo VARCHAR(255),                             -- Espanso per titoli accademici lunghi
+    sesso VARCHAR(50),                               -- Espanso per sicurezza
+    data_nascita DATE,
+    data_ingresso DATE,
+    tipo_associazione_intera VARCHAR(100),
+    categoria_associativa VARCHAR(100),
+    programma VARCHAR(100),
+    nome_sponsor VARCHAR(255),
+    email_preferita VARCHAR(255),
+    email_personale VARCHAR(255),
+    email_lavoro VARCHAR(255),
+    email_alternativa VARCHAR(255),
+    telefono_preferito VARCHAR(100),
+    telefono_cellulare VARCHAR(100),
+    telefono_abitazione VARCHAR(100),
+    altro_telefono VARCHAR(100),
+    fax VARCHAR(100),
+    indirizzo_riga1 TEXT,
+    indirizzo_riga2 TEXT,
+    indirizzo_riga3 TEXT,
+    indirizzo_locale TEXT,
+    citta VARCHAR(255),
+    stato_provincia VARCHAR(255),
+    cap VARCHAR(50),
+    paese VARCHAR(100),
+    nome_coniuge VARCHAR(255),
+    stato_coniuge VARCHAR(100),
+    professione VARCHAR(255),
+    CONSTRAINT fk_soci_club
+        FOREIGN KEY (identificativo_lions_club)
+        REFERENCES club(identificativo_lions)
+        ON DELETE SET NULL
+);
+-- 3. TABELLA OFFICER CLUB (Storico Incarichi)
+-- Registra i ruoli ricoperti dai soci nel tempo.
+CREATE TABLE officer_club (
+    id_incarico INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    matricola_socio VARCHAR(100) NOT NULL,
+    titolo_ufficiale VARCHAR(255) NOT NULL,
+    data_inizio DATE NOT NULL,
+    data_conclusione DATE,
+   
+    CONSTRAINT fk_officer_socio
+        FOREIGN KEY (matricola_socio)
+        REFERENCES soci(matricola_socio)
+        ON DELETE CASCADE,
+       
+    -- Evita l'inserimento di cariche duplicate identiche per lo stesso socio
+    CONSTRAINT uk_incarico_duplicato UNIQUE (matricola_socio, titolo_ufficiale, data_inizio)
+);
+-- 4. TABELLA ATTIVITA_REPORT (Service e Impatto)
+-- Registra le attività svolte e i dati quantitativi (fondi e ore).
+CREATE TABLE attivita_report (
+    id_attivita VARCHAR(100) PRIMARY KEY,            -- ID del report (es. SA-...)
+    id_account_club VARCHAR(100) NOT NULL,           -- FK verso club.id_account
+    titolo VARCHAR(255) NOT NULL,
+    descrizione TEXT,
+    stato VARCHAR(100),
+    rapporto_completo BOOLEAN DEFAULT FALSE,
+    livello_attivita VARCHAR(100),
+    causa VARCHAR(100),
+    tipo_progetto VARCHAR(255),
+    attivita_distintiva BOOLEAN DEFAULT FALSE,
+    finanziata_lcif BOOLEAN DEFAULT FALSE,
+    data_inizio DATE,
+    data_conclusione DATE,
+   
+    -- Utilizzo di NUMERIC per gestire correttamente decimali (es. 1.5 ore)
+    persone_servite NUMERIC DEFAULT 0,
+    persone_servite_limite NUMERIC DEFAULT 0,
+    totale_volontari NUMERIC DEFAULT 0,
+    totale_ore_servizio NUMERIC DEFAULT 0,
+    totale_ore_servizio_capped NUMERIC DEFAULT 0,
+    alberi_piantati NUMERIC DEFAULT 0,
+   
+    valuta_fondi_donati VARCHAR(10),
+    totale_fondi_donati NUMERIC DEFAULT 0,
+    fondi_donati_usd_capped NUMERIC DEFAULT 0,
+    donazione_lcif NUMERIC DEFAULT 0,
+    organizzazione_beneficiata VARCHAR(255),
+   
+    valuta_fondi_raccolti VARCHAR(10),
+    totale_fondi_raccolti NUMERIC DEFAULT 0,
+    fondi_raccolti_usd_capped NUMERIC DEFAULT 0,
+   
+    creato_da VARCHAR(255),
+   
+    CONSTRAINT fk_report_club
+        FOREIGN KEY (id_account_club)
+        REFERENCES club(id_account)
+        ON DELETE CASCADE
+);
+Selezioni - Viste
+-- ==========================================
+-- VISTE PER LA WEB APP (SELEZIONI MULTIPLE)
+-- ==========================================
+-- A. VISTA SOCI COMPLETA (Per filtri Member Detail)
+CREATE OR REPLACE VIEW vista_soci_ricerca AS
+SELECT
+    s.*,
+    c.nome_club,
+    c.zona as club_zona,
+    c.circoscrizione as club_circoscrizione,
+    EXTRACT(YEAR FROM AGE(s.data_nascita)) as eta,
+    CASE
+        WHEN EXTRACT(YEAR FROM AGE(s.data_nascita)) < 30 THEN 'Under 30'
+        WHEN EXTRACT(YEAR FROM AGE(s.data_nascita)) BETWEEN 30 AND 50 THEN '30-50'
+        WHEN EXTRACT(YEAR FROM AGE(s.data_nascita)) BETWEEN 51 AND 70 THEN '51-70'
+        ELSE 'Over 70'
+    END as fascia_eta,
+    EXTRACT(YEAR FROM AGE(s.data_ingresso)) as anzianita_lionistica
+FROM soci s
+LEFT JOIN club c ON s.identificativo_lions_club = c.identificativo_lions;
+-- B. VISTA OFFICER COMPLETA (Per filtri Officer Contact)
+CREATE OR REPLACE VIEW vista_officer_ricerca AS
+SELECT
+    o.id_incarico,
+    o.titolo_ufficiale,
+    o.data_inizio,
+    o.data_conclusione,
+    s.nome,
+    s.cognome,
+    s.matricola_socio,
+    c.nome_club,
+    c.nome_account_locale,
+    c.zona as club_zona,
+    c.circoscrizione as club_circoscrizione
+FROM officer_club o
+JOIN soci s ON o.matricola_socio = s.matricola_socio
+JOIN club c ON s.identificativo_lions_club = c.identificativo_lions;
+-- C. VISTA SERVICE COMPLETA (Per filtri Service Activities)
+CREATE OR REPLACE VIEW vista_report_ricerca AS
+SELECT
+    r.*,
+    c.nome_club as sponsor_nome_account,
+    c.zona as sponsor_zona,
+    c.circoscrizione as sponsor_circoscrizione
+FROM attivita_report r
+JOIN club c ON r.id_account_club = c.id_account;

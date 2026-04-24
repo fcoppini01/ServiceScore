@@ -1,0 +1,49 @@
+📘 Manuale Operativo: Sistema Gestionale Lions Distretto 108 LA
+Benvenuti nella documentazione ufficiale del nuovo ecosistema gestionale Lions. Questo sistema è stato progettato per centralizzare i dati provenienti dai CSV ministeriali e renderli fruibili tramite una Web App moderna e performante.
+🏗️ 1. Architettura del Sistema
+Il sistema si basa su tre componenti principali che lavorano in sinergia:
+Database Centrale (Supabase/PostgreSQL): Il cuore pulsante dove risiedono i dati normalizzati.
+Motore di Sincronizzazione (Python): Lo script che "pulisce" i file Excel/CSV e li invia al database.
+Dashboard Web (React): L'interfaccia utente per consultare e filtrare le informazioni.
+🗄️ 2. Struttura del Database
+Abbiamo trasformato i file "piatti" di Excel in un modello relazionale. Questo significa che le informazioni non sono duplicate.
+Tabelle Principali
+club: Contiene l'identità dei club. È il punto di riferimento per tutte le altre tabelle.
+soci: L'anagrafica completa. Ogni socio è collegato a un club tramite l'ID Lions.
+officer_club: Registra chi ricopre cariche (Presidente, Segretario, ecc.) in un determinato periodo.
+attivita_report: Raccoglie tutti i service, le ore lavorate e i fondi raccolti.
+Le Viste (Views) - Lo strumento per la Web App
+Per facilitare le ricerche complesse che hai richiesto (filtri per fascia d'età, zona, ecc.), abbiamo creato delle Viste. Una vista è una "tabella virtuale" che pre-elabora i dati:
+vista_soci_ricerca: Calcola in tempo reale l'età dei soci e la loro anzianità lionistica.
+vista_officer_ricerca: Unisce i nomi dei soci ai loro incarichi e ai nomi dei club.
+vista_report_ricerca: Permette di filtrare i service per zona dello sponsor o per range di fondi.
+🔄 3. Sincronizzazione dei Dati (Lo script Python)
+Il file convertitore_csv.py non è un semplice convertitore, ma un motore di sincronizzazione avanzato.
+Cosa fa lo script quando lo avvii:
+Lettura Intelligente: Apre i file soci.csv, officer.csv e report.csv gestendo gli accenti italiani (latin1) e i separatori ;.
+Pulizia Numerica: Trasforma i numeri "italiani" (es: 1.500,50) in numeri "database" (es: 1500.50).
+Normalizzazione Date: Converte le date dal formato GG/MM/AAAA al formato standard AAAA-MM-GG.
+Logica UPSERT: Questa è la parte più importante. Lo script non si limita a "caricare", ma effettua un Update + Insert.
+Se un socio esiste già nel database, aggiorna i suoi dati.
+Se è un nuovo socio, lo inserisce.
+Risultato: Niente duplicati, anche se carichi lo stesso file più volte.
+🚀 4. Guida Passo-Passo all'Aggiornamento
+Quando ricevi nuovi file CSV aggiornati, segui questa procedura:
+Prepara i file: Inserisci i file nella cartella dello script e rinominali esattamente in soci.csv, officer.csv e report.csv.
+Avvia la sincronizzazione:
+Apri il terminale nella cartella.
+Digita: python convertitore_csv.py.
+Verifica: Una volta terminato, lo script confermerà il numero di righe inviate. I dati saranno immediatamente visibili nella Web App.
+🛠️ 5. Risoluzione Problemi Comuni
+"Value too long for type character..."
+Significa che un testo nel CSV (es. una professione o un titolo) è più lungo dello spazio previsto nel database.
+Soluzione: Bisogna aumentare il limite del campo su Supabase usando il comando ALTER TABLE ... ALTER COLUMN ... TYPE VARCHAR(255).
+"Foreign Key Violation"
+Stai provando a inserire un socio o un report legato a un Club che non esiste nella tabella club.
+Soluzione: Assicurati di non aver cancellato righe dalla tabella club o svuota tutto con TRUNCATE TABLE club CASCADE; e riparti dall'importazione del file 1_club.
+Errori di Codifica (Caratteri strani)
+Se vedi simboli come Â° invece di °.
+Soluzione: Verifica che i file CSV originali siano salvati correttamente e che lo script Python stia usando encoding='latin1'.
+📊 6. Prossimi Passi: La Web App
+Il database è ora "pronto all'uso". La web app utilizzerà le Viste create per permetterti di fare selezioni multiple (es: "Mostrami tutti i Presidenti di zona della circoscrizione 2 che sono anche medici").
+Tutta la logica di calcolo pesante è gestita dal database, rendendo l'app veloce e reattiva.
