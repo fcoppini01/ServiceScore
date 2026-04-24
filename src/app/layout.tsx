@@ -3,6 +3,8 @@ import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { SessionProvider } from "@/components/session-provider";
 
 const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-ibm-sans",
@@ -32,10 +34,19 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-gradient-to-br from-background via-muted/20 to-background">
+      <body className="min-h-full flex flex-col bg-gradient-to-br from-background via-muted/20 to-background antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Header />
-          {children}
+          <SessionProvider>
+            <div className="min-h-screen flex flex-col backdrop-blur-sm">
+              <Header />
+              <main className="flex-1 relative">
+                {/* Effetto luce MAC */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
+                {children}
+              </main>
+              <Footer />
+            </div>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>
