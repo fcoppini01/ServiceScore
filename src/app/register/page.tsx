@@ -34,13 +34,8 @@ export default function RegisterPage() {
     })
 
     if (error) {
-      if (error.message.includes('Database error')) {
-        setMessage('ERRORE DATABASE: Vai su Supabase > Database > Logs per dettagli. Possibili cause: trigger falliti, RLS attiva, conferma email abilitata senza SMTP.')
-      } else if (error.message.includes('already registered')) {
-        setMessage('Utente già registrato. Prova il recupero password o il login.')
-      } else {
-        setMessage(error.message)
-      }
+      // Mostra l'errore reale per debug
+      setMessage('Errore: ' + error.message + ' (' + error.name + ')')
     } else if (data.user && data.user.identities?.length === 0) {
       setMessage('Utente già registrato ma non confermato. Controlla la tua email.')
     } else {
