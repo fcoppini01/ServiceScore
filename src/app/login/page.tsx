@@ -37,26 +37,6 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  async function handleMagicLink(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setMessage('')
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
-      },
-    })
-
-    if (error) {
-      setMessage(error.message)
-    } else {
-      setMessage('Controlla la tua email per il link di accesso!')
-    }
-    setLoading(false)
-  }
-
   return (
     <main className="flex min-h-screen items-center justify-center p-8">
       <Card className="w-full max-w-md">
@@ -92,17 +72,8 @@ export default function LoginPage() {
                 {message}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-gradient-to-r from-primary to-[#0055ff]" disabled={loading}>
               {loading ? 'Accesso in corso...' : 'Accedi'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleMagicLink}
-              disabled={loading || !email}
-            >
-              Invia Magic Link
             </Button>
           </form>
           <p className="text-center text-sm mt-4">
