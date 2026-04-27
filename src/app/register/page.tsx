@@ -87,17 +87,16 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Matricola Socio</label>
+              <label className="text-sm font-medium mb-1 block">Matricola Socio <span className="text-muted-foreground">(opzionale)</span></label>
               <Input
                 type="text"
                 value={matricola}
                 onChange={(e) => setMatricola(e.target.value)}
-                placeholder="Es: 12345"
-                required
+                placeholder="Es: 12345 - Lascia vuoto se non sei socio"
                 autoComplete="off"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Inserisci la tua matricola per associare l'account al socio
+                Inserisci la tua matricola per associare l'account al socio. Se sei sviluppatore, lascia vuoto.
               </p>
             </div>
             {message && (
