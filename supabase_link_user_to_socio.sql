@@ -42,7 +42,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 GRANT EXECUTE ON FUNCTION public.link_user_to_socio(VARCHAR) TO authenticated;
 
 -- 5. AGGIORNA RLS PER PERMETTERE AI SOCI DI VEDERE I PROPRI DATI
-DROP POLICY IF EXISTS "Soci visibili a utenti autenticati" ON soci;
+DROP POLICY IF EXISTS "Soci possono vedere i propri dati" ON soci;
 
 CREATE POLICY "Soci possono vedere i propri dati" 
 ON soci FOR SELECT 

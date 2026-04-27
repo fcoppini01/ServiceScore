@@ -16,6 +16,8 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const router = useRouter()
+  
+  // Matricola is optional - if provided, user will be linked to socio after email confirmation
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
