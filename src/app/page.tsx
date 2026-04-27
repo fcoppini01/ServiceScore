@@ -3,58 +3,151 @@
 import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { GlowCard, PulseGlow, FloatingElement, FadeInUp, StaggerContainer } from "@/lib/mac-effects"
 import { motion } from "framer-motion"
-import { containerVariants, itemVariants } from "@/lib/animations"
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 12,
+    },
+  },
+}
 
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8">
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="max-w-5xl w-full"
-      >
-        <motion.h1 
-          variants={itemVariants}
-          className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-8 text-center bg-gradient-to-r from-primary via-[#0055ff] to-[#ffe500] bg-clip-text text-transparent"
-        >
-          ServiceScore - Lions Club 108 LA
-        </motion.h1>
-        
-        <motion.p 
-          variants={itemVariants}
-          className="text-lg sm:text-xl text-center mb-8 sm:mb-12 text-muted-foreground"
-        >
-          Sistema gestionale per il monitoraggio delle attività di servizio
-        </motion.p>
+  const cards = [
+    { href: "/dashboard", title: "Dashboard", desc: "Panoramica completa con grafici e statistiche", icon: "📊" },
+    { href: "/soci", title: "Soci", desc: "Gestione anagrafica soci, ricerca e filtri avanzati", icon: "👥" },
+    { href: "/attivita", title: "Attività", desc: "Report attività di servizio, fondi e ore volontariato", icon: "🎯" },
+    { href: "/officer", title: "Officer", desc: "Gestione incarichi e ruoli nei club", icon: "⭐" },
+  ]
 
+  return (
+    <motion.main 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden"
+    >
+      {/* Background effects */}
+      <PulseGlow className="top-1/4 left-1/4 w-[600px] h-[600px]" />
+      <PulseGlow className="bottom-1/4 right-1/4 w-[400px] h-[400px]" glowColor="#ffe500" />
+      
+      {/* Ambient particles */}
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            background: i % 2 === 0 ? '#0055ff' : '#ffe500',
+          }}
+          animate={{
+            y: [0, -100, 0],
+            opacity: [0, 1, 0],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: Math.random() * 2,
+          }}
+        />
+      ))}
+
+      <StaggerContainer delay={0.1}>
+        {/* Hero Title */}
+        <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-16 relative z-10">
+          <motion.h1 
+            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
+          >
+            <span className="bg-gradient-to-r from-primary via-[#0055ff] to-[#ffe500] bg-clip-text text-transparent">
+              ServiceScore
+            </span>
+          </motion.h1>
+          <motion.p 
+            className="text-lg sm:text-xl text-muted-foreground"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            Lions Club Distretto 108 LA
+          </motion.p>
+        </motion.div>
+
+        {/* Cards Grid */}
         <motion.div 
-          variants={containerVariants}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6"
+          variants={itemVariants}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl w-full relative z-10"
         >
-          {[
-            { href: "/soci", title: "Soci", description: "Gestione anagrafica soci, ricerca e filtri avanzati", icon: "👥" },
-            { href: "/attivita", title: "Attività", description: "Report attività di servizio, fondi e ore volontariato", icon: "📊" },
-            { href: "/officer", title: "Officer", description: "Gestione incarichi e ruoli nei club", icon: "⭐" },
-          ].map((item, index) => (
-            <motion.div key={item.href} variants={itemVariants} custom={index}>
-              <Link href={item.href}>
-                <Card className="p-4 sm:p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer border-2 hover:border-primary/50 bg-gradient-to-br from-background to-muted/50">
-                  <div className="text-4xl mb-3">{item.icon}</div>
-                  <h2 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3">{item.title}</h2>
-                  <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
-                    {item.description}
-                  </p>
-                  <Button className="w-full bg-gradient-to-r from-primary to-[#0055ff] hover:from-[#0044cc] hover:to-[#0044cc] transition-all duration-300">
-                    Accedi
-                  </Button>
-                </Card>
-              </Link>
-            </motion.div>
+          {cards.map((card, index) => (
+            <FadeInUp key={card.href} delay={index * 0.1}>
+              <GlowCard 
+                glowColor={index === 0 ? "#0055ff" : index === 1 ? "#ffe500" : index === 2 ? "#ff0000" : "#0d0d0d"}
+                className="h-full"
+              >
+                <Link href={card.href}>
+                  <Card className="h-full p-4 sm:p-6 transition-all duration-300 hover:scale-[1.02] bg-background/80 backdrop-blur-xl border border-border/50 hover:border-primary/30 group">
+                    <FloatingElement>
+                      <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                        {card.icon}
+                      </div>
+                    </FloatingElement>
+                    <h2 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3 group-hover:text-primary transition-colors">
+                      {card.title}
+                    </h2>
+                    <p className="text-sm sm:text-base text-muted-foreground">
+                      {card.desc}
+                    </p>
+                    <motion.div
+                      className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                      initial={{ opacity: 0, y: 10 }}
+                      whileHover={{ opacity: 1, y: 0 }}
+                    >
+                      <Button className="w-full bg-gradient-to-r from-primary to-[#0055ff] group-hover:shadow-lg group-hover:shadow-primary/25 transition-all">
+                        Accedi
+                      </Button>
+                    </motion.div>
+                  </Card>
+                </Link>
+              </GlowCard>
+            </FadeInUp>
           ))}
         </motion.div>
-      </motion.div>
-    </main>
+
+        {/* Footer Info */}
+        <motion.div variants={itemVariants} className="mt-12 sm:mt-20 text-center text-sm text-muted-foreground">
+          <p>Progettato con Next.js + Supabase + Tailwind CSS</p>
+          <motion.p 
+            className="mt-2 text-xs"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+          >
+            © 2024 ServiceScore - Lions Club 108 LA
+          </motion.p>
+        </motion.div>
+      </StaggerContainer>
+    </motion.main>
   )
 }
