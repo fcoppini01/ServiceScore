@@ -28,9 +28,8 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${location.origin}/auth/callback${matricola ? `?matricola=${encodeURIComponent(matricola)}` : ''}`,
-        data: matricola ? { matricola_socio: matricola } : {}
-      },
+        emailRedirectTo: `${location.origin}/auth/callback`
+      }
     })
 
     if (error) {
