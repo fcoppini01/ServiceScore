@@ -94,7 +94,7 @@ export default function DashboardClient({
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [value, 'Soci']} />
+                <Tooltip formatter={(value) => [value, 'Soci']} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -119,7 +119,7 @@ export default function DashboardClient({
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [value, 'Soci']} />
+                <Tooltip formatter={(value) => [value, 'Soci']} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
