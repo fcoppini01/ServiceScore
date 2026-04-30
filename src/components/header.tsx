@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -39,24 +40,34 @@ export function Header() {
   ]
 
   return (
-    <motion.header 
+    <motion.header
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 100, damping: 15 }}
-      className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60"
+      className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60"
     >
       <div className="container flex h-14 items-center justify-between">
-        <motion.div 
+        {/* Brand + nav */}
+        <motion.div
           className="flex items-center gap-6"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Link href="/" className="font-bold text-lg text-primary hover:scale-105 transition-transform">
-            ServiceScore
+          <Link href="/" className="flex items-center gap-2 group">
+            <Image
+              src="/logo_ufficiale.png"
+              alt="Lions Club"
+              width={26}
+              height={26}
+              className="opacity-90 group-hover:opacity-100 transition-opacity"
+            />
+            <span className="font-bold text-base text-primary group-hover:opacity-80 transition-opacity">
+              ServiceScore
+            </span>
           </Link>
-          
-          {/* Desktop Navigation */}
+
+          {/* Desktop nav */}
           {user && (
             <nav className="hidden md:flex items-center gap-1">
               {navLinks.map((link, index) => (
@@ -71,7 +82,7 @@ export function Header() {
                     className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                       pathname.startsWith(link.href)
                         ? 'bg-primary/10 text-primary'
-                        : 'hover:bg-muted/50'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     }`}
                   >
                     {link.label}
@@ -82,6 +93,7 @@ export function Header() {
           )}
         </motion.div>
 
+        {/* Right side */}
         <div className="flex items-center gap-2">
           {!loading && (
             user ? (
@@ -90,11 +102,11 @@ export function Header() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleLogout}
-                  className="hidden sm:inline-flex hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  className="hidden sm:inline-flex hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors text-xs"
                 >
                   Esci
                 </Button>
@@ -106,7 +118,7 @@ export function Header() {
                 transition={{ delay: 0.2 }}
               >
                 <Link href="/login" className="hidden sm:inline-flex">
-                  <Button size="sm" className="bg-gradient-to-r from-primary to-[#0055ff] hover:shadow-lg hover:shadow-primary/25 transition-all">
+                  <Button size="sm" className="bg-gradient-to-r from-primary to-[#0055ff] hover:shadow-lg hover:shadow-primary/25 transition-all text-xs font-semibold">
                     Accedi
                   </Button>
                 </Link>
@@ -114,14 +126,10 @@ export function Header() {
             )
           )}
           <ThemeToggle />
-          
-          {/* Mobile Menu Button */}
+
+          {/* Mobile menu button */}
           {user && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -135,16 +143,16 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       <AnimatePresence>
         {mobileMenuOpen && user && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden overflow-hidden border-t bg-background/95 backdrop-blur-xl"
+            className="md:hidden overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl"
           >
-            <nav className="container flex flex-col py-4 space-y-1">
+            <nav className="container flex flex-col py-3 space-y-1">
               {navLinks.map((link, index) => (
                 <motion.div
                   key={link.href}
@@ -173,11 +181,8 @@ export function Header() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    handleLogout()
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full mt-2"
+                  onClick={() => { handleLogout(); setMobileMenuOpen(false) }}
+                  className="w-full mt-1"
                 >
                   Esci
                 </Button>

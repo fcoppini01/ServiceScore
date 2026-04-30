@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { containerVariants, itemVariants } from "@/lib/animations"
+import { Users, Building2, Activity, Clock } from "lucide-react"
 
 const COLORS = ['#0055ff', '#ffe500', '#ff4444', '#6366f1', '#a3a3a3']
 
@@ -14,6 +15,13 @@ const STATO_COLORS: Record<string, string> = {
   'In corso': 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
   Pianificato: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
 }
+
+const statConfig = [
+  { key: 'totalSoci', label: "Totale Soci", Icon: Users, color: "text-blue-400", bg: "bg-blue-500/10" },
+  { key: 'totalClubs', label: "Club", Icon: Building2, color: "text-yellow-400", bg: "bg-yellow-400/10" },
+  { key: 'totalActivities', label: "Attività", Icon: Activity, color: "text-red-400", bg: "bg-red-400/10" },
+  { key: 'totalHours', label: "Ore di Servizio", Icon: Clock, color: "text-indigo-400", bg: "bg-indigo-400/10" },
+]
 
 export default function DashboardClient({
   stats,
@@ -30,6 +38,13 @@ export default function DashboardClient({
   zoneData: { name: string; value: number }[]
   recentActivities: any[]
 }) {
+  const statValues: Record<string, string | number> = {
+    totalSoci: stats.totalSoci,
+    totalClubs: stats.totalClubs,
+    totalActivities: stats.totalActivities,
+    totalHours: stats.totalHours.toFixed(0),
+  }
+
   return (
     <motion.main
       initial="hidden"
@@ -39,139 +54,103 @@ export default function DashboardClient({
     >
       <motion.h1
         variants={itemVariants}
-        className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent"
+        className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent"
       >
         Dashboard
       </motion.h1>
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-8">
+        Panoramica generale del Distretto 108 LA
+      </motion.p>
 
       {/* Stats Cards */}
       <motion.div
         variants={itemVariants}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
-        {[
-          { label: "Totale Soci", value: stats.totalSoci, icon: "👥" },
-          { label: "Club", value: stats.totalClubs, icon: "🏢" },
-          { label: "Attività", value: stats.totalActivities, icon: "📊" },
-          { label: "Ore di Servizio", value: stats.totalHours.toFixed(0), icon: "⏱" },
-        ].map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            variants={itemVariants}
-            custom={index}
-          >
-            <Card className="border-2 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-background to-muted/30 backdrop-blur-sm">
-              <CardContent className="p-4 sm:p-6">
-                <div className="text-2xl mb-2">{stat.icon}</div>
-                <div className="text-2xl sm:text-3xl font-bold">{stat.value}</div>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {statConfig.map(({ key, label, Icon, color, bg }) => (
+          <Card key={key} className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm overflow-hidden group">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl ${bg} group-hover:scale-110 transition-transform`}>
+                  <Icon className={`w-5 h-5 ${color}`} />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold tabular-nums">{statValues[key]}</div>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">{label}</p>
+            </CardContent>
+          </Card>
         ))}
       </motion.div>
 
-      {/* Charts Row 1: Gender and Age Distribution */}
-      <motion.div
-        variants={itemVariants}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
-      >
-        <Card className="border-2 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-background to-muted/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Distribuzione per Genere</CardTitle>
+      {/* Charts Row 1 */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Distribuzione per Genere</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
-                <Pie
-                  data={genderData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  dataKey="value"
-                >
+                <Pie data={genderData} cx="50%" cy="50%" outerRadius={85} innerRadius={40} dataKey="value" paddingAngle={3}>
                   {genderData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [value, 'Soci']} />
-                <Legend />
+                <Tooltip formatter={(value) => [value, 'Soci']} contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
+                <Legend iconSize={10} iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-background to-muted/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Distribuzione per Fascia d'Età</CardTitle>
+        <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Distribuzione per Fascia d'Età</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
-                <Pie
-                  data={ageData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  dataKey="value"
-                >
+                <Pie data={ageData} cx="50%" cy="50%" outerRadius={85} innerRadius={40} dataKey="value" paddingAngle={3}>
                   {ageData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [value, 'Soci']} />
-                <Legend />
+                <Tooltip formatter={(value) => [value, 'Soci']} contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
+                <Legend iconSize={10} iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Charts Row 2: Activities by Cause and Zone */}
-      <motion.div
-        variants={itemVariants}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
-      >
-        <Card className="border-2 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-background to-muted/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Attività per Causa</CardTitle>
+      {/* Charts Row 2 */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Attività per Causa</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={causeData} margin={{ bottom: 60 }}>
-                <XAxis
-                  dataKey="name"
-                  angle={-35}
-                  textAnchor="end"
-                  height={70}
-                  tick={{ fontSize: 11 }}
-                  interval={0}
-                />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={causeData} margin={{ bottom: 55 }}>
+                <XAxis dataKey="name" angle={-35} textAnchor="end" height={65} tick={{ fontSize: 10 }} interval={0} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
                 <Bar dataKey="value" name="Attività" fill="#0055ff" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-background to-muted/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Attività per Zona</CardTitle>
+        <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Attività per Zona</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={zoneData} margin={{ bottom: 60 }}>
-                <XAxis
-                  dataKey="name"
-                  angle={-35}
-                  textAnchor="end"
-                  height={70}
-                  tick={{ fontSize: 11 }}
-                  interval={0}
-                />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={zoneData} margin={{ bottom: 55 }}>
+                <XAxis dataKey="name" angle={-35} textAnchor="end" height={65} tick={{ fontSize: 10 }} interval={0} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
                 <Bar dataKey="value" name="Attività" fill="#ffe500" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -179,16 +158,16 @@ export default function DashboardClient({
         </Card>
       </motion.div>
 
-      {/* Recent Activities Table */}
+      {/* Recent Activities */}
       <motion.div variants={itemVariants}>
-        <Card className="border-2 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-background to-muted/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Attività Recenti</CardTitle>
+        <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Attività Recenti</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {recentActivities.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
-                <span className="text-2xl">📋</span>
+                <Activity className="w-8 h-8 opacity-30" />
                 <span className="text-sm">Nessuna attività recente</span>
               </div>
             ) : (
@@ -210,24 +189,22 @@ export default function DashboardClient({
                       key={activity.id_attivita}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05, type: "spring", stiffness: 100 }}
-                      className="hover:bg-muted/50"
+                      transition={{ delay: index * 0.04, type: "spring", stiffness: 100 }}
+                      className="hover:bg-muted/40"
                     >
-                      <TableCell className="font-medium max-w-[150px] truncate">
-                        {activity.titolo}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">{activity.sponsor_nome_account}</TableCell>
+                      <TableCell className="font-medium max-w-[150px] truncate">{activity.titolo}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{activity.sponsor_nome_account}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">{activity.sponsor_zona}</Badge>
                       </TableCell>
-                      <TableCell className="text-xs">{activity.causa}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{activity.causa}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATO_COLORS[activity.stato] ?? 'bg-muted text-muted-foreground'}`}>
                           {activity.stato}
                         </span>
                       </TableCell>
-                      <TableCell>{activity.totale_ore_servizio}</TableCell>
-                      <TableCell>€ {activity.totale_fondi_raccolti}</TableCell>
+                      <TableCell className="text-sm tabular-nums">{activity.totale_ore_servizio}</TableCell>
+                      <TableCell className="text-sm tabular-nums">€ {activity.totale_fondi_raccolti}</TableCell>
                     </motion.tr>
                   ))}
                 </TableBody>
