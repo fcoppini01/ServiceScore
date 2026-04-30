@@ -26,23 +26,20 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session
-  const { data: { session } } = await supabase.auth.getSession();
+  // Validate session server-side (getUser is more secure than getSession)
+  const { data: { user } } = await supabase.auth.getUser();
 
   const url = new URL(request.url);
   const pathname = url.pathname;
 
-  // Protected routes
   const protectedRoutes = ['/soci', '/attivita', '/officer', '/dashboard'];
   const authRoutes = ['/login', '/register'];
 
-  // If user is not authenticated and tries to access protected routes
-  if (!session && protectedRoutes.some(route => pathname.startsWith(route))) {
+  if (!user && protectedRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // If user is authenticated and tries to access auth routes
-  if (session && authRoutes.some(route => pathname.startsWith(route))) {
+  if (user && authRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

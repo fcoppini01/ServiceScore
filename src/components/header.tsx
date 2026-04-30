@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
@@ -12,6 +13,7 @@ export function Header() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     checkUser()
@@ -64,9 +66,13 @@ export function Header() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + index * 0.05 }}
                 >
-                  <Link 
-                    href={link.href} 
-                    className="px-3 py-1.5 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors"
+                  <Link
+                    href={link.href}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                      pathname.startsWith(link.href)
+                        ? 'bg-primary/10 text-primary'
+                        : 'hover:bg-muted/50'
+                    }`}
                   >
                     {link.label}
                   </Link>
@@ -148,7 +154,11 @@ export function Header() {
                 >
                   <Link
                     href={link.href}
-                    className="block px-4 py-2.5 text-sm font-medium rounded-lg hover:bg-muted transition-colors"
+                    className={`block px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                      pathname.startsWith(link.href)
+                        ? 'bg-primary/10 text-primary'
+                        : 'hover:bg-muted'
+                    }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {link.label}

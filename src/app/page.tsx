@@ -2,9 +2,16 @@
 
 import Link from "next/link"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { GlowCard, PulseGlow, FloatingElement, FadeInUp, StaggerContainer } from "@/lib/mac-effects"
 import { motion } from "framer-motion"
+
+const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+  left: `${((i * 137.5) % 100).toFixed(1)}%`,
+  top: `${((i * 97.3 + 23) % 100).toFixed(1)}%`,
+  duration: 3 + (i % 5) * 0.5,
+  delay: (i % 4) * 0.5,
+  blue: i % 2 === 0,
+}))
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -50,24 +57,24 @@ export default function Home() {
       <PulseGlow className="bottom-1/4 right-1/4 w-[400px] h-[400px]" glowColor="#ffe500" />
       
       {/* Ambient particles */}
-      {[...Array(20)].map((_, i) => (
+      {PARTICLES.map((p, i) => (
         <motion.div
           key={i}
           className="absolute w-1 h-1 rounded-full"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            background: i % 2 === 0 ? '#0055ff' : '#ffe500',
+            left: p.left,
+            top: p.top,
+            background: p.blue ? '#0055ff' : '#ffe500',
           }}
           animate={{
             y: [0, -100, 0],
             opacity: [0, 1, 0],
           }}
           transition={{
-            duration: 3 + Math.random() * 2,
+            duration: p.duration,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: Math.random() * 2,
+            delay: p.delay,
           }}
         />
       ))}
@@ -119,15 +126,10 @@ export default function Home() {
                     <p className="text-sm sm:text-base text-muted-foreground">
                       {card.desc}
                     </p>
-                    <motion.div
-                      className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                      initial={{ opacity: 0, y: 10 }}
-                      whileHover={{ opacity: 1, y: 0 }}
-                    >
-                      <Button className="w-full bg-gradient-to-r from-primary to-[#0055ff] group-hover:shadow-lg group-hover:shadow-primary/25 transition-all">
-                        Accedi
-                      </Button>
-                    </motion.div>
+                    <div className="mt-4 flex items-center gap-1 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span>Vai alla sezione</span>
+                      <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
+                    </div>
                   </Card>
                 </Link>
               </GlowCard>
@@ -138,13 +140,13 @@ export default function Home() {
         {/* Footer Info */}
         <motion.div variants={itemVariants} className="mt-12 sm:mt-20 text-center text-sm text-muted-foreground">
           <p>Progettato con Next.js + Supabase + Tailwind CSS</p>
-          <motion.p 
+          <motion.p
             className="mt-2 text-xs"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
           >
-            © 2024 ServiceScore - Lions Club 108 LA
+            © {new Date().getFullYear()} ServiceScore - Lions Club 108 LA
           </motion.p>
         </motion.div>
       </StaggerContainer>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -14,13 +14,16 @@ import { containerVariants, itemVariants } from '@/lib/animations'
 export default function OfficerPage() {
   const [officer, setOfficer] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState({
     search: '',
     titolo: '',
     zona: '',
   })
   const [zone, setZone] = useState<string[]>([])
+  const [titoli, setTitoli] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setIsClient(true)
@@ -28,28 +31,38 @@ export default function OfficerPage() {
   }, [])
 
   useEffect(() => {
-    if (isClient) loadOfficer()
+    if (!isClient) return
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      loadOfficer()
+    }, 300)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [filters, isClient])
 
   async function loadFilterOptions() {
-    const { data: zoneData } = await supabase
-      .from('vista_officer_ricerca')
-      .select('club_zona')
-      .not('club_zona', 'is', null)
-    
-    if (zoneData) {
-      const uniqueZone = [...new Set(zoneData.map(z => z.club_zona))].sort()
-      setZone(uniqueZone as string[])
+    const [zoneRes, titoliRes] = await Promise.all([
+      supabase.from('vista_officer_ricerca').select('club_zona').not('club_zona', 'is', null),
+      supabase.from('vista_officer_ricerca').select('titolo_ufficiale').not('titolo_ufficiale', 'is', null),
+    ])
+
+    if (zoneRes.data) {
+      setZone([...new Set(zoneRes.data.map(z => z.club_zona))].sort() as string[])
+    }
+    if (titoliRes.data) {
+      setTitoli([...new Set(titoliRes.data.map(t => t.titolo_ufficiale))].sort() as string[])
     }
   }
 
   async function loadOfficer() {
     setLoading(true)
-    
+    setError(null)
+
     let query = supabase
       .from('vista_officer_ricerca')
       .select('*')
-    
+
     if (filters.search) {
       query = query.or(`nome.ilike.%${filters.search}%,cognome.ilike.%${filters.search}%,matricola_socio.ilike.%${filters.search}%`)
     }
@@ -59,11 +72,13 @@ export default function OfficerPage() {
     if (filters.zona) {
       query = query.eq('club_zona', filters.zona)
     }
-    
-    const { data, error } = await query.limit(100)
-    
-    if (!error && data) {
-      setOfficer(data)
+
+    const { data, error: queryError } = await query.limit(100)
+
+    if (queryError) {
+      setError('Errore nel caricamento degli incarichi. Riprova.')
+    } else {
+      setOfficer(data || [])
     }
     setLoading(false)
   }
@@ -75,19 +90,19 @@ export default function OfficerPage() {
   if (!isClient) return null
 
   return (
-    <motion.main 
+    <motion.main
       initial="hidden"
       animate="visible"
       variants={containerVariants}
       className="container mx-auto p-4 sm:p-8"
     >
-      <motion.h1 
+      <motion.h1
         variants={itemVariants}
         className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent"
       >
         Gestione Officer
       </motion.h1>
-      
+
       <motion.div variants={itemVariants}>
         <Card className="mb-6 sm:mb-8 border-2 hover:border-primary/30 transition-all duration-300">
           <CardHeader className="pb-2 sm:pb-4">
@@ -98,23 +113,22 @@ export default function OfficerPage() {
               <Input
                 placeholder="Cerca nome, cognome..."
                 value={filters.search}
-                onChange={(e) => setFilters({...filters, search: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               />
-              
-              <Select value={filters.titolo} onValueChange={(v: string | null) => setFilters({...filters, titolo: v ?? ""})}>
+
+              <Select value={filters.titolo} onValueChange={(v: string | null) => setFilters({ ...filters, titolo: v ?? "" })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Incarico" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Tutti</SelectItem>
-                  <SelectItem value="Presidente">Presidente</SelectItem>
-                  <SelectItem value="Segretario">Segretario</SelectItem>
-                  <SelectItem value="Tesoriere">Tesoriere</SelectItem>
-                  <SelectItem value="Cerimoniere">Cerimoniere</SelectItem>
+                  {titoli.map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
-              <Select value={filters.zona} onValueChange={(v: string | null) => setFilters({...filters, zona: v ?? ""})}>
+              <Select value={filters.zona} onValueChange={(v: string | null) => setFilters({ ...filters, zona: v ?? "" })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Zona" />
                 </SelectTrigger>
@@ -139,13 +153,20 @@ export default function OfficerPage() {
             <CardTitle className="text-lg sm:text-xl">Elenco Incarichi ({officer.length})</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            {loading ? (
+            {error ? (
+              <div className="flex justify-center items-center h-32 text-destructive text-sm">{error}</div>
+            ) : loading ? (
               <div className="flex justify-center items-center h-32">
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
                 />
+              </div>
+            ) : officer.length === 0 ? (
+              <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
+                <span className="text-2xl">🔍</span>
+                <span className="text-sm">Nessun incarico trovato</span>
               </div>
             ) : (
               <table className="w-full min-w-[600px]">
@@ -184,7 +205,7 @@ export default function OfficerPage() {
                           {off.data_inizio ? new Date(off.data_inizio).toLocaleDateString('it-IT') : ''}
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-sm">
-                          {off.data_conclusione 
+                          {off.data_conclusione
                             ? new Date(off.data_conclusione).toLocaleDateString('it-IT')
                             : <span className="text-green-500">In corso</span>
                           }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -22,6 +22,7 @@ interface Filters {
 export default function SociPage() {
   const [soci, setSoci] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState<Filters>({
     search: '',
     sesso: '',
@@ -32,6 +33,7 @@ export default function SociPage() {
   const [zone, setZone] = useState<string[]>([])
   const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setIsClient(true)
@@ -39,38 +41,38 @@ export default function SociPage() {
   }, [])
 
   useEffect(() => {
-    if (isClient) loadSoci()
+    if (!isClient) return
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      loadSoci()
+    }, 300)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [filters, isClient])
 
   async function loadFilterOptions() {
-    const { data: zoneData } = await supabase
-      .from('club')
-      .select('zona')
-      .not('zona', 'is', null)
-    
-    if (zoneData) {
-      const uniqueZone = [...new Set(zoneData.map(z => z.zona))].sort()
-      setZone(uniqueZone as string[])
-    }
+    const [zoneRes, circRes] = await Promise.all([
+      supabase.from('club').select('zona').not('zona', 'is', null),
+      supabase.from('club').select('circoscrizione').not('circoscrizione', 'is', null),
+    ])
 
-    const { data: circData } = await supabase
-      .from('club')
-      .select('circoscrizione')
-      .not('circoscrizione', 'is', null)
-    
-    if (circData) {
-      const uniqueCirc = [...new Set(circData.map(c => c.circoscrizione))].sort()
-      setCircoscrizioni(uniqueCirc as string[])
+    if (zoneRes.data) {
+      setZone([...new Set(zoneRes.data.map(z => z.zona))].sort() as string[])
+    }
+    if (circRes.data) {
+      setCircoscrizioni([...new Set(circRes.data.map(c => c.circoscrizione))].sort() as string[])
     }
   }
 
   async function loadSoci() {
     setLoading(true)
-    
+    setError(null)
+
     let query = supabase
       .from('vista_soci_ricerca')
       .select('*')
-    
+
     if (filters.search) {
       query = query.or(`nome.ilike.%${filters.search}%,cognome.ilike.%${filters.search}%,matricola_socio.ilike.%${filters.search}%`)
     }
@@ -86,11 +88,13 @@ export default function SociPage() {
     if (filters.circoscrizione) {
       query = query.eq('club_circoscrizione', filters.circoscrizione)
     }
-    
-    const { data, error } = await query.limit(100)
-    
-    if (!error && data) {
-      setSoci(data)
+
+    const { data, error: queryError } = await query.limit(100)
+
+    if (queryError) {
+      setError('Errore nel caricamento dei soci. Riprova.')
+    } else {
+      setSoci(data || [])
     }
     setLoading(false)
   }
@@ -108,19 +112,19 @@ export default function SociPage() {
   if (!isClient) return null
 
   return (
-    <motion.main 
+    <motion.main
       initial="hidden"
       animate="visible"
       variants={containerVariants}
       className="container mx-auto p-4 sm:p-8"
     >
-      <motion.h1 
+      <motion.h1
         variants={itemVariants}
         className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent"
       >
         Gestione Soci
       </motion.h1>
-      
+
       <motion.div variants={itemVariants}>
         <Card className="mb-6 sm:mb-8 border-2 hover:border-primary/30 transition-all duration-300">
           <CardHeader className="pb-2 sm:pb-4">
@@ -131,11 +135,11 @@ export default function SociPage() {
               <Input
                 placeholder="Cerca nome, cognome..."
                 value={filters.search}
-                onChange={(e) => setFilters({...filters, search: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                 className="sm:col-span-2 lg:col-span-1"
               />
-              
-              <Select value={filters.sesso} onValueChange={(v: string | null) => setFilters({...filters, sesso: v ?? ""})}>
+
+              <Select value={filters.sesso} onValueChange={(v: string | null) => setFilters({ ...filters, sesso: v ?? "" })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Genere" />
                 </SelectTrigger>
@@ -146,7 +150,7 @@ export default function SociPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={filters.fasciaEta} onValueChange={(v: string | null) => setFilters({...filters, fasciaEta: v ?? ""})}>
+              <Select value={filters.fasciaEta} onValueChange={(v: string | null) => setFilters({ ...filters, fasciaEta: v ?? "" })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Fascia d'età" />
                 </SelectTrigger>
@@ -159,7 +163,7 @@ export default function SociPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={filters.zona} onValueChange={(v: string | null) => setFilters({...filters, zona: v ?? ""})}>
+              <Select value={filters.zona} onValueChange={(v: string | null) => setFilters({ ...filters, zona: v ?? "" })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Zona" />
                 </SelectTrigger>
@@ -171,7 +175,7 @@ export default function SociPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={filters.circoscrizione} onValueChange={(v: string | null) => setFilters({...filters, circoscrizione: v ?? ""})}>
+              <Select value={filters.circoscrizione} onValueChange={(v: string | null) => setFilters({ ...filters, circoscrizione: v ?? "" })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Circoscrizione" />
                 </SelectTrigger>
@@ -196,13 +200,20 @@ export default function SociPage() {
             <CardTitle className="text-lg sm:text-xl">Elenco Soci ({soci.length})</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            {loading ? (
+            {error ? (
+              <div className="flex justify-center items-center h-32 text-destructive text-sm">{error}</div>
+            ) : loading ? (
               <div className="flex justify-center items-center h-32">
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
                 />
+              </div>
+            ) : soci.length === 0 ? (
+              <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
+                <span className="text-2xl">🔍</span>
+                <span className="text-sm">Nessun socio trovato</span>
               </div>
             ) : (
               <table className="w-full min-w-[600px]">

@@ -23,11 +23,14 @@ export default function RegisterPage() {
     setLoading(true)
     setMessage('')
 
+    const callbackUrl = new URL(`${location.origin}/auth/callback`)
+    if (matricola) callbackUrl.searchParams.set('matricola', matricola)
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${location.origin}/auth/callback`
+        emailRedirectTo: callbackUrl.toString()
       }
     })
 

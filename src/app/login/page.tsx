@@ -102,7 +102,7 @@ export default function LoginPage() {
                   <motion.p 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className={`text-sm ${message.includes('Controlla') ? 'text-green-500' : 'text-red-500'}`}
+                    className={`text-sm ${message.includes('effettuato') || message.includes('completata') ? 'text-green-500' : 'text-red-500'}`}
                   >
                     {message}
                   </motion.p>
