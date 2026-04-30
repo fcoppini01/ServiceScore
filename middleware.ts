@@ -3,9 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request: { headers: request.headers },
   });
 
   const supabase = createServerClient(
@@ -26,22 +24,8 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Validate session server-side (getUser is more secure than getSession)
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const url = new URL(request.url);
-  const pathname = url.pathname;
-
-  const protectedRoutes = ['/soci', '/attivita', '/officer', '/dashboard'];
-  const authRoutes = ['/login', '/register'];
-
-  if (!user && protectedRoutes.some(route => pathname.startsWith(route))) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  if (user && authRoutes.some(route => pathname.startsWith(route))) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
+  // Refresh session only — no route protection for now
+  await supabase.auth.getUser();
 
   return response;
 }

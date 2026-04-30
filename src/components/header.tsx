@@ -67,30 +67,28 @@ export function Header() {
             </span>
           </Link>
 
-          {/* Desktop nav */}
-          {user && (
-            <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link, index) => (
-                <motion.div
-                  key={link.href}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
+          {/* Desktop nav — always visible */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navLinks.map((link, index) => (
+              <motion.div
+                key={link.href}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + index * 0.05 }}
+              >
+                <Link
+                  href={link.href}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                    pathname.startsWith(link.href)
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }`}
                 >
-                  <Link
-                    href={link.href}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                      pathname.startsWith(link.href)
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                </motion.div>
-              ))}
-            </nav>
-          )}
+                  {link.label}
+                </Link>
+              </motion.div>
+            ))}
+          </nav>
         </motion.div>
 
         {/* Right side */}
@@ -127,25 +125,23 @@ export function Header() {
           )}
           <ThemeToggle />
 
-          {/* Mobile menu button */}
-          {user && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            </motion.div>
-          )}
+          {/* Mobile menu button — always visible */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </motion.div>
         </div>
       </div>
 
       {/* Mobile menu */}
       <AnimatePresence>
-        {mobileMenuOpen && user && (
+        {mobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}

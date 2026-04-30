@@ -1,6 +1,5 @@
 import { createClient } from "@/utils/supabase/server"
 import DashboardClient from "@/components/dashboard/dashboard-client"
-import { redirect } from "next/navigation"
 
 function buildDist(data: { [key: string]: any }[] | null, key: string, fallback = 'Non specificato') {
   const dist = (data || []).reduce((acc: Record<string, number>, item) => {
@@ -13,9 +12,6 @@ function buildDist(data: { [key: string]: any }[] | null, key: string, fallback 
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
 
   const [
     { count: totalSoci },
