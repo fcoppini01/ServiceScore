@@ -168,9 +168,14 @@ def converti_dati_lions():
         # TABELLA 4: REPORT ATTIVITA'
         # ---------------------------------------------------------
         print("Elaborazione tabella 'report'...")
+        # NOTA: il CSV Lions ha un bug noto - 'Sponsor: ID dell?organizzazione di appartenenza'
+        # contiene SEMPRE lo stesso ID per tutte le righe (export buggato).
+        # Il match col club si fa quindi tramite 'Sponsor: Nome account' (-> nome_club_sponsor),
+        # e la vista vista_report_ricerca joina su questo campo, non su id_account_club.
         mapping_report = {
             'ID attività di servizio': 'id_attivita',
             'Sponsor: ID dell?organizzazione di appartenenza': 'id_account_club',
+            'Sponsor: Nome account': 'nome_club_sponsor',
             'Titolo': 'titolo', 'Descrizione': 'descrizione', 'Stato': 'stato',
             'Rapporto completo': 'rapporto_completo', 'Livello dell\'attività': 'livello_attivita',
             'Causa': 'causa', 'Tipo di progetto': 'tipo_progetto',
