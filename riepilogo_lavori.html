@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>ServiceScore – Riepilogo Lavori</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; padding: 40px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 26px; color: #0055ff; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 13px; margin-bottom: 32px; border-bottom: 2px solid #0055ff; padding-bottom: 12px; }
+  h2 { font-size: 16px; color: #0055ff; margin: 28px 0 10px; padding: 6px 10px; background: #f0f4ff; border-left: 4px solid #0055ff; border-radius: 2px; }
+  h3 { font-size: 13px; font-weight: 600; margin: 14px 0 6px; color: #333; }
+  p { margin-bottom: 8px; line-height: 1.6; }
+  ul { margin: 6px 0 10px 20px; }
+  li { margin-bottom: 4px; line-height: 1.6; }
+  code { background: #f4f4f4; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas', monospace; font-size: 12px; color: #c7254e; }
+  pre { background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 4px; padding: 12px; margin: 8px 0 12px; overflow-x: auto; font-family: 'Consolas', monospace; font-size: 11.5px; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 12px; }
+  th { background: #0055ff; color: white; padding: 7px 10px; text-align: left; }
+  td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-red { background: #fee2e2; color: #b91c1c; }
+  .badge-yellow { background: #fef9c3; color: #92400e; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .section-intro { color: #555; margin-bottom: 10px; font-style: italic; }
+  .commit { font-family: 'Consolas', monospace; font-size: 11px; color: #555; background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+  .page-break { page-break-before: always; }
+  footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid #ddd; color: #888; font-size: 11px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>ServiceScore · Riepilogo Lavori</h1>
+<div class="subtitle">Sistema gestionale Lions Club Distretto 108 LA &nbsp;|&nbsp; Aprile–Maggio 2026 &nbsp;|&nbsp; Sviluppato con Claude Code</div>
+
+<!-- ===== PANORAMICA ===== -->
+<h2>1. Panoramica del Progetto</h2>
+<p>ServiceScore è un'applicazione web per la gestione dei soci, delle attività di servizio e degli incarichi officer del Distretto Lions 108 LA. Stack tecnologico:</p>
+<table>
+  <tr><th>Layer</th><th>Tecnologia</th></tr>
+  <tr><td>Frontend</td><td>Next.js 16 (App Router) · React 19 · TypeScript</td></tr>
+  <tr><td>Stile</td><td>Tailwind CSS v4 · shadcn/ui (base-nova) · Framer Motion</td></tr>
+  <tr><td>Font</td><td>IBM Plex Sans / IBM Plex Mono (Google Fonts)</td></tr>
+  <tr><td>Icone</td><td>Lucide React</td></tr>
+  <tr><td>Grafici</td><td>Recharts</td></tr>
+  <tr><td>Backend</td><td>Supabase (PostgreSQL + Auth + Row Level Security)</td></tr>
+  <tr><td>Deploy</td><td>Vercel (auto-deploy da GitHub main)</td></tr>
+  <tr><td>Repository</td><td>github.com/fcoppini01/ServiceScore</td></tr>
+  <tr><td>URL produzione</td><td>servicescore108la-01informatica-progetti.vercel.app</td></tr>
+</table>
+
+<!-- ===== BUG FIX ===== -->
+<h2>2. Bug Fix Critici</h2>
+
+<h3>2.1 Auth callback – sessione non persistita dopo conferma email</h3>
+<p>Il file <code>src/app/auth/callback/route.ts</code> scriveva i cookie di sessione sulla request invece che sulla response, causando la perdita della sessione subito dopo il login via link email.</p>
+<pre>// PRIMA (sbagliato)
+request.cookies.set(name, value)
+
+// DOPO (corretto)
+response.cookies.set(name, value, options)  // ← options include SameSite, HttpOnly, ecc.</pre>
+
+<h3>2.2 Matricola socio non collegata all'account</h3>
+<p>La matricola inserita in fase di registrazione non veniva mai trasmessa al callback di conferma email. Fix: aggiunta come parametro nella URL di redirect.</p>
+<pre>const callbackUrl = new URL(`${location.origin}/auth/callback`)
+if (matricola) callbackUrl.searchParams.set('matricola', matricola)</pre>
+
+<h3>2.3 Font CSS – riferimento circolare</h3>
+<p>In <code>globals.css</code> le variabili CSS dei font puntavano a se stesse (<code>var(--font-sans)</code> si auto-referenziava). Fix: agganciate alle variabili generate da Next.js.</p>
+<pre>/* PRIMA */
+--font-sans: var(--font-sans);   /* circolare! */
+--font-mono: var(--font-geist-mono);  /* inesistente */
+
+/* DOPO */
+--font-sans: var(--font-ibm-sans);
+--font-mono: var(--font-ibm-mono);</pre>
+
+<h3>2.4 Messaggio di errore login mostrato in verde</h3>
+<p>La logica per scegliere il colore del messaggio controllava <code>message.includes('Controlla')</code>, ma quella stringa appariva anche nei messaggi di errore. Fix: controllo invertito su keyword di successo.</p>
+
+<h3>2.5 Hydration mismatch – particelle animate</h3>
+<p>La homepage usava <code>Math.random()</code> per posizionare le particelle decorative, causando un mismatch tra server-side rendering e client-side. Fix: array deterministico pre-calcolato.</p>
+
+<h3>2.6 TypeScript error – Recharts Tooltip formatter</h3>
+<p>Il tipo <code>Formatter&lt;ValueType, NameType&gt;</code> di Recharts non accettava la type annotation esplicita. Fix: rimossa la annotazione lasciando inferire a TypeScript.</p>
+<pre>// PRIMA – errore di build
+formatter={(value: number) => [value, 'Soci']}
+
+// DOPO – corretto
+formatter={(value) => [value, 'Soci']}</pre>
+
+<!-- ===== RESTYLING ===== -->
+<h2 class="page-break">3. Restyling Grafico Completo</h2>
+<p class="section-intro">Tutti i componenti sono stati ridisegnati con un'estetica coerente: sfondo scuro, accenti blu (#0055ff) e giallo Lions (#ffe500), glassmorphism, animazioni spring.</p>
+
+<h3>3.1 Homepage (<code>src/app/page.tsx</code>)</h3>
+<ul>
+  <li>Logo Lions ufficiale 80×80px come hero</li>
+  <li>Titolo con gradient <code>from-[#0055ff] via-white to-[#ffe500]</code></li>
+  <li>4 card navigazione con icone Lucide, colori semantici per sezione</li>
+  <li>Particelle decorative animate e deterministiche (no hydration mismatch)</li>
+  <li>Effetti PulseGlow, FadeInUp, GlowCard da <code>lib/mac-effects.tsx</code></li>
+</ul>
+
+<h3>3.2 Header (<code>src/components/header.tsx</code>)</h3>
+<ul>
+  <li>Logo Lions 26×26px accanto al titolo ServiceScore</li>
+  <li>Navigazione sempre visibile (rimossa dipendenza da stato login)</li>
+  <li>Indicatore link attivo: <code>bg-primary/10 text-primary</code> via <code>usePathname()</code></li>
+  <li>Menu mobile con AnimatePresence (hamburger → X)</li>
+  <li>Backdrop blur + <code>sticky top-0 z-50</code></li>
+</ul>
+
+<h3>3.3 Dashboard (<code>src/components/dashboard/dashboard-client.tsx</code>)</h3>
+<ul>
+  <li>4 stat card con icone Lucide colorate per categoria</li>
+  <li>Grafici a ciambella (donut) per genere e fascia d'età: <code>innerRadius={40}</code></li>
+  <li>Bar chart per causa e zona con etichette angolate a -35°</li>
+  <li>Tabella attività recenti con badge stato colorati semanticamente</li>
+  <li>Colore quinto grafico corretto: <code>#6366f1</code> (indigo) al posto di <code>#0d0d0d</code> (invisibile in dark mode)</li>
+  <li>Queries parallelizzate: 8 chiamate simultanée con <code>Promise.all</code></li>
+</ul>
+
+<h3>3.4 Pagine Login e Registrazione</h3>
+<ul>
+  <li>Logo Lions 56px come header della card</li>
+  <li>Sezione header con gradient e bordo separatore</li>
+  <li>Messaggi di feedback con colori corretti (verde/rosso)</li>
+  <li>Animazioni Framer Motion su ogni campo</li>
+</ul>
+
+<!-- ===== RESPONSIVE ===== -->
+<h2>4. Responsive e Paginazione Tabelle</h2>
+<p class="section-intro">Soluzione alla "tabella gigante": card view su mobile + paginazione server-side da 20 record + filtri collassabili.</p>
+
+<table>
+  <tr><th>Breakpoint</th><th>Comportamento</th></tr>
+  <tr><td><code>&lt; md</code> (mobile)</td><td>Card compatte per ogni record: info essenziali, badge zona/stato, dati chiave</td></tr>
+  <tr><td><code>≥ md</code> (desktop)</td><td>Tabella completa con tutte le colonne</td></tr>
+</table>
+
+<h3>Paginazione server-side</h3>
+<pre>// Sostituisce il vecchio .limit(100)
+const { data, count } = await query
+  .select('*', { count: 'exact' })
+  .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)  // PAGE_SIZE = 20</pre>
+<ul>
+  <li>Navigazione Prev/Next con contatore "X–Y di N totali"</li>
+  <li>Reset automatico a pagina 0 ad ogni cambio filtro (<code>updateFilters()</code>)</li>
+  <li>Debounce 300ms sulla ricerca testuale</li>
+</ul>
+
+<h3>Filtri collassabili su mobile</h3>
+<ul>
+  <li>Bottone "Filtri" visibile solo su <code>&lt; sm</code>, nasconde/mostra il pannello</li>
+  <li>Su <code>≥ sm</code> i filtri sono sempre visibili</li>
+  <li>Pattern: <code>className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}</code></li>
+</ul>
+
+<p>Implementato su: <code>src/app/soci/page.tsx</code>, <code>src/app/attivita/page.tsx</code>, <code>src/app/officer/page.tsx</code></p>
+
+<!-- ===== AUTH ===== -->
+<h2 class="page-break">5. Autenticazione e Sicurezza</h2>
+
+<h3>5.1 Middleware (<code>middleware.ts</code>)</h3>
+<p>Le restrizioni di accesso alle route sono state temporaneamente rimosse per permettere la navigazione senza account. Il middleware aggiorna solo la sessione:</p>
+<pre>// Solo refresh sessione, nessuna protezione route
+await supabase.auth.getUser();
+return response;</pre>
+
+<h3>5.2 Row Level Security (RLS)</h3>
+<table>
+  <tr><th>Tabella</th><th>Policy attiva</th><th>Regola</th></tr>
+  <tr><td><code>club</code></td><td>Club visibili a utenti autenticati</td><td>SELECT per authenticated</td></tr>
+  <tr><td><code>soci</code></td><td>Soci visibili a utenti autenticati</td><td>SELECT per authenticated – USING (true)</td></tr>
+  <tr><td><code>officer_club</code></td><td>Officer visibili a utenti autenticati</td><td>SELECT per authenticated</td></tr>
+  <tr><td><code>attivita_report</code></td><td>Report visibili / Inserimento e Aggiornamento officer</td><td>SELECT tutti auth; INSERT/UPDATE solo officer attivi</td></tr>
+</table>
+<p>Nota: la policy originale <code>"Soci possono vedere i propri dati"</code> (che mostrava solo il proprio record) è stata sostituita con una policy permissiva per tutti gli autenticati, necessaria per il funzionamento della dashboard amministrativa.</p>
+
+<h3>5.3 Funzione di collegamento utente–socio</h3>
+<p>SQL definito in <code>supabase_link_user_to_socio.sql</code>: funzione <code>link_user_to_socio(matricola)</code> che aggiorna il campo <code>soci.user_id</code> dopo la conferma email.</p>
+
+<!-- ===== DATABASE ===== -->
+<h2>6. Struttura Database Supabase</h2>
+<p><strong>Progetto:</strong> <code>uywtfwjkyiacdfgsbtgo</code> · Distretto 108 LA</p>
+
+<h3>Tabelle base</h3>
+<table>
+  <tr><th>Tabella</th><th>Chiave primaria</th><th>Record</th><th>Note</th></tr>
+  <tr><td><code>club</code></td><td>id_account</td><td>93</td><td>Ha anche identificativo_lions per FK da soci</td></tr>
+  <tr><td><code>soci</code></td><td>matricola_socio</td><td>2.966</td><td>FK → club.identificativo_lions; ha user_id per auth</td></tr>
+  <tr><td><code>officer_club</code></td><td>id_incarico (serial)</td><td>1.297</td><td>FK → soci.matricola_socio</td></tr>
+  <tr><td><code>attivita_report</code></td><td>id_attivita</td><td>1.606</td><td>FK → club.id_account</td></tr>
+</table>
+
+<h3>Viste</h3>
+<table>
+  <tr><th>Vista</th><th>Join</th><th>Campi calcolati</th></tr>
+  <tr><td><code>vista_soci_ricerca</code></td><td>soci LEFT JOIN club</td><td>eta, fascia_eta, anzianita_lionistica</td></tr>
+  <tr><td><code>vista_report_ricerca</code></td><td>attivita_report JOIN club</td><td>sponsor_nome_account, sponsor_zona</td></tr>
+  <tr><td><code>vista_officer_ricerca</code></td><td>officer_club JOIN soci JOIN club</td><td>club_zona, club_circoscrizione</td></tr>
+</table>
+
+<!-- ===== DATA PIPELINE ===== -->
+<h2>7. Pipeline Dati CSV → Supabase</h2>
+<p class="section-intro">Il flusso si aggiorna ogni volta che Lions fornisce nuovi file export.</p>
+
+<h3>File sorgente (dalla piattaforma Lions)</h3>
+<ul>
+  <li><code>officer.csv</code> – incarichi officer (Latin1, separatore <code>;</code>)</li>
+  <li><code>soci.csv</code> – anagrafica soci (Latin1, separatore <code>;</code>)</li>
+  <li><code>report.csv</code> – attività di servizio (Latin1, separatore <code>;</code>)</li>
+</ul>
+
+<h3>Script di conversione (<code>Dati_Lions/convertitore_csv.py</code>)</h3>
+<p>Produce 4 CSV normalizzati pronti per l'import in Supabase:</p>
+<table>
+  <tr><th>Output</th><th>Tabella target</th><th>Sorgente</th></tr>
+  <tr><td><code>1_club_supabase.csv</code></td><td>club</td><td>officer.csv + report.csv (union + dedup)</td></tr>
+  <tr><td><code>2_soci_supabase.csv</code></td><td>soci</td><td>soci.csv</td></tr>
+  <tr><td><code>3_officer_supabase.csv</code></td><td>officer_club</td><td>officer.csv</td></tr>
+  <tr><td><code>4_report_supabase.csv</code></td><td>attivita_report</td><td>report.csv</td></tr>
+</table>
+
+<h3>Procedura di reimport</h3>
+<pre>-- 1. Svuota tutto (CASCADE elimina dipendenze in ordine)
+TRUNCATE TABLE club CASCADE;
+
+-- 2. Importa in ordine (rispetta le FK)
+-- Table Editor → Import: 1_club → 2_soci → 3_officer → 4_report</pre>
+
+<h3>Bug fix applicati allo script</h3>
+<table>
+  <tr><th>Fix</th><th>Problema</th><th>Soluzione</th></tr>
+  <tr><td><span class="badge badge-red">Critico</span></td><td>Booleani non mappati → stringa vuota <code>""</code> → errore import su colonne boolean</td><td>Cambiato <code>else ''</code> → <code>else None</code> (NULL)</td></tr>
+  <tr><td><span class="badge badge-yellow">Moderato</span></td><td>Valori numerici vuoti → <code>'0'</code> → inquinamento statistiche</td><td>Cambiato <code>return '0'</code> → <code>return None</code> (NULL)</td></tr>
+</table>
+
+<!-- ===== VISTE FIX ===== -->
+<h2>8. Fix Viste Supabase</h2>
+<table>
+  <tr><th>Vista</th><th>Problema</th><th>Fix</th></tr>
+  <tr><td><code>vista_soci_ricerca</code></td><td>Soci senza <code>data_nascita</code> venivano classificati come "Over 70" per il CASE ELSE</td><td>Aggiunto controllo <code>IS NULL</code>: <code>fascia_eta = NULL</code> se data mancante</td></tr>
+</table>
+
+<!-- ===== CONFIGURAZIONI ===== -->
+<h2 class="page-break">9. Configurazioni e Strumenti</h2>
+
+<h3>9.1 Supabase MCP in Claude Code</h3>
+<p>Configurato in <code>~/.claude/settings.json</code> per accesso diretto al database durante le sessioni di sviluppo:</p>
+<pre>{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": ["-y", "@supabase/mcp-server-supabase@latest",
+               "--access-token", "...",
+               "--project-ref", "uywtfwjkyiacdfgsbtgo"]
+    }
+  }
+}</pre>
+
+<h3>9.2 Preview locale</h3>
+<p>Server di sviluppo configurato in <code>.claude/launch.json</code>, credenziali Supabase in <code>.env.local</code>. Permette preview istantanea delle modifiche senza deploy su Vercel.</p>
+
+<h3>9.3 Vercel</h3>
+<ul>
+  <li>Auto-deploy dal branch <code>main</code> di GitHub</li>
+  <li>Team: <code>01informatica-progetti</code></li>
+  <li>Progetto rinominato da <code>servicescore</code> a <code>servicescore108la</code> per risolvere conflitto di dominio con un vecchio progetto</li>
+</ul>
+
+<!-- ===== COMMIT LOG ===== -->
+<h2>10. Cronologia Commit</h2>
+<table>
+  <tr><th>Hash</th><th>Descrizione</th></tr>
+  <tr><td><span class="commit">98a4d77</span></td><td>Fix critical bugs and UI improvements</td></tr>
+  <tr><td><span class="commit">da261a1</span></td><td>Fix TypeScript error in Tooltip formatter (Recharts ValueType)</td></tr>
+  <tr><td><span class="commit">00ac2b7</span></td><td>UI restyling: Lions logo, Lucide icons, improved layout</td></tr>
+  <tr><td><span class="commit">8db14a6</span></td><td>Remove auth restrictions: all pages accessible without login</td></tr>
+  <tr><td><span class="commit">e963069</span></td><td>Responsive tables: mobile cards + pagination + collapsible filters</td></tr>
+  <tr><td><span class="commit">58ec947</span></td><td>Trigger redeploy after project rename to servicescore108la</td></tr>
+  <tr><td><span class="commit">1cd6535</span></td><td>Add favicon.ico and update metadataBase URL after project rename</td></tr>
+  <tr><td><span class="commit">ebe7f65</span></td><td>Fix data pipeline: NULL handling and boolean conversion</td></tr>
+</table>
+
+<!-- ===== PENDENTI ===== -->
+<h2>11. Attività Pendenti / Note Future</h2>
+<ul>
+  <li><strong>Riabilitare protezione route</strong> – quando il sistema di auth sarà in produzione, riattivare il redirect su <code>middleware.ts</code> per le route protette</li>
+  <li><strong>Dominio custom</strong> – il dominio <code>servicescore.vercel.app</code> è irrecuperabile (account diverso, supporto Vercel non interviene). Valutare dominio custom a pagamento o mantenere l'URL attuale</li>
+  <li><strong>Colonna <code>tipo_indirizzo_primario</code></strong> – presente in DB ma non popolata dal CSV (campo non esportato da Lions). Valutare rimozione se non necessaria</li>
+  <li><strong>Script Python – <code>tipo_indirizzo_primario</code></strong> – campo assente nel CSV Lions, rimarrà NULL</li>
+  <li><strong>Test completo import CSV</strong> – eseguire il ciclo completo TRUNCATE → script → import con i nuovi file corretti per validare l'intera pipeline</li>
+</ul>
+
+<footer>
+  ServiceScore · Distretto Lions 108 LA · Documento generato il 4 Maggio 2026<br>
+  Sviluppato con Claude Code (Anthropic) · github.com/fcoppini01/ServiceScore
+</footer>
+
+</body>
+</html>

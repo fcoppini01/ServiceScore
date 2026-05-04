@@ -147,12 +147,12 @@ export default function OfficerPage() {
           </CardHeader>
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
             <CardContent className="pt-0 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <Input
                   placeholder="Cerca nome, cognome..."
                   value={filters.search}
                   onChange={(e) => updateFilters({ ...filters, search: e.target.value })}
-                  className="bg-background/50"
+                  className="bg-background/50 sm:col-span-2 lg:col-span-1"
                 />
                 <MultiSelect
                   options={titoli}

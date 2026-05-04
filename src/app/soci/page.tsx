@@ -60,6 +60,7 @@ export default function SociPage() {
   const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
   const [categorie, setCategorie] = useState<string[]>([])
   const [clubs, setClubs] = useState<string[]>([])
+  const [sessiDisponibili, setSessiDisponibili] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
@@ -78,16 +79,18 @@ export default function SociPage() {
   }, [filters, page, isClient])
 
   async function loadFilterOptions() {
-    const [zoneRes, circRes, catRes, clubRes] = await Promise.all([
+    const [zoneRes, circRes, catRes, clubRes, sessoRes] = await Promise.all([
       supabase.from('club').select('zona').not('zona', 'is', null),
       supabase.from('club').select('circoscrizione').not('circoscrizione', 'is', null),
       supabase.from('soci').select('categoria_associativa').not('categoria_associativa', 'is', null),
       supabase.from('club').select('nome_club').not('nome_club', 'is', null),
+      supabase.from('soci').select('sesso').not('sesso', 'is', null),
     ])
     if (zoneRes.data) setZone([...new Set(zoneRes.data.map(z => z.zona))].sort() as string[])
     if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map(c => c.circoscrizione))].sort() as string[])
     if (catRes.data) setCategorie([...new Set(catRes.data.map(c => c.categoria_associativa))].filter(Boolean).sort() as string[])
     if (clubRes.data) setClubs([...new Set(clubRes.data.map(c => c.nome_club))].filter(Boolean).sort() as string[])
+    if (sessoRes.data) setSessiDisponibili([...new Set(sessoRes.data.map(s => s.sesso))].filter(Boolean).sort() as string[])
   }
 
   async function loadSoci() {
@@ -159,15 +162,15 @@ export default function SociPage() {
           </CardHeader>
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
             <CardContent className="pt-0 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <Input
                   placeholder="Cerca nome, cognome, matricola..."
                   value={filters.search}
                   onChange={(e) => updateFilters({ ...filters, search: e.target.value })}
-                  className="bg-background/50"
+                  className="bg-background/50 sm:col-span-2 lg:col-span-1"
                 />
                 <MultiSelect
-                  options={['M', 'F']}
+                  options={sessiDisponibili}
                   selected={filters.sesso}
                   onChange={(v) => updateFilters({ ...filters, sesso: v })}
                   placeholder="Genere"
@@ -200,17 +203,17 @@ export default function SociPage() {
                     className="overflow-hidden"
                   >
                     <div className="space-y-3 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <MultiSelect options={zone} selected={filters.zona} onChange={(v) => updateFilters({ ...filters, zona: v })} placeholder="Zona" />
                         <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
                         <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <MultiSelect options={categorie} selected={filters.categoriaAssociativa} onChange={(v) => updateFilters({ ...filters, categoriaAssociativa: v })} placeholder="Categoria associativa" />
                         <Input placeholder="Professione..." value={filters.professione} onChange={(e) => updateFilters({ ...filters, professione: e.target.value })} className="bg-background/50" />
                         <Input placeholder="Città..." value={filters.citta} onChange={(e) => updateFilters({ ...filters, citta: e.target.value })} className="bg-background/50" />
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <Input placeholder="Provincia..." value={filters.provincia} onChange={(e) => updateFilters({ ...filters, provincia: e.target.value })} className="bg-background/50" />
                         <div>
                           <p className="text-[10px] text-muted-foreground mb-1">Anzianità (anni)</p>
