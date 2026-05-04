@@ -88,9 +88,10 @@ function countAdvancedFilters(f: Filters) {
 }
 
 const STATO_COLORS: Record<string, string> = {
-  Completato: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30',
-  'In corso': 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
-  Pianificato: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
+  'Comunicato': 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30',
+  'Pronto per comunicare i dati': 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+  'Pianificato': 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
+  'Bozza': 'bg-muted text-muted-foreground border-border',
 }
 
 function RangeRow({ label, minVal, maxVal, onMin, onMax, type = 'number', unit }: {
@@ -126,6 +127,7 @@ export default function AttivitaPage() {
   const [cause, setCause] = useState<string[]>([])
   const [tipiProgetto, setTipiProgetto] = useState<string[]>([])
   const [livelliAttivita, setLivelliAttivita] = useState<string[]>([])
+  const [stati, setStati] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
@@ -144,18 +146,20 @@ export default function AttivitaPage() {
   }, [filters, page, isClient])
 
   async function loadFilterOptions() {
-    const [zoneRes, circRes, causaRes, tipoRes, livelloRes] = await Promise.all([
+    const [zoneRes, circRes, causaRes, tipoRes, livelloRes, statiRes] = await Promise.all([
       supabase.from('vista_report_ricerca').select('sponsor_zona').not('sponsor_zona', 'is', null),
       supabase.from('vista_report_ricerca').select('sponsor_circoscrizione').not('sponsor_circoscrizione', 'is', null),
       supabase.from('vista_report_ricerca').select('causa').not('causa', 'is', null),
       supabase.from('vista_report_ricerca').select('tipo_progetto').not('tipo_progetto', 'is', null),
       supabase.from('vista_report_ricerca').select('livello_attivita').not('livello_attivita', 'is', null),
+      supabase.from('vista_report_ricerca').select('stato').not('stato', 'is', null),
     ])
     if (zoneRes.data) setZone([...new Set(zoneRes.data.map(z => z.sponsor_zona))].filter(Boolean).sort() as string[])
     if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map(c => c.sponsor_circoscrizione))].filter(Boolean).sort() as string[])
     if (causaRes.data) setCause([...new Set(causaRes.data.map(c => c.causa))].filter(Boolean).sort() as string[])
     if (tipoRes.data) setTipiProgetto([...new Set(tipoRes.data.map(t => t.tipo_progetto))].filter(Boolean).sort() as string[])
     if (livelloRes.data) setLivelliAttivita([...new Set(livelloRes.data.map(l => l.livello_attivita))].filter(Boolean).sort() as string[])
+    if (statiRes.data) setStati([...new Set(statiRes.data.map(s => s.stato))].filter(Boolean).sort() as string[])
   }
 
   async function loadAttivita() {
@@ -261,7 +265,7 @@ export default function AttivitaPage() {
                   onChange={(e) => upd({ search: e.target.value })}
                   className="sm:col-span-2 lg:col-span-1 bg-background/50"
                 />
-                <MultiSelect options={['Completato', 'In corso', 'Pianificato']} selected={filters.stato} onChange={(v) => upd({ stato: v })} placeholder="Stato" />
+                <MultiSelect options={stati} selected={filters.stato} onChange={(v) => upd({ stato: v })} placeholder="Stato" />
                 <MultiSelect options={zone} selected={filters.zona} onChange={(v) => upd({ zona: v })} placeholder="Zona" />
                 <MultiSelect options={cause} selected={filters.causa} onChange={(v) => upd({ causa: v })} placeholder="Causa" />
               </div>
