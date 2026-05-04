@@ -19,7 +19,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://servicescore.vercel.app"),
+  metadataBase: new URL("https://servicescore108la-01informatica-progetti.vercel.app"),
   title: {
     default: "ServiceScore - Lions Club 108 LA",
     template: "%s | ServiceScore"
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ServiceScore - Lions Club",
     description: "Sistema gestionale per i Lions Club Distretto 108 LA",
-    url: "https://servicescore.vercel.app",
+    url: "https://servicescore108la-01informatica-progetti.vercel.app",
     siteName: "ServiceScore",
     images: [
       {
