@@ -1,26 +1,45 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
+import { MultiSelect } from '@/components/ui/multi-select'
+import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, SlidersHorizontal, ShieldCheck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, ShieldCheck } from 'lucide-react'
 
 const PAGE_SIZE = 20
 
 interface Filters {
   search: string
-  titolo: string
-  zona: string
+  titolo: string[]
+  zona: string[]
+  circoscrizione: string[]
+  club: string[]
+  dataInizioDa: string
+  dataInizioA: string
+  dataConclusioneDa: string
+  dataConclusioneA: string
 }
 
-const EMPTY_FILTERS: Filters = { search: '', titolo: '', zona: '' }
+const EMPTY_FILTERS: Filters = {
+  search: '', titolo: [], zona: [], circoscrizione: [], club: [],
+  dataInizioDa: '', dataInizioA: '',
+  dataConclusioneDa: '', dataConclusioneA: '',
+}
+
+function countAdvancedFilters(f: Filters) {
+  let c = 0
+  if (f.circoscrizione.length) c++
+  if (f.club.length) c++
+  if (f.dataInizioDa || f.dataInizioA) c++
+  if (f.dataConclusioneDa || f.dataConclusioneA) c++
+  return c
+}
 
 export default function OfficerPage() {
   const [officer, setOfficer] = useState<any[]>([])
@@ -30,9 +49,12 @@ export default function OfficerPage() {
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const [zone, setZone] = useState<string[]>([])
+  const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
   const [titoli, setTitoli] = useState<string[]>([])
+  const [clubs, setClubs] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -48,12 +70,16 @@ export default function OfficerPage() {
   }, [filters, page, isClient])
 
   async function loadFilterOptions() {
-    const [zoneRes, titoliRes] = await Promise.all([
+    const [zoneRes, circRes, titoliRes, clubRes] = await Promise.all([
       supabase.from('vista_officer_ricerca').select('club_zona').not('club_zona', 'is', null),
+      supabase.from('vista_officer_ricerca').select('club_circoscrizione').not('club_circoscrizione', 'is', null),
       supabase.from('vista_officer_ricerca').select('titolo_ufficiale').not('titolo_ufficiale', 'is', null),
+      supabase.from('club').select('nome_club').not('nome_club', 'is', null),
     ])
-    if (zoneRes.data) setZone([...new Set(zoneRes.data.map(z => z.club_zona))].sort() as string[])
-    if (titoliRes.data) setTitoli([...new Set(titoliRes.data.map(t => t.titolo_ufficiale))].sort() as string[])
+    if (zoneRes.data) setZone([...new Set(zoneRes.data.map(z => z.club_zona))].filter(Boolean).sort() as string[])
+    if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map(c => c.club_circoscrizione))].filter(Boolean).sort() as string[])
+    if (titoliRes.data) setTitoli([...new Set(titoliRes.data.map(t => t.titolo_ufficiale))].filter(Boolean).sort() as string[])
+    if (clubRes.data) setClubs([...new Set(clubRes.data.map(c => c.nome_club))].filter(Boolean).sort() as string[])
   }
 
   async function loadOfficer() {
@@ -63,17 +89,19 @@ export default function OfficerPage() {
     let query = supabase.from('vista_officer_ricerca').select('*', { count: 'exact' })
 
     if (filters.search) query = query.or(`nome.ilike.%${filters.search}%,cognome.ilike.%${filters.search}%,matricola_socio.ilike.%${filters.search}%`)
-    if (filters.titolo) query = query.eq('titolo_ufficiale', filters.titolo)
-    if (filters.zona) query = query.eq('club_zona', filters.zona)
+    if (filters.titolo.length) query = query.in('titolo_ufficiale', filters.titolo)
+    if (filters.zona.length) query = query.in('club_zona', filters.zona)
+    if (filters.circoscrizione.length) query = query.in('club_circoscrizione', filters.circoscrizione)
+    if (filters.club.length) query = query.in('nome_club', filters.club)
+    if (filters.dataInizioDa) query = query.gte('data_inizio', filters.dataInizioDa)
+    if (filters.dataInizioA) query = query.lte('data_inizio', filters.dataInizioA)
+    if (filters.dataConclusioneDa) query = query.gte('data_conclusione', filters.dataConclusioneDa)
+    if (filters.dataConclusioneA) query = query.lte('data_conclusione', filters.dataConclusioneA)
 
     const { data, count, error: queryError } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
-    if (queryError) {
-      setError('Errore nel caricamento degli incarichi. Riprova.')
-    } else {
-      setOfficer(data || [])
-      setTotalCount(count ?? 0)
-    }
+    if (queryError) setError('Errore nel caricamento degli incarichi. Riprova.')
+    else { setOfficer(data || []); setTotalCount(count ?? 0) }
     setLoading(false)
   }
 
@@ -82,6 +110,8 @@ export default function OfficerPage() {
     setFilters(newFilters)
   }
 
+  const advancedCount = useMemo(() => countAdvancedFilters(filters), [filters])
+  const basicCount = (filters.search ? 1 : 0) + (filters.titolo.length ? 1 : 0) + (filters.zona.length ? 1 : 0)
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
   const start = totalCount === 0 ? 0 : page * PAGE_SIZE + 1
   const end = Math.min((page + 1) * PAGE_SIZE, totalCount)
@@ -97,56 +127,107 @@ export default function OfficerPage() {
         Incarichi ufficiali del Distretto 108 LA
       </motion.p>
 
-      {/* Filters */}
       <motion.div variants={itemVariants}>
         <Card className="mb-6 border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold">Filtri di Ricerca</CardTitle>
               <Button
-                variant="ghost"
-                size="sm"
+                variant="ghost" size="sm"
                 className="sm:hidden flex items-center gap-1.5 text-xs h-8 px-2"
                 onClick={() => setFiltersOpen(!filtersOpen)}
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 {filtersOpen ? 'Nascondi' : 'Filtri'}
+                {(advancedCount + basicCount) > 0 && (
+                  <Badge className="h-4 min-w-4 px-1 text-[9px] ml-0.5">{advancedCount + basicCount}</Badge>
+                )}
               </Button>
             </div>
           </CardHeader>
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <CardContent className="pt-0 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Input
                   placeholder="Cerca nome, cognome..."
                   value={filters.search}
                   onChange={(e) => updateFilters({ ...filters, search: e.target.value })}
                   className="bg-background/50"
                 />
-                <Select value={filters.titolo} onValueChange={(v) => updateFilters({ ...filters, titolo: v ?? '' })}>
-                  <SelectTrigger className="bg-background/50"><SelectValue placeholder="Incarico" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Tutti</SelectItem>
-                    {titoli.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Select value={filters.zona} onValueChange={(v) => updateFilters({ ...filters, zona: v ?? '' })}>
-                  <SelectTrigger className="bg-background/50"><SelectValue placeholder="Zona" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Tutte</SelectItem>
-                    {zone.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <MultiSelect
+                  options={titoli}
+                  selected={filters.titolo}
+                  onChange={(v) => updateFilters({ ...filters, titolo: v })}
+                  placeholder="Incarico / Titolo"
+                />
+                <MultiSelect
+                  options={zone}
+                  selected={filters.zona}
+                  onChange={(v) => updateFilters({ ...filters, zona: v })}
+                  placeholder="Zona"
+                />
               </div>
-              <Button variant="outline" size="sm" onClick={() => updateFilters(EMPTY_FILTERS)} className="text-xs">
-                Cancella filtri
-              </Button>
+
+              <button
+                onClick={() => setAdvancedOpen(!advancedOpen)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${advancedOpen ? 'rotate-180' : ''}`} />
+                Filtri avanzati
+                {advancedCount > 0 && <Badge className="h-4 min-w-4 px-1 text-[9px]">{advancedCount}</Badge>}
+              </button>
+
+              <AnimatePresence initial={false}>
+                {advancedOpen && (
+                  <motion.div
+                    key="advanced"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-3 pt-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
+                        <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground mb-1">Data inizio</p>
+                          <div className="flex items-center gap-1.5">
+                            <Input type="date" value={filters.dataInizioDa} onChange={(e) => updateFilters({ ...filters, dataInizioDa: e.target.value })} className="text-sm bg-background/50" />
+                            <span className="text-xs text-muted-foreground shrink-0">—</span>
+                            <Input type="date" value={filters.dataInizioA} onChange={(e) => updateFilters({ ...filters, dataInizioA: e.target.value })} className="text-sm bg-background/50" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground mb-1">Data conclusione</p>
+                          <div className="flex items-center gap-1.5">
+                            <Input type="date" value={filters.dataConclusioneDa} onChange={(e) => updateFilters({ ...filters, dataConclusioneDa: e.target.value })} className="text-sm bg-background/50" />
+                            <span className="text-xs text-muted-foreground shrink-0">—</span>
+                            <Input type="date" value={filters.dataConclusioneA} onChange={(e) => updateFilters({ ...filters, dataConclusioneA: e.target.value })} className="text-sm bg-background/50" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex items-center gap-2 pt-1">
+                <Button variant="outline" size="sm" onClick={() => { updateFilters(EMPTY_FILTERS); setAdvancedOpen(false) }} className="text-xs">
+                  Cancella filtri
+                </Button>
+                {(advancedCount + basicCount) > 0 && (
+                  <span className="text-xs text-muted-foreground">{advancedCount + basicCount} filtri attivi</span>
+                )}
+              </div>
             </CardContent>
           </div>
         </Card>
       </motion.div>
 
-      {/* Results */}
       <motion.div variants={itemVariants}>
         <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
@@ -165,7 +246,7 @@ export default function OfficerPage() {
               <div className="flex justify-center items-center h-32 text-destructive text-sm">{error}</div>
             ) : loading ? (
               <div className="flex justify-center items-center h-32">
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
               </div>
             ) : officer.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
@@ -174,7 +255,6 @@ export default function OfficerPage() {
               </div>
             ) : (
               <>
-                {/* Mobile cards */}
                 <div className="md:hidden space-y-3">
                   {officer.map((off: any) => (
                     <div key={off.id_incarico} className="rounded-xl border border-border/50 bg-background/40 p-4 space-y-2">
@@ -199,7 +279,6 @@ export default function OfficerPage() {
                   ))}
                 </div>
 
-                {/* Desktop table */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <TableHeader>
@@ -240,7 +319,6 @@ export default function OfficerPage() {
                   </table>
                 </div>
 
-                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
                     <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 0} className="h-8 px-3 text-xs">
