@@ -4,23 +4,23 @@ import numpy as np
 def pulisci_numero(valore):
     """Sostituisce la virgola con il punto e rimuove eventuali punti delle migliaia."""
     if pd.isna(valore) or str(valore).strip() == '':
-        return '0'
+        return None  # NULL in Supabase invece di 0
     # Rimuove spazi, simboli valuta o altri caratteri non numerici comuni
     s = str(valore).replace(' ', '').replace('€', '').strip()
-    
+
     # Gestione formati europei (es. 1.234,56 -> 1234.56)
     if '.' in s and ',' in s:
         s = s.replace('.', '').replace(',', '.')
     # Gestione solo virgola (es. 1234,56 -> 1234.56)
     elif ',' in s:
         s = s.replace(',', '.')
-    
-    # Verifica che sia un numero valido, altrimenti ritorna 0
+
+    # Verifica che sia un numero valido, altrimenti NULL
     try:
         float(s)
         return s
     except ValueError:
-        return '0'
+        return None
 
 def converti_dati_lions():
     print("Inizio l'elaborazione dei file CSV...")
@@ -215,7 +215,7 @@ def converti_dati_lions():
         bool_cols = ['rapporto_completo', 'attivita_distintiva', 'finanziata_lcif']
         for col in bool_cols:
             if col in df_report.columns:
-                df_report[col] = df_report[col].apply(lambda x: 'TRUE' if str(x).strip() == '1' else ('FALSE' if str(x).strip() == '0' else ''))
+                df_report[col] = df_report[col].apply(lambda x: True if str(x).strip() == '1' else (False if str(x).strip() == '0' else None))
 
         df_report.to_csv('4_report_supabase.csv', index=False)
 
