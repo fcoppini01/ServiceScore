@@ -41,25 +41,36 @@ export function MultiSelect({
 
   useEffect(() => {
     if (!open) return
-    const handleClose = (e: MouseEvent) => {
-      if (
-        dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
-        triggerRef.current && !triggerRef.current.contains(e.target as Node)
-      ) {
+    const isInsideDropdown = (target: EventTarget | null) =>
+      dropdownRef.current && target instanceof Node && dropdownRef.current.contains(target)
+    const isInsideTrigger = (target: EventTarget | null) =>
+      triggerRef.current && target instanceof Node && triggerRef.current.contains(target)
+
+    const handleClose = (e: MouseEvent | TouchEvent) => {
+      if (!isInsideDropdown(e.target) && !isInsideTrigger(e.target)) {
         setOpen(false)
         setSearch('')
       }
     }
-    const handleDismiss = () => { setOpen(false); setSearch('') }
+    const handleScroll = (e: Event) => {
+      // Ignora scroll interni al dropdown (rotella desktop, swipe mobile)
+      if (isInsideDropdown(e.target)) return
+      // Riposiziona invece di chiudere quando l'utente scrolla la pagina esterna
+      updatePos()
+    }
+    const handleResize = () => { setOpen(false); setSearch('') }
+
     document.addEventListener('mousedown', handleClose)
-    window.addEventListener('scroll', handleDismiss, true)
-    window.addEventListener('resize', handleDismiss)
+    document.addEventListener('touchstart', handleClose, { passive: true })
+    window.addEventListener('scroll', handleScroll, true)
+    window.addEventListener('resize', handleResize)
     return () => {
       document.removeEventListener('mousedown', handleClose)
-      window.removeEventListener('scroll', handleDismiss, true)
-      window.removeEventListener('resize', handleDismiss)
+      document.removeEventListener('touchstart', handleClose)
+      window.removeEventListener('scroll', handleScroll, true)
+      window.removeEventListener('resize', handleResize)
     }
-  }, [open])
+  }, [open, updatePos])
 
   const toggle = (value: string) => {
     onChange(selected.includes(value) ? selected.filter(v => v !== value) : [...selected, value])
@@ -80,7 +91,7 @@ export function MultiSelect({
   const dropdown = mounted && open ? createPortal(
     <div
       ref={dropdownRef}
-      style={{ position: 'fixed', top: pos.top, left: pos.left, width: Math.max(pos.width, 200), zIndex: 9999 }}
+      style={{ position: 'fixed', top: pos.top, left: pos.left, width: Math.max(pos.width, 200), zIndex: 9999, touchAction: 'manipulation', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
       className="rounded-xl border border-border/80 bg-card shadow-2xl overflow-hidden"
     >
       {showSearch && (
@@ -101,7 +112,7 @@ export function MultiSelect({
           )}
         </div>
       )}
-      <div className="max-h-52 overflow-y-auto py-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
+      <div className="max-h-52 overflow-y-auto overscroll-contain py-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full" style={{ WebkitOverflowScrolling: 'touch' }}>
         {filtered.length === 0 ? (
           <p className="py-4 text-center text-xs text-muted-foreground">Nessun risultato</p>
         ) : (
@@ -149,8 +160,9 @@ export function MultiSelect({
         ref={triggerRef}
         type="button"
         onClick={handleToggleOpen}
+        style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
         className={cn(
-          'flex w-full items-center justify-between h-auto min-h-9 rounded-md border border-input bg-background/50 px-3 py-1.5 text-sm hover:bg-background/70 focus:outline-none transition-colors',
+          'flex w-full items-center justify-between h-auto min-h-9 rounded-md border border-input bg-background/50 px-3 py-1.5 text-sm hover:bg-background/70 focus:outline-none transition-colors select-none',
           open && 'border-ring ring-1 ring-ring/30'
         )}
       >
@@ -163,8 +175,10 @@ export function MultiSelect({
                 {v}
                 <span
                   role="button"
-                  className="ml-0.5 cursor-pointer hover:text-destructive"
-                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggle(v) }}
+                  aria-label={`Rimuovi ${v}`}
+                  className="ml-0.5 cursor-pointer hover:text-destructive px-1"
+                  onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(v) }}
                 >×</span>
               </Badge>
             ))
@@ -172,10 +186,15 @@ export function MultiSelect({
         </div>
         <div className="flex items-center gap-1 shrink-0 ml-1">
           {selected.length > 0 && (
-            <X
-              className="h-3.5 w-3.5 opacity-40 hover:opacity-100 cursor-pointer"
-              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onChange([]) }}
-            />
+            <span
+              role="button"
+              aria-label="Cancella tutti"
+              className="cursor-pointer p-0.5"
+              onPointerDown={(e) => { e.preventDefault(); e.stopPropagation() }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange([]) }}
+            >
+              <X className="h-3.5 w-3.5 opacity-40 hover:opacity-100" />
+            </span>
           )}
           <ChevronDown className={cn('h-3.5 w-3.5 opacity-50 transition-transform duration-200', open && 'rotate-180')} />
         </div>
