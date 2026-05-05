@@ -257,17 +257,17 @@ export default function OfficerPage() {
               <>
                 <div className="md:hidden space-y-3">
                   {officer.map((off: any) => (
-                    <div key={off.id_incarico} className="rounded-xl border border-border/50 bg-background/40 p-4 space-y-2">
+                    <div key={off.id_incarico} className="rounded-xl border border-border/50 bg-background/40 p-4 space-y-2 overflow-hidden">
                       <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="font-semibold text-sm">{off.nome} {off.cognome}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{off.nome_club}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm break-words">{off.nome} {off.cognome}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 break-words">{off.nome_club}</p>
                         </div>
-                        <Badge className="text-[10px] shrink-0">{off.titolo_ufficiale}</Badge>
+                        <Badge variant="outline" className="text-[10px] h-5 shrink-0">{off.club_zona}</Badge>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] h-5">{off.club_zona}</Badge>
-                      </div>
+                      <Badge className="text-[10px] inline-block max-w-full whitespace-normal text-left leading-snug py-1 px-2 h-auto">
+                        {off.titolo_ufficiale}
+                      </Badge>
                       <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-1 border-t border-border/30">
                         {off.data_inizio && <span>Dal {new Date(off.data_inizio).toLocaleDateString('it-IT')}</span>}
                         {off.data_conclusione
