@@ -20,7 +20,7 @@ export function MultiSelect({
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 260 })
   const triggerRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [mounted, setMounted] = useState(false)
@@ -31,12 +31,18 @@ export function MultiSelect({
     if (!triggerRef.current) return
     const rect = triggerRef.current.getBoundingClientRect()
     const showSearch = searchable && options.length > 6
-    const estimatedH = Math.min(options.length * 38 + (showSearch ? 48 : 0) + 8, 260)
-    const spaceBelow = window.innerHeight - rect.bottom
-    const top = spaceBelow < estimatedH && rect.top > estimatedH
-      ? rect.top - estimatedH - 4
-      : rect.bottom + 4
-    setPos({ top, left: rect.left, width: rect.width })
+    // Usa visualViewport se disponibile (tiene conto della tastiera mobile)
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null
+    const viewportHeight = vv?.height ?? window.innerHeight
+    const viewportTop = vv?.offsetTop ?? 0
+    const visibleBottom = viewportTop + viewportHeight
+    const estimatedH = Math.min(options.length * 38 + (showSearch ? 48 : 0) + 8, 320)
+    const spaceBelow = visibleBottom - rect.bottom - 8
+    const spaceAbove = rect.top - viewportTop - 8
+    const openUp = spaceBelow < Math.min(estimatedH, 200) && spaceAbove > spaceBelow
+    const maxHeight = Math.max(160, Math.min(estimatedH, openUp ? spaceAbove : spaceBelow))
+    const top = openUp ? rect.top - maxHeight - 4 : rect.bottom + 4
+    setPos({ top, left: rect.left, width: rect.width, maxHeight })
   }, [options.length, searchable])
 
   useEffect(() => {
@@ -58,17 +64,29 @@ export function MultiSelect({
       // Riposiziona invece di chiudere quando l'utente scrolla la pagina esterna
       updatePos()
     }
-    const handleResize = () => { setOpen(false); setSearch('') }
+    // Riposiziona invece di chiudere su resize: su mobile la comparsa
+    // della tastiera causa un resize del viewport e prima questo
+    // chiudeva il dropdown immediatamente.
+    const handleResize = () => updatePos()
 
     document.addEventListener('mousedown', handleClose)
     document.addEventListener('touchstart', handleClose, { passive: true })
     window.addEventListener('scroll', handleScroll, true)
     window.addEventListener('resize', handleResize)
+    // visualViewport e' piu' affidabile per detectare la tastiera
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+      window.visualViewport.addEventListener('scroll', handleResize)
+    }
     return () => {
       document.removeEventListener('mousedown', handleClose)
       document.removeEventListener('touchstart', handleClose)
       window.removeEventListener('scroll', handleScroll, true)
       window.removeEventListener('resize', handleResize)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize)
+        window.visualViewport.removeEventListener('scroll', handleResize)
+      }
     }
   }, [open, updatePos])
 
@@ -91,28 +109,27 @@ export function MultiSelect({
   const dropdown = mounted && open ? createPortal(
     <div
       ref={dropdownRef}
-      style={{ position: 'fixed', top: pos.top, left: pos.left, width: Math.max(pos.width, 200), zIndex: 9999, touchAction: 'manipulation', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
+      style={{ position: 'fixed', top: pos.top, left: pos.left, width: Math.max(pos.width, 200), maxHeight: pos.maxHeight, zIndex: 9999, touchAction: 'manipulation', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none', display: 'flex', flexDirection: 'column' }}
       className="rounded-xl border border-border/80 bg-card shadow-2xl overflow-hidden"
     >
       {showSearch && (
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-muted/30">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-muted/30 shrink-0">
           <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <input
             type="text"
             placeholder="Cerca..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
-            autoFocus
+            className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground min-w-0"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button type="button" onClick={() => setSearch('')} className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
               <X className="h-3 w-3" />
             </button>
           )}
         </div>
       )}
-      <div className="max-h-52 overflow-y-auto overscroll-contain py-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full" style={{ WebkitOverflowScrolling: 'touch' }}>
         {filtered.length === 0 ? (
           <p className="py-4 text-center text-xs text-muted-foreground">Nessun risultato</p>
         ) : (
@@ -141,8 +158,9 @@ export function MultiSelect({
         )}
       </div>
       {selected.length > 0 && (
-        <div className="border-t border-border/50 px-3 py-1.5 bg-muted/20">
+        <div className="border-t border-border/50 px-3 py-1.5 bg-muted/20 shrink-0">
           <button
+            type="button"
             onClick={() => { onChange([]); setOpen(false); setSearch('') }}
             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
           >
