@@ -25,6 +25,7 @@ interface Filters {
   tipoProgetto: string[]
   livelloAttivita: string[]
   circoscrizione: string[]
+  club: string[]
   organizzazioneBeneficiata: string
   rapportoCompleto: string
   attivitaDistintiva: string
@@ -52,7 +53,7 @@ interface Filters {
 
 const EMPTY_FILTERS: Filters = {
   search: '', stato: [], zona: [], causa: [],
-  tipoProgetto: [], livelloAttivita: [], circoscrizione: [],
+  tipoProgetto: [], livelloAttivita: [], circoscrizione: [], club: [],
   organizzazioneBeneficiata: '', rapportoCompleto: '', attivitaDistintiva: '', finanziateLcif: '',
   dataInizioDa: '', dataInizioA: '', dataConclusioneDa: '', dataConclusioneA: '',
   minPersone: '', maxPersone: '', minPersoneLimite: '', maxPersoneLimite: '',
@@ -68,6 +69,7 @@ function countAdvancedFilters(f: Filters) {
   if (f.tipoProgetto.length) c++
   if (f.livelloAttivita.length) c++
   if (f.circoscrizione.length) c++
+  if (f.club.length) c++
   if (f.organizzazioneBeneficiata) c++
   if (f.rapportoCompleto) c++
   if (f.attivitaDistintiva) c++
@@ -129,6 +131,7 @@ export default function AttivitaPage() {
   const [tipiProgetto, setTipiProgetto] = useState<string[]>([])
   const [livelliAttivita, setLivelliAttivita] = useState<string[]>([])
   const [stati, setStati] = useState<string[]>([])
+  const [clubs, setClubs] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
@@ -153,13 +156,14 @@ export default function AttivitaPage() {
   }
 
   async function loadFilterOptions() {
-    const [zoneRes, circRes, causaRes, tipoRes, livelloRes, statiRes] = await Promise.all([
+    const [zoneRes, circRes, causaRes, tipoRes, livelloRes, statiRes, clubsRes] = await Promise.all([
       supabase.from('vista_report_ricerca').select('sponsor_zona').not('sponsor_zona', 'is', null),
       supabase.from('vista_report_ricerca').select('sponsor_circoscrizione').not('sponsor_circoscrizione', 'is', null),
       supabase.from('vista_report_ricerca').select('causa').not('causa', 'is', null),
       supabase.from('vista_report_ricerca').select('tipo_progetto').not('tipo_progetto', 'is', null),
       supabase.from('vista_report_ricerca').select('livello_attivita').not('livello_attivita', 'is', null),
       supabase.from('vista_report_ricerca').select('stato').not('stato', 'is', null),
+      supabase.from('vista_report_ricerca').select('sponsor_nome_account').not('sponsor_nome_account', 'is', null),
     ])
     if (zoneRes.data) setZone([...new Set(zoneRes.data.map(z => z.sponsor_zona))].filter(Boolean).sort() as string[])
     if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map(c => c.sponsor_circoscrizione))].filter(Boolean).sort() as string[])
@@ -167,6 +171,7 @@ export default function AttivitaPage() {
     if (tipoRes.data) setTipiProgetto([...new Set(tipoRes.data.map(t => t.tipo_progetto))].filter(Boolean).sort() as string[])
     if (livelloRes.data) setLivelliAttivita([...new Set(livelloRes.data.map(l => l.livello_attivita))].filter(Boolean).sort() as string[])
     if (statiRes.data) setStati([...new Set(statiRes.data.map(s => s.stato))].filter(Boolean).sort() as string[])
+    if (clubsRes.data) setClubs([...new Set(clubsRes.data.map(c => c.sponsor_nome_account))].filter(Boolean).sort() as string[])
   }
 
   async function loadAttivita() {
@@ -182,6 +187,7 @@ export default function AttivitaPage() {
     if (filters.tipoProgetto.length) query = query.in('tipo_progetto', filters.tipoProgetto)
     if (filters.livelloAttivita.length) query = query.in('livello_attivita', filters.livelloAttivita)
     if (filters.circoscrizione.length) query = query.in('sponsor_circoscrizione', filters.circoscrizione)
+    if (filters.club.length) query = query.in('sponsor_nome_account', filters.club)
     if (filters.organizzazioneBeneficiata) query = query.ilike('organizzazione_beneficiata', `%${filters.organizzazioneBeneficiata}%`)
     if (filters.rapportoCompleto) query = query.eq('rapporto_completo', filters.rapportoCompleto === 'true')
     if (filters.attivitaDistintiva) query = query.eq('attivita_distintiva', filters.attivitaDistintiva === 'true')
@@ -304,6 +310,7 @@ export default function AttivitaPage() {
                       {/* Categorizzazione */}
                       <SectionLabel>Categorizzazione</SectionLabel>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <MultiSelect options={clubs} selected={filters.club} onChange={(v) => upd({ club: v })} placeholder="Club" />
                         <MultiSelect options={tipiProgetto} selected={filters.tipoProgetto} onChange={(v) => upd({ tipoProgetto: v })} placeholder="Tipo progetto" />
                         <MultiSelect options={livelliAttivita} selected={filters.livelloAttivita} onChange={(v) => upd({ livelloAttivita: v })} placeholder="Livello attività" />
                         <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => upd({ circoscrizione: v })} placeholder="Circoscrizione" />
