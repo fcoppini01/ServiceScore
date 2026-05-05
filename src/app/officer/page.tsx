@@ -265,9 +265,12 @@ export default function OfficerPage() {
                         </div>
                         <Badge variant="outline" className="text-[10px] h-5 shrink-0">{off.club_zona}</Badge>
                       </div>
-                      <Badge className="text-[10px] inline-block max-w-full whitespace-normal text-left leading-snug py-1 px-2 h-auto">
-                        {off.titolo_ufficiale}
-                      </Badge>
+                      <div className="flex items-center flex-wrap gap-1.5">
+                        <Badge className="text-[10px] inline-block max-w-full whitespace-normal text-left leading-snug py-1 px-2 h-auto">
+                          {off.titolo_ufficiale}
+                        </Badge>
+                        {off.club_circoscrizione && <Badge variant="outline" className="text-[10px] h-5">{off.club_circoscrizione}</Badge>}
+                      </div>
                       <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-1 border-t border-border/30">
                         {off.data_inizio && <span>Dal {new Date(off.data_inizio).toLocaleDateString('it-IT')}</span>}
                         {off.data_conclusione
@@ -283,13 +286,14 @@ export default function OfficerPage() {
                   <table className="w-full">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Cognome</TableHead>
+                        <TableHead className="whitespace-nowrap">Nome</TableHead>
+                        <TableHead className="whitespace-nowrap">Cognome</TableHead>
                         <TableHead>Club</TableHead>
                         <TableHead>Incarico</TableHead>
-                        <TableHead>Zona</TableHead>
-                        <TableHead>Inizio</TableHead>
-                        <TableHead>Fine</TableHead>
+                        <TableHead className="whitespace-nowrap">Zona</TableHead>
+                        <TableHead className="whitespace-nowrap">Circ.</TableHead>
+                        <TableHead className="whitespace-nowrap">Inizio</TableHead>
+                        <TableHead className="whitespace-nowrap">Fine</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -301,13 +305,14 @@ export default function OfficerPage() {
                           transition={{ delay: index * 0.02 }}
                           className="hover:bg-muted/40"
                         >
-                          <TableCell className="font-medium">{off.nome}</TableCell>
-                          <TableCell>{off.cognome}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{off.nome_club}</TableCell>
-                          <TableCell><Badge className="text-xs">{off.titolo_ufficiale}</Badge></TableCell>
-                          <TableCell><Badge variant="outline" className="text-xs">{off.club_zona}</Badge></TableCell>
-                          <TableCell className="text-sm">{off.data_inizio ? new Date(off.data_inizio).toLocaleDateString('it-IT') : ''}</TableCell>
-                          <TableCell className="text-sm">
+                          <TableCell className="font-medium whitespace-nowrap">{off.nome}</TableCell>
+                          <TableCell className="whitespace-nowrap">{off.cognome}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate" title={off.nome_club}>{off.nome_club}</TableCell>
+                          <TableCell><Badge className="text-xs whitespace-normal leading-snug py-1 h-auto max-w-[280px] inline-block">{off.titolo_ufficiale}</Badge></TableCell>
+                          <TableCell className="whitespace-nowrap"><Badge variant="outline" className="text-xs">{off.club_zona}</Badge></TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{off.club_circoscrizione}</TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">{off.data_inizio ? new Date(off.data_inizio).toLocaleDateString('it-IT') : ''}</TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">
                             {off.data_conclusione
                               ? new Date(off.data_conclusione).toLocaleDateString('it-IT')
                               : <span className="text-green-500">In corso</span>

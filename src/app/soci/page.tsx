@@ -285,16 +285,28 @@ export default function SociPage() {
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground truncate">{socio.nome_club}</div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center flex-wrap gap-1.5">
                         <Badge variant="outline" className="text-[10px] h-5">{socio.club_zona}</Badge>
-                        {socio.anzianita_lionistica && <span className="text-[10px] text-muted-foreground">{socio.anzianita_lionistica} anni</span>}
+                        {socio.club_circoscrizione && <Badge variant="outline" className="text-[10px] h-5">{socio.club_circoscrizione}</Badge>}
+                        {socio.categoria_associativa && <Badge variant="outline" className="text-[10px] h-5 max-w-[140px] truncate">{socio.categoria_associativa}</Badge>}
+                        {socio.anzianita_lionistica != null && <span className="text-[10px] text-muted-foreground">{socio.anzianita_lionistica} anni Lions</span>}
                       </div>
+                      {(socio.citta || socio.stato_provincia) && (
+                        <div className="text-[10px] text-muted-foreground truncate">
+                          📍 {[socio.citta, socio.stato_provincia].filter(Boolean).join(', ')}
+                        </div>
+                      )}
+                      {socio.professione && (
+                        <div className="text-[10px] text-muted-foreground truncate">
+                          💼 {socio.professione}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
 
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-sm">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="whitespace-nowrap">Matricola</TableHead>
@@ -306,6 +318,10 @@ export default function SociPage() {
                         <TableHead>Gen.</TableHead>
                         <TableHead>Fascia</TableHead>
                         <TableHead>Anzianità</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Professione</TableHead>
+                        <TableHead>Città</TableHead>
+                        <TableHead>Prov.</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -317,15 +333,19 @@ export default function SociPage() {
                           transition={{ delay: index * 0.02 }}
                           className="hover:bg-muted/40"
                         >
-                          <TableCell className="font-mono text-xs">{socio.matricola_socio}</TableCell>
-                          <TableCell className="font-medium">{socio.nome}</TableCell>
-                          <TableCell>{socio.cognome}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{socio.nome_club}</TableCell>
-                          <TableCell><Badge variant="outline" className="text-xs">{socio.club_zona}</Badge></TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{socio.club_circoscrizione}</TableCell>
-                          <TableCell className="text-xs">{socio.sesso}</TableCell>
-                          <TableCell><Badge className="text-xs">{socio.fascia_eta}</Badge></TableCell>
-                          <TableCell className="text-sm">{socio.anzianita_lionistica} anni</TableCell>
+                          <TableCell className="font-mono text-xs whitespace-nowrap">{socio.matricola_socio}</TableCell>
+                          <TableCell className="font-medium whitespace-nowrap">{socio.nome}</TableCell>
+                          <TableCell className="whitespace-nowrap">{socio.cognome}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap max-w-[200px] truncate" title={socio.nome_club}>{socio.nome_club}</TableCell>
+                          <TableCell className="whitespace-nowrap"><Badge variant="outline" className="text-xs">{socio.club_zona}</Badge></TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{socio.club_circoscrizione}</TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{socio.sesso}</TableCell>
+                          <TableCell className="whitespace-nowrap"><Badge className="text-xs">{socio.fascia_eta}</Badge></TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">{socio.anzianita_lionistica != null ? `${socio.anzianita_lionistica} anni` : ''}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[150px] truncate" title={socio.categoria_associativa}>{socio.categoria_associativa}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[150px] truncate" title={socio.professione}>{socio.professione}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.citta}>{socio.citta}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{socio.stato_provincia}</TableCell>
                         </motion.tr>
                       ))}
                     </TableBody>

@@ -408,39 +408,65 @@ export default function AttivitaPage() {
               <>
                 <div className="md:hidden space-y-3">
                   {attivita.map((att: any) => (
-                    <div key={att.id_attivita} className="rounded-xl border border-border/50 bg-background/40 p-4 space-y-2">
+                    <div key={att.id_attivita} className="rounded-xl border border-border/50 bg-background/40 p-4 space-y-2 overflow-hidden">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-semibold text-sm leading-tight line-clamp-2">{att.titolo}</p>
+                        <p className="font-semibold text-sm leading-tight line-clamp-2 break-words flex-1 min-w-0">{att.titolo}</p>
                         <span className={`shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap ${STATO_COLORS[att.stato] ?? 'bg-muted text-muted-foreground'}`}>
                           {att.stato}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">{att.sponsor_nome_account}</p>
-                      <div className="flex items-center gap-2">
+                      <p className="text-xs text-muted-foreground break-words">{att.sponsor_nome_account}</p>
+                      <div className="flex items-center flex-wrap gap-1.5">
                         <Badge variant="outline" className="text-[10px] h-5">{att.sponsor_zona}</Badge>
-                        {att.causa && <span className="text-[10px] text-muted-foreground truncate">{att.causa}</span>}
+                        {att.sponsor_circoscrizione && <Badge variant="outline" className="text-[10px] h-5">{att.sponsor_circoscrizione}</Badge>}
+                        {att.causa && <Badge variant="outline" className="text-[10px] h-5 max-w-[160px] truncate">{att.causa}</Badge>}
+                        {att.tipo_progetto && <Badge variant="outline" className="text-[10px] h-5 max-w-[160px] truncate">{att.tipo_progetto}</Badge>}
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1 border-t border-border/30">
+                      {(att.attivita_distintiva || att.finanziata_lcif) && (
+                        <div className="flex items-center flex-wrap gap-1.5">
+                          {att.attivita_distintiva && <Badge className="text-[10px] h-5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30">⭐ Distintiva</Badge>}
+                          {att.finanziata_lcif && <Badge className="text-[10px] h-5 bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30">LCIF</Badge>}
+                        </div>
+                      )}
+                      {att.organizzazione_beneficiata && (
+                        <p className="text-[10px] text-muted-foreground break-words">🤝 {att.organizzazione_beneficiata}</p>
+                      )}
+                      <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground pt-1 border-t border-border/30">
                         <span><span className="font-medium text-foreground">{att.persone_servite ?? 0}</span> persone</span>
+                        <span><span className="font-medium text-foreground">{att.totale_volontari ?? 0}</span> volontari</span>
                         <span><span className="font-medium text-foreground">{att.totale_ore_servizio ?? 0}</span> ore</span>
-                        <span><span className="font-medium text-foreground">€ {att.totale_fondi_raccolti ?? 0}</span></span>
+                        {att.alberi_piantati > 0 && <span><span className="font-medium text-foreground">{att.alberi_piantati}</span> alberi</span>}
+                        <span>raccolti <span className="font-medium text-foreground tabular-nums">€{att.totale_fondi_raccolti ?? 0}</span></span>
+                        {att.totale_fondi_donati > 0 && <span>donati <span className="font-medium text-foreground tabular-nums">€{att.totale_fondi_donati}</span></span>}
                       </div>
+                      {att.data_inizio && (
+                        <div className="text-[10px] text-muted-foreground pt-1">
+                          📅 {new Date(att.data_inizio).toLocaleDateString('it-IT')}
+                          {att.data_conclusione && ` → ${new Date(att.data_conclusione).toLocaleDateString('it-IT')}`}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
 
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-sm">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Titolo</TableHead>
                         <TableHead>Club</TableHead>
-                        <TableHead>Zona</TableHead>
-                        <TableHead>Stato</TableHead>
-                        <TableHead>Causa</TableHead>
-                        <TableHead>Persone</TableHead>
-                        <TableHead>Ore</TableHead>
-                        <TableHead>Fondi</TableHead>
+                        <TableHead className="whitespace-nowrap">Zona</TableHead>
+                        <TableHead className="whitespace-nowrap">Circ.</TableHead>
+                        <TableHead className="whitespace-nowrap">Stato</TableHead>
+                        <TableHead className="whitespace-nowrap">Causa</TableHead>
+                        <TableHead className="whitespace-nowrap">Tipo</TableHead>
+                        <TableHead className="whitespace-nowrap">Data</TableHead>
+                        <TableHead className="whitespace-nowrap text-right">Persone</TableHead>
+                        <TableHead className="whitespace-nowrap text-right">Volont.</TableHead>
+                        <TableHead className="whitespace-nowrap text-right">Ore</TableHead>
+                        <TableHead className="whitespace-nowrap text-right">Donati</TableHead>
+                        <TableHead className="whitespace-nowrap text-right">Raccolti</TableHead>
+                        <TableHead className="whitespace-nowrap text-right">Alberi</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -452,18 +478,24 @@ export default function AttivitaPage() {
                           transition={{ delay: index * 0.02 }}
                           className="hover:bg-muted/40"
                         >
-                          <TableCell className="font-medium max-w-[200px] truncate">{att.titolo}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{att.sponsor_nome_account}</TableCell>
-                          <TableCell><Badge variant="outline" className="text-xs">{att.sponsor_zona}</Badge></TableCell>
-                          <TableCell>
+                          <TableCell className="font-medium max-w-[220px] truncate" title={att.titolo}>{att.titolo}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground max-w-[180px] truncate" title={att.sponsor_nome_account}>{att.sponsor_nome_account}</TableCell>
+                          <TableCell className="whitespace-nowrap"><Badge variant="outline" className="text-xs">{att.sponsor_zona}</Badge></TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{att.sponsor_circoscrizione}</TableCell>
+                          <TableCell className="whitespace-nowrap">
                             <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATO_COLORS[att.stato] ?? 'bg-muted text-muted-foreground'}`}>
                               {att.stato}
                             </span>
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{att.causa}</TableCell>
-                          <TableCell className="text-sm">{att.persone_servite}</TableCell>
-                          <TableCell className="text-sm">{att.totale_ore_servizio}</TableCell>
-                          <TableCell className="text-sm tabular-nums">€ {att.totale_fondi_raccolti}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground max-w-[140px] truncate" title={att.causa}>{att.causa}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground max-w-[140px] truncate" title={att.tipo_progetto}>{att.tipo_progetto}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{att.data_inizio ? new Date(att.data_inizio).toLocaleDateString('it-IT') : ''}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-right">{att.persone_servite ?? 0}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-right">{att.totale_volontari ?? 0}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-right">{att.totale_ore_servizio ?? 0}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-right">€{att.totale_fondi_donati ?? 0}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-right">€{att.totale_fondi_raccolti ?? 0}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-right">{att.alberi_piantati ?? 0}</TableCell>
                         </motion.tr>
                       ))}
                     </TableBody>
