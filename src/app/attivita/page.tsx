@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
+import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity } from 'lucide-react'
@@ -131,6 +132,7 @@ export default function AttivitaPage() {
   const [isClient, setIsClient] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [sort, setSort] = useState<SortState>({ field: 'data_inizio', dir: 'desc' })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -143,7 +145,12 @@ export default function AttivitaPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => { loadAttivita() }, 300)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [filters, page, isClient])
+  }, [filters, page, sort, isClient])
+
+  const handleSort = (field: string) => {
+    setPage(0)
+    setSort(s => nextSort(s, field, 'desc'))
+  }
 
   async function loadFilterOptions() {
     const [zoneRes, circRes, causaRes, tipoRes, livelloRes, statiRes] = await Promise.all([
@@ -205,6 +212,8 @@ export default function AttivitaPage() {
     if (filters.maxFondiRaccoltiCapped) query = query.lte('fondi_raccolti_usd_capped', parseFloat(filters.maxFondiRaccoltiCapped))
     if (filters.minAlberi) query = query.gte('alberi_piantati', parseFloat(filters.minAlberi))
     if (filters.maxAlberi) query = query.lte('alberi_piantati', parseFloat(filters.maxAlberi))
+
+    if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
     const { data, count, error: queryError } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
@@ -406,6 +415,21 @@ export default function AttivitaPage() {
               </div>
             ) : (
               <>
+                <MobileSortSelect
+                  options={[
+                    { value: 'data_inizio:desc', label: 'Data (più recente)' },
+                    { value: 'data_inizio:asc', label: 'Data (più vecchia)' },
+                    { value: 'titolo:asc', label: 'Titolo A→Z' },
+                    { value: 'totale_fondi_raccolti:desc', label: 'Fondi raccolti (max)' },
+                    { value: 'totale_fondi_donati:desc', label: 'Fondi donati (max)' },
+                    { value: 'persone_servite:desc', label: 'Persone servite (max)' },
+                    { value: 'totale_ore_servizio:desc', label: 'Ore servizio (max)' },
+                    { value: 'totale_volontari:desc', label: 'Volontari (max)' },
+                    { value: 'sponsor_nome_account:asc', label: 'Club A→Z' },
+                  ]}
+                  sort={sort}
+                  onChange={(s) => { setPage(0); setSort(s) }}
+                />
                 <div className="md:hidden space-y-3">
                   {attivita.map((att: any) => (
                     <div key={att.id_attivita} className="rounded-xl border border-border/50 bg-background/40 p-4 space-y-2 overflow-hidden">
@@ -453,20 +477,20 @@ export default function AttivitaPage() {
                   <table className="w-full text-sm">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Titolo</TableHead>
-                        <TableHead>Club</TableHead>
-                        <TableHead className="whitespace-nowrap">Zona</TableHead>
-                        <TableHead className="whitespace-nowrap">Circ.</TableHead>
-                        <TableHead className="whitespace-nowrap">Stato</TableHead>
-                        <TableHead className="whitespace-nowrap">Causa</TableHead>
-                        <TableHead className="whitespace-nowrap">Tipo</TableHead>
-                        <TableHead className="whitespace-nowrap">Data</TableHead>
-                        <TableHead className="whitespace-nowrap text-right">Persone</TableHead>
-                        <TableHead className="whitespace-nowrap text-right">Volont.</TableHead>
-                        <TableHead className="whitespace-nowrap text-right">Ore</TableHead>
-                        <TableHead className="whitespace-nowrap text-right">Donati</TableHead>
-                        <TableHead className="whitespace-nowrap text-right">Raccolti</TableHead>
-                        <TableHead className="whitespace-nowrap text-right">Alberi</TableHead>
+                        <SortableHead field="titolo" label="Titolo" sort={sort} onSort={handleSort} />
+                        <SortableHead field="sponsor_nome_account" label="Club" sort={sort} onSort={handleSort} />
+                        <SortableHead field="sponsor_zona" label="Zona" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="sponsor_circoscrizione" label="Circ." sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="stato" label="Stato" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="causa" label="Causa" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="tipo_progetto" label="Tipo" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="data_inizio" label="Data" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="persone_servite" label="Persone" sort={sort} onSort={handleSort} className="whitespace-nowrap" align="right" />
+                        <SortableHead field="totale_volontari" label="Volont." sort={sort} onSort={handleSort} className="whitespace-nowrap" align="right" />
+                        <SortableHead field="totale_ore_servizio" label="Ore" sort={sort} onSort={handleSort} className="whitespace-nowrap" align="right" />
+                        <SortableHead field="totale_fondi_donati" label="Donati" sort={sort} onSort={handleSort} className="whitespace-nowrap" align="right" />
+                        <SortableHead field="totale_fondi_raccolti" label="Raccolti" sort={sort} onSort={handleSort} className="whitespace-nowrap" align="right" />
+                        <SortableHead field="alberi_piantati" label="Alberi" sort={sort} onSort={handleSort} className="whitespace-nowrap" align="right" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>

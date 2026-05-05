@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
+import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, ShieldCheck } from 'lucide-react'
@@ -55,6 +56,7 @@ export default function OfficerPage() {
   const [isClient, setIsClient] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [sort, setSort] = useState<SortState>({ field: 'cognome', dir: 'asc' })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -67,7 +69,12 @@ export default function OfficerPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => { loadOfficer() }, 300)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [filters, page, isClient])
+  }, [filters, page, sort, isClient])
+
+  const handleSort = (field: string) => {
+    setPage(0)
+    setSort(s => nextSort(s, field))
+  }
 
   async function loadFilterOptions() {
     const [zoneRes, circRes, titoliRes, clubRes] = await Promise.all([
@@ -97,6 +104,8 @@ export default function OfficerPage() {
     if (filters.dataInizioA) query = query.lte('data_inizio', filters.dataInizioA)
     if (filters.dataConclusioneDa) query = query.gte('data_conclusione', filters.dataConclusioneDa)
     if (filters.dataConclusioneA) query = query.lte('data_conclusione', filters.dataConclusioneA)
+
+    if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
     const { data, count, error: queryError } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
@@ -255,6 +264,18 @@ export default function OfficerPage() {
               </div>
             ) : (
               <>
+                <MobileSortSelect
+                  options={[
+                    { value: 'cognome:asc', label: 'Cognome A→Z' },
+                    { value: 'cognome:desc', label: 'Cognome Z→A' },
+                    { value: 'titolo_ufficiale:asc', label: 'Incarico A→Z' },
+                    { value: 'data_inizio:desc', label: 'Inizio (più recente)' },
+                    { value: 'data_inizio:asc', label: 'Inizio (più vecchio)' },
+                    { value: 'nome_club:asc', label: 'Club A→Z' },
+                  ]}
+                  sort={sort}
+                  onChange={(s) => { setPage(0); setSort(s) }}
+                />
                 <div className="md:hidden space-y-3">
                   {officer.map((off: any) => (
                     <div key={off.id_incarico} className="rounded-xl border border-border/50 bg-background/40 p-4 space-y-2 overflow-hidden">
@@ -286,14 +307,14 @@ export default function OfficerPage() {
                   <table className="w-full">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="whitespace-nowrap">Nome</TableHead>
-                        <TableHead className="whitespace-nowrap">Cognome</TableHead>
-                        <TableHead>Club</TableHead>
-                        <TableHead>Incarico</TableHead>
-                        <TableHead className="whitespace-nowrap">Zona</TableHead>
-                        <TableHead className="whitespace-nowrap">Circ.</TableHead>
-                        <TableHead className="whitespace-nowrap">Inizio</TableHead>
-                        <TableHead className="whitespace-nowrap">Fine</TableHead>
+                        <SortableHead field="nome" label="Nome" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="cognome" label="Cognome" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="nome_club" label="Club" sort={sort} onSort={handleSort} />
+                        <SortableHead field="titolo_ufficiale" label="Incarico" sort={sort} onSort={handleSort} />
+                        <SortableHead field="club_zona" label="Zona" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="club_circoscrizione" label="Circ." sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="data_inizio" label="Inizio" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="data_conclusione" label="Fine" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>

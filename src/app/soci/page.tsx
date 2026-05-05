@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
+import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Users } from 'lucide-react'
@@ -64,6 +65,7 @@ export default function SociPage() {
   const [isClient, setIsClient] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [sort, setSort] = useState<SortState>({ field: 'cognome', dir: 'asc' })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -76,7 +78,12 @@ export default function SociPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => { loadSoci() }, 300)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [filters, page, isClient])
+  }, [filters, page, sort, isClient])
+
+  const handleSort = (field: string) => {
+    setPage(0)
+    setSort(s => nextSort(s, field))
+  }
 
   async function loadFilterOptions() {
     const [zoneRes, circRes, catRes, clubRes, sessoRes] = await Promise.all([
@@ -111,6 +118,8 @@ export default function SociPage() {
     if (filters.provincia) query = query.ilike('stato_provincia', `%${filters.provincia}%`)
     if (filters.anzianitaMin) query = query.gte('anzianita_lionistica', parseInt(filters.anzianitaMin))
     if (filters.anzianitaMax) query = query.lte('anzianita_lionistica', parseInt(filters.anzianitaMax))
+
+    if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
     const { data, count, error: queryError } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
@@ -271,6 +280,20 @@ export default function SociPage() {
               </div>
             ) : (
               <>
+                <MobileSortSelect
+                  options={[
+                    { value: 'cognome:asc', label: 'Cognome A→Z' },
+                    { value: 'cognome:desc', label: 'Cognome Z→A' },
+                    { value: 'nome:asc', label: 'Nome A→Z' },
+                    { value: 'matricola_socio:asc', label: 'Matricola crescente' },
+                    { value: 'anzianita_lionistica:desc', label: 'Anzianità (più anni)' },
+                    { value: 'anzianita_lionistica:asc', label: 'Anzianità (meno anni)' },
+                    { value: 'nome_club:asc', label: 'Club A→Z' },
+                    { value: 'citta:asc', label: 'Città A→Z' },
+                  ]}
+                  sort={sort}
+                  onChange={(s) => { setPage(0); setSort(s) }}
+                />
                 <div className="md:hidden space-y-3">
                   {soci.map((socio: any) => (
                     <div key={socio.matricola_socio} className="rounded-xl border border-border/50 bg-background/40 p-4 space-y-2">
@@ -309,19 +332,19 @@ export default function SociPage() {
                   <table className="w-full text-sm">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="whitespace-nowrap">Matricola</TableHead>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Cognome</TableHead>
-                        <TableHead>Club</TableHead>
-                        <TableHead>Zona</TableHead>
-                        <TableHead>Circ.</TableHead>
-                        <TableHead>Gen.</TableHead>
-                        <TableHead>Fascia</TableHead>
-                        <TableHead>Anzianità</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead>Professione</TableHead>
-                        <TableHead>Città</TableHead>
-                        <TableHead>Prov.</TableHead>
+                        <SortableHead field="matricola_socio" label="Matricola" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="nome" label="Nome" sort={sort} onSort={handleSort} />
+                        <SortableHead field="cognome" label="Cognome" sort={sort} onSort={handleSort} />
+                        <SortableHead field="nome_club" label="Club" sort={sort} onSort={handleSort} />
+                        <SortableHead field="club_zona" label="Zona" sort={sort} onSort={handleSort} />
+                        <SortableHead field="club_circoscrizione" label="Circ." sort={sort} onSort={handleSort} />
+                        <SortableHead field="sesso" label="Gen." sort={sort} onSort={handleSort} />
+                        <SortableHead field="fascia_eta" label="Fascia" sort={sort} onSort={handleSort} />
+                        <SortableHead field="anzianita_lionistica" label="Anzianità" sort={sort} onSort={handleSort} />
+                        <SortableHead field="categoria_associativa" label="Categoria" sort={sort} onSort={handleSort} />
+                        <SortableHead field="professione" label="Professione" sort={sort} onSort={handleSort} />
+                        <SortableHead field="citta" label="Città" sort={sort} onSort={handleSort} />
+                        <SortableHead field="stato_provincia" label="Prov." sort={sort} onSort={handleSort} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>

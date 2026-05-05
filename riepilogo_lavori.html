@@ -33,7 +33,7 @@
 <body>
 
 <h1>ServiceScore · Riepilogo Lavori</h1>
-<div class="subtitle">Sistema gestionale Lions Club Distretto 108 LA &nbsp;|&nbsp; Aprile–Maggio 2026 &nbsp;|&nbsp; Sviluppato con Claude Code</div>
+<div class="subtitle">Sistema gestionale Lions Club Distretto 108 LA &nbsp;|&nbsp; Aprile–Maggio 2026 &nbsp;|&nbsp; Sviluppato con Claude Code · <em>Ultimo aggiornamento: 4 Maggio 2026 (v2)</em></div>
 
 <!-- ===== PANORAMICA ===== -->
 <h2>1. Panoramica del Progetto</h2>
@@ -161,6 +161,69 @@ const { data, count } = await query
 
 <p>Implementato su: <code>src/app/soci/page.tsx</code>, <code>src/app/attivita/page.tsx</code>, <code>src/app/officer/page.tsx</code></p>
 
+<!-- ===== FILTRI COMPLETI v2 ===== -->
+<h2 class="page-break">4-bis. Sistema Filtri Avanzato (v2)</h2>
+<p class="section-intro">Riprogettato il sistema di filtri delle 3 pagine elenco con multi-selezione, sezioni collassabili, e match dinamico ai dati del DB.</p>
+
+<h3>4-bis.1 Componente <code>MultiSelect</code> con Portal</h3>
+<p>Componente custom in <code>src/components/ui/multi-select.tsx</code> che sostituisce i <code>Select</code> single-value. Caratteristiche chiave:</p>
+<ul>
+  <li><strong>React Portal</strong> – il dropdown è renderizzato in <code>document.body</code> con <code>position: fixed</code>: nessun clipping da <code>overflow-hidden</code> dei container padre (es. animazioni Framer Motion)</li>
+  <li><strong>Posizionamento intelligente</strong> – flip automatico verso l'alto se manca spazio sotto al trigger</li>
+  <li><strong>Search interna</strong> con icona, attivata automaticamente se &gt; 6 opzioni</li>
+  <li><strong>Multi-selezione visiva</strong> – badge per ogni elemento selezionato, × per rimuoverlo singolarmente, "Deseleziona tutti (n)"</li>
+  <li><strong>Auto-dismiss</strong> – chiusura su scroll/resize/click esterno</li>
+  <li><strong>Scrollbar sottile</strong> custom con <code>[&::-webkit-scrollbar]:w-1</code></li>
+</ul>
+
+<h3>4-bis.2 Filtri Soci – completi</h3>
+<p>Sezione base + sezione "Filtri avanzati" collassabile con badge di conteggio.</p>
+<table>
+  <tr><th>Sezione</th><th>Campi</th></tr>
+  <tr><td>Base</td><td>Search testuale, Genere (multi), Fascia d'età (multi)</td></tr>
+  <tr><td>Avanzati</td><td>Zona, Circoscrizione, Club, Categoria associativa (tutti multi); Professione, Città, Provincia (testuali); Anzianità min/max</td></tr>
+</table>
+
+<h3>4-bis.3 Filtri Officer</h3>
+<table>
+  <tr><th>Sezione</th><th>Campi</th></tr>
+  <tr><td>Base</td><td>Search testuale, Incarico/Titolo (multi), Zona (multi)</td></tr>
+  <tr><td>Avanzati</td><td>Circoscrizione, Club (multi); Range Data inizio; Range Data conclusione</td></tr>
+</table>
+
+<h3>4-bis.4 Filtri Attività – grouped panel</h3>
+<p>Pannello avanzato suddiviso in 4 sezioni con header tipografici:</p>
+<table>
+  <tr><th>Gruppo</th><th>Campi</th></tr>
+  <tr><td>Base (sempre visibile)</td><td>Search, Stato (multi), Zona (multi), Causa (multi)</td></tr>
+  <tr><td>Categorizzazione</td><td>Tipo progetto, Livello attività, Circoscrizione (multi); Organizzazione beneficiata (text); Rapporto completo, Attività distintiva, Finanziata LCIF (Sì/No/Tutti)</td></tr>
+  <tr><td>Date</td><td>Range Data inizio + Data conclusione (input <code>type="date"</code>)</td></tr>
+  <tr><td>Impatto</td><td>Persone servite, Persone limite, Volontari, Ore servizio, Ore capped, Alberi (range min/max)</td></tr>
+  <tr><td>Finanziario</td><td>Fondi donati, Fondi donati capped, Donazione LCIF, Fondi raccolti, Fondi raccolti capped (range €/$)</td></tr>
+</table>
+
+<h3>4-bis.5 Opzioni dinamiche dal DB</h3>
+<p>I valori dei filtri sono caricati con <code>SELECT DISTINCT</code> dal DB invece che hardcodati. Vantaggio: ogni futuro import dati farà comparire automaticamente i nuovi valori, senza modifiche al codice.</p>
+<table>
+  <tr><th>Filtro</th><th>Sorgente</th><th>Valori reali</th></tr>
+  <tr><td>Soci → Genere</td><td><code>soci.sesso</code></td><td>Maschio, Femmina, Preferisco non rispondere</td></tr>
+  <tr><td>Attività → Stato</td><td><code>attivita_report.stato</code></td><td>Comunicato (1506), Pronto per comunicare i dati (84), Pianificato (9), Bozza (7)</td></tr>
+  <tr><td>Attività → Causa</td><td>9 valori distinti</td><td>caricati dinamicamente</td></tr>
+  <tr><td>Attività → Tipo progetto</td><td>44 valori distinti</td><td>caricati dinamicamente</td></tr>
+  <tr><td>Soci/Officer/Attività → Club, Zona, Circoscrizione</td><td>tabella <code>club</code></td><td>92 club, ~12 zone, 4 circoscrizioni</td></tr>
+</table>
+<p>Restano hardcodati solo i valori "controllati" che dipendono dalla nostra logica: fasce età (Under 30 / 30-50 / 51-70 / Over 70), opzioni booleane (Sì/No/Tutti).</p>
+
+<h3>4-bis.6 Query Supabase con multi-select</h3>
+<pre>// Pattern utilizzato per ogni filtro multi
+if (filters.zona.length) query = query.in('club_zona', filters.zona)
+if (filters.causa.length) query = query.in('causa', filters.causa)
+// Per range numerici / date
+if (filters.minPersone) query = query.gte('persone_servite', parseFloat(filters.minPersone))
+if (filters.dataInizioDa) query = query.gte('data_inizio', filters.dataInizioDa)
+// Per booleani
+if (filters.rapportoCompleto) query = query.eq('rapporto_completo', filters.rapportoCompleto === 'true')</pre>
+
 <!-- ===== AUTH ===== -->
 <h2 class="page-break">5. Autenticazione e Sicurezza</h2>
 
@@ -172,13 +235,18 @@ return response;</pre>
 
 <h3>5.2 Row Level Security (RLS)</h3>
 <table>
-  <tr><th>Tabella</th><th>Policy attiva</th><th>Regola</th></tr>
-  <tr><td><code>club</code></td><td>Club visibili a utenti autenticati</td><td>SELECT per authenticated</td></tr>
-  <tr><td><code>soci</code></td><td>Soci visibili a utenti autenticati</td><td>SELECT per authenticated – USING (true)</td></tr>
-  <tr><td><code>officer_club</code></td><td>Officer visibili a utenti autenticati</td><td>SELECT per authenticated</td></tr>
-  <tr><td><code>attivita_report</code></td><td>Report visibili / Inserimento e Aggiornamento officer</td><td>SELECT tutti auth; INSERT/UPDATE solo officer attivi</td></tr>
+  <tr><th>Tabella</th><th>Policy</th><th>Ruolo</th><th>Regola</th></tr>
+  <tr><td><code>club</code></td><td>Club visibili a utenti autenticati</td><td>authenticated</td><td>SELECT USING (true)</td></tr>
+  <tr><td><code>club</code></td><td>Club visibili a tutti</td><td><strong>anon</strong></td><td>SELECT USING (true) <span class="badge badge-blue">v2</span></td></tr>
+  <tr><td><code>soci</code></td><td>Soci visibili a utenti autenticati</td><td>authenticated</td><td>SELECT USING (true)</td></tr>
+  <tr><td><code>soci</code></td><td>Soci visibili a tutti</td><td><strong>anon</strong></td><td>SELECT USING (true) <span class="badge badge-blue">v2</span></td></tr>
+  <tr><td><code>officer_club</code></td><td>Officer visibili a utenti autenticati</td><td>authenticated</td><td>SELECT USING (true)</td></tr>
+  <tr><td><code>officer_club</code></td><td>Officer visibili a tutti</td><td><strong>anon</strong></td><td>SELECT USING (true) <span class="badge badge-blue">v2</span></td></tr>
+  <tr><td><code>attivita_report</code></td><td>Report visibili / INSERT/UPDATE officer</td><td>authenticated</td><td>SELECT tutti; INSERT/UPDATE solo officer attivi</td></tr>
+  <tr><td><code>attivita_report</code></td><td>Attivita visibili a tutti</td><td><strong>anon</strong></td><td>SELECT USING (true) <span class="badge badge-blue">v2</span></td></tr>
 </table>
-<p>Nota: la policy originale <code>"Soci possono vedere i propri dati"</code> (che mostrava solo il proprio record) è stata sostituita con una policy permissiva per tutti gli autenticati, necessaria per il funzionamento della dashboard amministrativa.</p>
+<p>Le policy originali per <code>authenticated</code> bloccavano l'accesso ai visitatori non loggati (la web app è attualmente accessibile senza login per scelta di design). Aggiunte policy <code>anon</code> permissive su tutte le tabelle di lettura dati pubblici. Inserimenti/modifiche restano protetti.</p>
+<p>La policy originale <code>"Soci possono vedere i propri dati"</code> (che mostrava solo il proprio record) è stata sostituita con una policy permissiva, necessaria per il funzionamento della dashboard amministrativa.</p>
 
 <h3>5.3 Funzione di collegamento utente–socio</h3>
 <p>SQL definito in <code>supabase_link_user_to_socio.sql</code>: funzione <code>link_user_to_socio(matricola)</code> che aggiorna il campo <code>soci.user_id</code> dopo la conferma email.</p>
@@ -244,7 +312,82 @@ TRUNCATE TABLE club CASCADE;
 <table>
   <tr><th>Vista</th><th>Problema</th><th>Fix</th></tr>
   <tr><td><code>vista_soci_ricerca</code></td><td>Soci senza <code>data_nascita</code> venivano classificati come "Over 70" per il CASE ELSE</td><td>Aggiunto controllo <code>IS NULL</code>: <code>fascia_eta = NULL</code> se data mancante</td></tr>
+  <tr><td><code>vista_report_ricerca</code> <span class="badge badge-blue">v2</span></td><td>Tutte le 1606 attività mostravano lo stesso club (ABETONE) invece dei loro 80 club distinti</td><td>JOIN cambiato da ID (buggato) a <code>UPPER(TRIM(nome_club))</code> con LATERAL per evitare duplicati</td></tr>
 </table>
+
+<!-- ===== FIX ATTIVITA-CLUB ===== -->
+<h2 class="page-break">8-bis. Fix Critico: Attività ↔ Club <span class="badge badge-red">Critico</span></h2>
+<p class="section-intro">Bug nei dati esportati da Lions: tutte le attività venivano associate al club ABETONE MONTAGNA PISTOIESE invece che ai loro club reali.</p>
+
+<h3>8-bis.1 Diagnosi</h3>
+<p>Il file <code>report.csv</code> di Lions contiene <strong>80 nomi club distinti</strong> nella colonna <code>Sponsor: Nome account</code>, ma <strong>1 solo ID</strong> (<code>001Ns00000EDgRMIA1</code> = ABETONE) ripetuto in tutte le 1606 righe della colonna <code>Sponsor: ID dell'organizzazione di appartenenza</code>. È un bug dell'export Lions, non nostro.</p>
+<p>La vista originale <code>vista_report_ricerca</code> faceva il JOIN su quell'ID, quindi tutte le attività risultavano collegate ad ABETONE.</p>
+
+<h3>8-bis.2 Soluzione strutturale (5 step)</h3>
+<table>
+  <tr><th>#</th><th>Azione</th><th>Comando</th></tr>
+  <tr><td>1</td><td>Aggiunta colonna <code>nome_club_sponsor</code></td><td><code>ALTER TABLE attivita_report ADD COLUMN nome_club_sponsor TEXT;</code></td></tr>
+  <tr><td>2</td><td>Popolata dai dati CSV</td><td>9 batch UPDATE da 200 righe ciascuno (1606 totali) via API</td></tr>
+  <tr><td>3</td><td>Vista ricreata con JOIN sul nome</td><td><code>JOIN LATERAL (SELECT … FROM club WHERE UPPER(TRIM(nome_club)) = UPPER(TRIM(r.nome_club_sponsor)) LIMIT 1)</code></td></tr>
+  <tr><td>4</td><td>Script convertitore aggiornato</td><td>Aggiunto mapping <code>'Sponsor: Nome account': 'nome_club_sponsor'</code></td></tr>
+  <tr><td>5</td><td>Verifica</td><td>1606 attività, 80 club distinti, 0 senza zona ✓</td></tr>
+</table>
+
+<h3>8-bis.3 Perché LATERAL?</h3>
+<p>La tabella <code>club</code> ha un duplicato letterale per <code>ABETONE MONTAGNA PISTOIESE</code> (2 record stessi dati, ID diversi — probabilmente uniti da officer.csv e report.csv). Senza <code>LATERAL ... LIMIT 1</code>, il JOIN avrebbe duplicato le righe (1606 → 1607).</p>
+<pre>-- View finale
+CREATE VIEW vista_report_ricerca AS
+SELECT r.*, COALESCE(c.nome_club, r.nome_club_sponsor) AS sponsor_nome_account,
+       c.zona AS sponsor_zona, c.circoscrizione AS sponsor_circoscrizione
+FROM attivita_report r
+LEFT JOIN LATERAL (
+  SELECT nome_club, zona, circoscrizione FROM club
+  WHERE UPPER(TRIM(nome_club)) = UPPER(TRIM(r.nome_club_sponsor))
+  LIMIT 1
+) c ON TRUE;</pre>
+
+<!-- ===== AUDIT CSV ===== -->
+<h2>8-ter. Audit Completo Pipeline CSV</h2>
+<p class="section-intro">Verifica sistematica di copertura mapping, integrità dati, encoding per i tre file Lions.</p>
+
+<h3>8-ter.1 Risultati audit colonne</h3>
+<table>
+  <tr><th>File</th><th>Colonne CSV</th><th>Mappate</th><th>Non importate</th><th>Note</th></tr>
+  <tr><td><code>soci.csv</code></td><td>48</td><td>38</td><td>9 (ridondanti)</td><td>Zona/circoscrizione/distretto recuperati via JOIN club. Età calcolata in view.</td></tr>
+  <tr><td><code>officer.csv</code></td><td>44</td><td>18</td><td>26 (ridondanti)</td><td>Tutte le info socio (Nome, Cognome, Email, Indirizzo) ridondanti — già in <code>soci.csv</code></td></tr>
+  <tr><td><code>report.csv</code></td><td>35</td><td>32</td><td>3 (non utili)</td><td>Esclusi <code>Sponsor: ID del profilo</code> e <code>Parent Parent Id</code>; nessuno è zona/club</td></tr>
+</table>
+
+<h3>8-ter.2 Anomalie nei dati di origine (non nostre)</h3>
+<table>
+  <tr><th>Campo</th><th>Anomalia</th><th>Impatto</th></tr>
+  <tr><td><code>Sponsor: ID dell'organizzazione</code></td><td>Sempre uguale per 1606 righe</td><td><span class="badge badge-red">Critico</span> – fixato con match per nome (sez. 8-bis)</td></tr>
+  <tr><td><code>Livello dell'attività</code></td><td>Sempre "Lions Club"</td><td><span class="badge badge-yellow">Cosmetico</span> – Lions classifica così tutte le attività di club</td></tr>
+  <tr><td><code>persone_servite</code> max</td><td>300.000 in una singola attività (outlier)</td><td><span class="badge badge-yellow">Cosmetico</span> – inquina alcune statistiche aggregate</td></tr>
+  <tr><td><code>club</code>: ABETONE MONTAGNA PISTOIESE</td><td>Duplicato in tabella (2 record, ID diversi)</td><td>Gestito con <code>LATERAL ... LIMIT 1</code></td></tr>
+  <tr><td><code>soci.csv</code>: 2 matricole duplicate</td><td>401929, 1091460 (probabili doppie tessere)</td><td>Gestito con <code>drop_duplicates(subset='matricola_socio')</code></td></tr>
+</table>
+
+<h3>8-ter.3 Robustezza per import futuri</h3>
+<p>Lo script <code>convertitore_csv.py</code> gestisce automaticamente:</p>
+<ul>
+  <li>Bug ID-club di Lions (match per nome con la nuova colonna)</li>
+  <li>Header con <code>?</code> letterali (apostrofi smart non rappresentabili in latin1, sostituiti dall'export Lions)</li>
+  <li>Boolean <code>0</code>/<code>1</code> → <code>true</code>/<code>false</code>/<code>NULL</code></li>
+  <li>Date in formato europeo <code>DD/MM/YYYY</code> → ISO</li>
+  <li>Numeri europei (<code>1.234,56</code> → <code>1234.56</code>)</li>
+  <li>Matricole duplicate (drop_duplicates)</li>
+  <li>Encoding latin1/cp1252 (lettura corretta di <code>à</code>, <code>è</code>, ecc.)</li>
+</ul>
+<p><strong>Procedura raccomandata per ogni nuovo export Lions:</strong></p>
+<pre>cd Dati_Lions
+# 1. Sostituisci i 3 file CSV con quelli nuovi
+# 2. Esegui lo script
+python convertitore_csv.py
+
+# 3. Su Supabase Table Editor
+TRUNCATE TABLE club CASCADE;
+# 4. Importa in ordine: 1_club → 2_soci → 3_officer → 4_report</pre>
 
 <!-- ===== CONFIGURAZIONI ===== -->
 <h2 class="page-break">9. Configurazioni e Strumenti</h2>
@@ -284,20 +427,27 @@ TRUNCATE TABLE club CASCADE;
   <tr><td><span class="commit">58ec947</span></td><td>Trigger redeploy after project rename to servicescore108la</td></tr>
   <tr><td><span class="commit">1cd6535</span></td><td>Add favicon.ico and update metadataBase URL after project rename</td></tr>
   <tr><td><span class="commit">ebe7f65</span></td><td>Fix data pipeline: NULL handling and boolean conversion</td></tr>
+  <tr><td colspan="2" style="background:#f0f4ff; font-weight:600; color:#0055ff;">Sessione 4 Maggio 2026 (v2)</td></tr>
+  <tr><td><span class="commit">5421ef3</span></td><td>Add full filter panels to Soci, Officer, Attività pages</td></tr>
+  <tr><td><span class="commit">b30f813</span></td><td>Fix attivita: stati dinamici da DB, colori corretti</td></tr>
+  <tr><td><span class="commit">28f8f72</span></td><td>Fix MultiSelect: portal rendering, sesso dinamico, griglia responsive</td></tr>
+  <tr><td><span class="commit">dd294ee</span></td><td>Remove embedded worktree from index, add .claude to gitignore</td></tr>
+  <tr><td><span class="commit">c72a3ec</span></td><td>Fix attività-club: match per nome invece che per ID buggato</td></tr>
 </table>
 
 <!-- ===== PENDENTI ===== -->
 <h2>11. Attività Pendenti / Note Future</h2>
 <ul>
-  <li><strong>Riabilitare protezione route</strong> – quando il sistema di auth sarà in produzione, riattivare il redirect su <code>middleware.ts</code> per le route protette</li>
+  <li><strong>Riabilitare protezione route</strong> – quando il sistema di auth sarà in produzione, riattivare il redirect su <code>middleware.ts</code> per le route protette. Con la riabilitazione, rimuovere le policy <code>anon</code> aggiunte in v2 sulle 4 tabelle.</li>
   <li><strong>Dominio custom</strong> – il dominio <code>servicescore.vercel.app</code> è irrecuperabile (account diverso, supporto Vercel non interviene). Valutare dominio custom a pagamento o mantenere l'URL attuale</li>
   <li><strong>Colonna <code>tipo_indirizzo_primario</code></strong> – presente in DB ma non popolata dal CSV (campo non esportato da Lions). Valutare rimozione se non necessaria</li>
-  <li><strong>Script Python – <code>tipo_indirizzo_primario</code></strong> – campo assente nel CSV Lions, rimarrà NULL</li>
-  <li><strong>Test completo import CSV</strong> – eseguire il ciclo completo TRUNCATE → script → import con i nuovi file corretti per validare l'intera pipeline</li>
+  <li><strong>Outlier <code>persone_servite</code></strong> – un'attività con 300.000 persone servite inquina alcune statistiche aggregate. Verificare con il referente Lions se è un dato reale o un errore di compilazione</li>
+  <li><strong>Bug ID-club di Lions</strong> – segnalare al referente per capire se possono fixare l'export. La nostra soluzione (match per nome) è robusta, ma se Lions ripristina ID univoci si potrebbe tornare al JOIN per ID</li>
+  <li><strong>Test completo import CSV</strong> – al prossimo invio CSV da Lions, eseguire il ciclo completo TRUNCATE → script → import per validare l'intera pipeline aggiornata</li>
 </ul>
 
 <footer>
-  ServiceScore · Distretto Lions 108 LA · Documento generato il 4 Maggio 2026<br>
+  ServiceScore · Distretto Lions 108 LA · Documento generato il 4 Maggio 2026 (v2)<br>
   Sviluppato con Claude Code (Anthropic) · github.com/fcoppini01/ServiceScore
 </footer>
 
