@@ -11,7 +11,8 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, ShieldCheck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, ShieldCheck, FileText } from 'lucide-react'
+import Link from 'next/link'
 
 const PAGE_SIZE = 20
 
@@ -21,6 +22,7 @@ interface Filters {
   zona: string[]
   circoscrizione: string[]
   club: string[]
+  soloAttivi: boolean
   dataInizioDa: string
   dataInizioA: string
   dataConclusioneDa: string
@@ -29,6 +31,7 @@ interface Filters {
 
 const EMPTY_FILTERS: Filters = {
   search: '', titolo: [], zona: [], circoscrizione: [], club: [],
+  soloAttivi: false,
   dataInizioDa: '', dataInizioA: '',
   dataConclusioneDa: '', dataConclusioneA: '',
 }
@@ -37,6 +40,7 @@ function countAdvancedFilters(f: Filters) {
   let c = 0
   if (f.circoscrizione.length) c++
   if (f.club.length) c++
+  if (f.soloAttivi) c++
   if (f.dataInizioDa || f.dataInizioA) c++
   if (f.dataConclusioneDa || f.dataConclusioneA) c++
   return c
@@ -104,6 +108,7 @@ export default function OfficerPage() {
     if (filters.dataInizioA) query = query.lte('data_inizio', filters.dataInizioA)
     if (filters.dataConclusioneDa) query = query.gte('data_conclusione', filters.dataConclusioneDa)
     if (filters.dataConclusioneA) query = query.lte('data_conclusione', filters.dataConclusioneA)
+    if (filters.soloAttivi) query = query.is('data_conclusione', null)
 
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
@@ -132,9 +137,20 @@ export default function OfficerPage() {
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent">
         Gestione Officer
       </motion.h1>
-      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6">
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4">
         Incarichi ufficiali del Distretto 108 LA
       </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Quadri di Sintesi</p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/officer/quadri/incarichi-club">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Incarichi con nomine dai Club
+            </Button>
+          </Link>
+        </div>
+      </motion.div>
 
       <motion.div variants={itemVariants}>
         <Card className="mb-6 border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
@@ -201,21 +217,32 @@ export default function OfficerPage() {
                         <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
                         <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
                       </div>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={filters.soloAttivi}
+                          onChange={(e) => updateFilters({ ...filters, soloAttivi: e.target.checked })}
+                          className="h-4 w-4 rounded border-input accent-primary"
+                        />
+                        <span className="text-sm">Solo incarichi attivi (senza data di conclusione)</span>
+                      </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <p className="text-[10px] text-muted-foreground mb-1">Data inizio</p>
+                          <p className="text-xs font-medium mb-1">Incarichi iniziati nel periodo</p>
+                          <p className="text-[10px] text-muted-foreground mb-1.5">Data di inizio incarico compresa tra le due date</p>
                           <div className="flex items-center gap-1.5">
-                            <Input type="date" value={filters.dataInizioDa} onChange={(e) => updateFilters({ ...filters, dataInizioDa: e.target.value })} className="text-sm bg-background/50" />
-                            <span className="text-xs text-muted-foreground shrink-0">—</span>
-                            <Input type="date" value={filters.dataInizioA} onChange={(e) => updateFilters({ ...filters, dataInizioA: e.target.value })} className="text-sm bg-background/50" />
+                            <Input type="date" value={filters.dataInizioDa} onChange={(e) => updateFilters({ ...filters, dataInizioDa: e.target.value })} className="text-sm bg-background/50" title="Inizio incarico dal" />
+                            <span className="text-xs text-muted-foreground shrink-0">→</span>
+                            <Input type="date" value={filters.dataInizioA} onChange={(e) => updateFilters({ ...filters, dataInizioA: e.target.value })} className="text-sm bg-background/50" title="Inizio incarico al" />
                           </div>
                         </div>
                         <div>
-                          <p className="text-[10px] text-muted-foreground mb-1">Data conclusione</p>
+                          <p className="text-xs font-medium mb-1">Incarichi conclusi nel periodo</p>
+                          <p className="text-[10px] text-muted-foreground mb-1.5">Data di conclusione compresa tra le due date</p>
                           <div className="flex items-center gap-1.5">
-                            <Input type="date" value={filters.dataConclusioneDa} onChange={(e) => updateFilters({ ...filters, dataConclusioneDa: e.target.value })} className="text-sm bg-background/50" />
-                            <span className="text-xs text-muted-foreground shrink-0">—</span>
-                            <Input type="date" value={filters.dataConclusioneA} onChange={(e) => updateFilters({ ...filters, dataConclusioneA: e.target.value })} className="text-sm bg-background/50" />
+                            <Input type="date" value={filters.dataConclusioneDa} onChange={(e) => updateFilters({ ...filters, dataConclusioneDa: e.target.value })} className="text-sm bg-background/50" title="Fine incarico dal" />
+                            <span className="text-xs text-muted-foreground shrink-0">→</span>
+                            <Input type="date" value={filters.dataConclusioneA} onChange={(e) => updateFilters({ ...filters, dataConclusioneA: e.target.value })} className="text-sm bg-background/50" title="Fine incarico al" />
                           </div>
                         </div>
                       </div>
