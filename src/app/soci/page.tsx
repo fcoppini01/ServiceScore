@@ -11,7 +11,8 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Users } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Users, FileText, Calendar, Award } from 'lucide-react'
+import Link from 'next/link'
 
 const PAGE_SIZE = 20
 
@@ -19,6 +20,8 @@ interface Filters {
   search: string
   sesso: string[]
   fasciaEta: string[]
+  etaMin: string
+  etaMax: string
   zona: string[]
   circoscrizione: string[]
   categoriaAssociativa: string[]
@@ -31,7 +34,7 @@ interface Filters {
 }
 
 const EMPTY_FILTERS: Filters = {
-  search: '', sesso: [], fasciaEta: [],
+  search: '', sesso: [], fasciaEta: [], etaMin: '', etaMax: '',
   zona: [], circoscrizione: [], categoriaAssociativa: [], club: [],
   professione: '', citta: '', provincia: '',
   anzianitaMin: '', anzianitaMax: '',
@@ -39,6 +42,7 @@ const EMPTY_FILTERS: Filters = {
 
 function countAdvancedFilters(f: Filters) {
   let c = 0
+  if (f.etaMin || f.etaMax) c++
   if (f.zona.length) c++
   if (f.circoscrizione.length) c++
   if (f.categoriaAssociativa.length) c++
@@ -118,6 +122,8 @@ export default function SociPage() {
     if (filters.provincia) query = query.ilike('stato_provincia', `%${filters.provincia}%`)
     if (filters.anzianitaMin) query = query.gte('anzianita_lionistica', parseInt(filters.anzianitaMin))
     if (filters.anzianitaMax) query = query.lte('anzianita_lionistica', parseInt(filters.anzianitaMax))
+    if (filters.etaMin) query = query.gte('eta', parseInt(filters.etaMin))
+    if (filters.etaMax) query = query.lte('eta', parseInt(filters.etaMax))
 
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
@@ -145,9 +151,30 @@ export default function SociPage() {
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent">
         Gestione Soci
       </motion.h1>
-      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6">
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4">
         Elenco soci del Distretto 108 LA
       </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Quadri di Riordino</p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/soci/quadri/eta">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5">
+              <Calendar className="h-3.5 w-3.5" /> Per fasce di età
+            </Button>
+          </Link>
+          <Link href="/soci/quadri/anzianita">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5">
+              <Award className="h-3.5 w-3.5" /> Per anzianità lionistica
+            </Button>
+          </Link>
+          <Link href="/soci/quadri/caratteristiche">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Caratteristiche associative
+            </Button>
+          </Link>
+        </div>
+      </motion.div>
 
       <motion.div variants={itemVariants}>
         <Card className="mb-6 border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
@@ -225,11 +252,19 @@ export default function SociPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <Input placeholder="Provincia..." value={filters.provincia} onChange={(e) => updateFilters({ ...filters, provincia: e.target.value })} className="bg-background/50" />
                         <div>
-                          <p className="text-[10px] text-muted-foreground mb-1">Anzianità (anni)</p>
+                          <p className="text-[10px] text-muted-foreground mb-1">Età (anni)</p>
                           <div className="flex items-center gap-1.5">
-                            <Input type="number" placeholder="Da" value={filters.anzianitaMin} onChange={(e) => updateFilters({ ...filters, anzianitaMin: e.target.value })} className="text-sm bg-background/50" />
+                            <Input type="number" placeholder="Da" min="0" max="120" value={filters.etaMin} onChange={(e) => updateFilters({ ...filters, etaMin: e.target.value })} className="text-sm bg-background/50" />
                             <span className="text-xs text-muted-foreground shrink-0">—</span>
-                            <Input type="number" placeholder="A" value={filters.anzianitaMax} onChange={(e) => updateFilters({ ...filters, anzianitaMax: e.target.value })} className="text-sm bg-background/50" />
+                            <Input type="number" placeholder="A" min="0" max="120" value={filters.etaMax} onChange={(e) => updateFilters({ ...filters, etaMax: e.target.value })} className="text-sm bg-background/50" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground mb-1">Anzianità lionistica (anni)</p>
+                          <div className="flex items-center gap-1.5">
+                            <Input type="number" placeholder="Da" min="0" value={filters.anzianitaMin} onChange={(e) => updateFilters({ ...filters, anzianitaMin: e.target.value })} className="text-sm bg-background/50" />
+                            <span className="text-xs text-muted-foreground shrink-0">—</span>
+                            <Input type="number" placeholder="A" min="0" value={filters.anzianitaMax} onChange={(e) => updateFilters({ ...filters, anzianitaMax: e.target.value })} className="text-sm bg-background/50" />
                           </div>
                         </div>
                       </div>

@@ -130,3 +130,65 @@
     @apply font-sans;
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 1.2cm;
+  }
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Nasconde elementi non utili in stampa */
+  .no-print, header, footer, nav, .print-hide {
+    display: none !important;
+  }
+  /* Quadri di riordino: layout pulito */
+  .print-area {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+  }
+  .print-area * {
+    color: #000000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-color: #999 !important;
+  }
+  .print-area table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11px !important;
+    page-break-inside: auto;
+  }
+  .print-area thead {
+    display: table-header-group !important;
+  }
+  .print-area tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  .print-area th, .print-area td {
+    border: 1px solid #999 !important;
+    padding: 4px 6px !important;
+    text-align: left !important;
+  }
+  .print-area th {
+    background: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-weight: 700 !important;
+  }
+  .print-area h1, .print-area h2 {
+    color: #000000 !important;
+    background: none !important;
+    margin-bottom: 8px !important;
+    -webkit-text-fill-color: #000 !important;
+  }
+}
