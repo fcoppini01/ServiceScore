@@ -66,10 +66,11 @@ const EMPTY_FILTERS: Filters = {
 
 function countAdvancedFilters(f: Filters) {
   let c = 0
+  if (f.stato.length) c++
+  if (f.zona.length) c++
+  if (f.causa.length) c++
   if (f.tipoProgetto.length) c++
   if (f.livelloAttivita.length) c++
-  if (f.circoscrizione.length) c++
-  if (f.club.length) c++
   if (f.organizzazioneBeneficiata) c++
   if (f.rapportoCompleto) c++
   if (f.attivitaDistintiva) c++
@@ -234,7 +235,7 @@ export default function AttivitaPage() {
   }
 
   const advancedCount = useMemo(() => countAdvancedFilters(filters), [filters])
-  const basicCount = (filters.search ? 1 : 0) + (filters.stato.length ? 1 : 0) + (filters.zona.length ? 1 : 0) + (filters.causa.length ? 1 : 0)
+  const basicCount = (filters.search ? 1 : 0) + (filters.club.length ? 1 : 0) + (filters.circoscrizione.length ? 1 : 0)
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
   const start = totalCount === 0 ? 0 : page * PAGE_SIZE + 1
   const end = Math.min((page + 1) * PAGE_SIZE, totalCount)
@@ -273,16 +274,15 @@ export default function AttivitaPage() {
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
             <CardContent className="pt-0 space-y-3">
               {/* Basic */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <Input
                   placeholder="Cerca titolo, descrizione..."
                   value={filters.search}
                   onChange={(e) => upd({ search: e.target.value })}
                   className="sm:col-span-2 lg:col-span-1 bg-background/50"
                 />
-                <MultiSelect options={stati} selected={filters.stato} onChange={(v) => upd({ stato: v })} placeholder="Stato" />
-                <MultiSelect options={zone} selected={filters.zona} onChange={(v) => upd({ zona: v })} placeholder="Zona" />
-                <MultiSelect options={cause} selected={filters.causa} onChange={(v) => upd({ causa: v })} placeholder="Causa" />
+                <MultiSelect options={clubs} selected={filters.club} onChange={(v) => upd({ club: v })} placeholder="Club" />
+                <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => upd({ circoscrizione: v })} placeholder="Circoscrizione" />
               </div>
 
               {/* Advanced toggle */}
@@ -310,10 +310,11 @@ export default function AttivitaPage() {
                       {/* Categorizzazione */}
                       <SectionLabel>Categorizzazione</SectionLabel>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <MultiSelect options={clubs} selected={filters.club} onChange={(v) => upd({ club: v })} placeholder="Club" />
+                        <MultiSelect options={stati} selected={filters.stato} onChange={(v) => upd({ stato: v })} placeholder="Stato" />
+                        <MultiSelect options={zone} selected={filters.zona} onChange={(v) => upd({ zona: v })} placeholder="Zona" />
+                        <MultiSelect options={cause} selected={filters.causa} onChange={(v) => upd({ causa: v })} placeholder="Causa" />
                         <MultiSelect options={tipiProgetto} selected={filters.tipoProgetto} onChange={(v) => upd({ tipoProgetto: v })} placeholder="Tipo progetto" />
                         <MultiSelect options={livelliAttivita} selected={filters.livelloAttivita} onChange={(v) => upd({ livelloAttivita: v })} placeholder="Livello attività" />
-                        <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => upd({ circoscrizione: v })} placeholder="Circoscrizione" />
                         <Input placeholder="Organizzazione beneficiata..." value={filters.organizzazioneBeneficiata} onChange={(e) => upd({ organizzazioneBeneficiata: e.target.value })} className="bg-background/50" />
                         <div>
                           <p className="text-[10px] text-muted-foreground mb-1">Rapporto completo</p>
