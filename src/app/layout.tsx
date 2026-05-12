@@ -21,8 +21,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://servicescore108la-01informatica-progetti.vercel.app"),
   title: {
-    default: "ServiceScore - Lions Club 108 LA",
-    template: "%s | ServiceScore"
+    default: "Digitalions - Lions Club 108 LA",
+    template: "%s | Digitalions"
   },
   description: "Sistema gestionale per i Lions Club Distretto 108 LA",
   icons: {
@@ -31,10 +31,10 @@ export const metadata: Metadata = {
     apple: "/logo_ufficiale.png",
   },
   openGraph: {
-    title: "ServiceScore - Lions Club",
+    title: "Digitalions - Lions Club",
     description: "Sistema gestionale per i Lions Club Distretto 108 LA",
     url: "https://servicescore108la-01informatica-progetti.vercel.app",
-    siteName: "ServiceScore",
+    siteName: "Digitalions",
     images: [
       {
         url: "/logo_ufficiale.png",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ServiceScore - Lions Club",
+    title: "Digitalions - Lions Club",
     description: "Sistema gestionale per i Lions Club Distretto 108 LA",
     images: ["/logo_ufficiale.png"],
   },

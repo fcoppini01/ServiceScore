@@ -63,7 +63,7 @@ export function Header() {
               className="opacity-90 group-hover:opacity-100 transition-opacity"
             />
             <span className="font-bold text-base text-primary group-hover:opacity-80 transition-opacity">
-              ServiceScore
+              Digitalions
             </span>
           </Link>
 

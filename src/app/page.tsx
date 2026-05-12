@@ -134,7 +134,7 @@ export default function Home() {
             transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
           >
             <span className="bg-gradient-to-r from-[#0055ff] via-white to-[#ffe500] bg-clip-text text-transparent">
-              ServiceScore
+              Digitalions
             </span>
           </motion.h1>
 
@@ -194,7 +194,7 @@ export default function Home() {
         <motion.div variants={itemVariants} className="mt-14 sm:mt-20 text-center text-sm text-muted-foreground/60">
           <p className="text-xs">Progettato con Next.js · Supabase · Tailwind CSS</p>
           <p className="mt-1 text-xs">
-            © {new Date().getFullYear()} ServiceScore — Lions Club Distretto 108 LA
+            © {new Date().getFullYear()} Digitalions — Lions Club Distretto 108 LA
           </p>
         </motion.div>
       </StaggerContainer>
