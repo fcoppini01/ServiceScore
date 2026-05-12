@@ -131,10 +131,26 @@
   }
 }
 
+/* Orientamento landscape per quadri con molte colonne — va applicato
+   a livello body così @page lo intercetta. La classe sull'area da sola
+   non basta a cambiare il layout di pagina. */
+body:has(.print-landscape) {
+  /* nessun effetto a schermo */
+}
 @media print {
   @page {
     size: A4;
     margin: 1.2cm;
+  }
+  body:has(.print-landscape) {
+    /* placeholder */
+  }
+  @page landscape-page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+  .print-landscape {
+    page: landscape-page;
   }
   html, body {
     background: #ffffff !important;

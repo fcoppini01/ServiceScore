@@ -12,7 +12,8 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity, FileText, Briefcase } from 'lucide-react'
+import Link from 'next/link'
 
 const PAGE_SIZE = 20
 
@@ -275,9 +276,25 @@ export default function AttivitaPage() {
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent">
         Attività di Servizio
       </motion.h1>
-      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6">
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4">
         Reportistica attività del Distretto 108 LA
       </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Quadri di Stampa</p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/attivita/quadri/club-anno">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Tutte le attività del club / anno
+            </Button>
+          </Link>
+          <Link href="/attivita/quadri/club-anno-amm-service">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5">
+              <Briefcase className="h-3.5 w-3.5" /> Amministrazione vs Service
+            </Button>
+          </Link>
+        </div>
+      </motion.div>
 
       <motion.div variants={itemVariants}>
         <Card className="mb-6 border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
