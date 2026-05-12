@@ -67,7 +67,6 @@ const EMPTY_FILTERS: Filters = {
 function countAdvancedFilters(f: Filters) {
   let c = 0
   if (f.stato.length) c++
-  if (f.zona.length) c++
   if (f.causa.length) c++
   if (f.tipoProgetto.length) c++
   if (f.livelloAttivita.length) c++
@@ -133,6 +132,7 @@ export default function AttivitaPage() {
   const [livelliAttivita, setLivelliAttivita] = useState<string[]>([])
   const [stati, setStati] = useState<string[]>([])
   const [clubs, setClubs] = useState<string[]>([])
+  const [totali, setTotali] = useState({ persone: 0, volontari: 0, ore: 0, donati: 0, raccolti: 0 })
   const [isClient, setIsClient] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
@@ -175,57 +175,83 @@ export default function AttivitaPage() {
     if (clubsRes.data) setClubs([...new Set(clubsRes.data.map(c => c.sponsor_nome_account))].filter(Boolean).sort() as string[])
   }
 
+  // Applica i filtri correnti a una qualsiasi query Supabase (riusato per
+  // la query paginata e per quella aggregata dei totali).
+  function applyFilters<T>(query: T): T {
+    let q: any = query
+    if (filters.search) q = q.or(`titolo.ilike.%${filters.search}%,descrizione.ilike.%${filters.search}%`)
+    if (filters.stato.length) q = q.in('stato', filters.stato)
+    if (filters.zona.length) q = q.in('sponsor_zona', filters.zona)
+    if (filters.causa.length) q = q.in('causa', filters.causa)
+    if (filters.tipoProgetto.length) q = q.in('tipo_progetto', filters.tipoProgetto)
+    if (filters.livelloAttivita.length) q = q.in('livello_attivita', filters.livelloAttivita)
+    if (filters.circoscrizione.length) q = q.in('sponsor_circoscrizione', filters.circoscrizione)
+    if (filters.club.length) q = q.in('sponsor_nome_account', filters.club)
+    if (filters.organizzazioneBeneficiata) q = q.ilike('organizzazione_beneficiata', `%${filters.organizzazioneBeneficiata}%`)
+    if (filters.rapportoCompleto) q = q.eq('rapporto_completo', filters.rapportoCompleto === 'true')
+    if (filters.attivitaDistintiva) q = q.eq('attivita_distintiva', filters.attivitaDistintiva === 'true')
+    if (filters.finanziateLcif) q = q.eq('finanziata_lcif', filters.finanziateLcif === 'true')
+    if (filters.dataInizioDa) q = q.gte('data_inizio', filters.dataInizioDa)
+    if (filters.dataInizioA) q = q.lte('data_inizio', filters.dataInizioA)
+    if (filters.dataConclusioneDa) q = q.gte('data_conclusione', filters.dataConclusioneDa)
+    if (filters.dataConclusioneA) q = q.lte('data_conclusione', filters.dataConclusioneA)
+    if (filters.minPersone) q = q.gte('persone_servite', parseFloat(filters.minPersone))
+    if (filters.maxPersone) q = q.lte('persone_servite', parseFloat(filters.maxPersone))
+    if (filters.minPersoneLimite) q = q.gte('persone_servite_limite', parseFloat(filters.minPersoneLimite))
+    if (filters.maxPersoneLimite) q = q.lte('persone_servite_limite', parseFloat(filters.maxPersoneLimite))
+    if (filters.minVolontari) q = q.gte('totale_volontari', parseFloat(filters.minVolontari))
+    if (filters.maxVolontari) q = q.lte('totale_volontari', parseFloat(filters.maxVolontari))
+    if (filters.minOre) q = q.gte('totale_ore_servizio', parseFloat(filters.minOre))
+    if (filters.maxOre) q = q.lte('totale_ore_servizio', parseFloat(filters.maxOre))
+    if (filters.minOreCapped) q = q.gte('totale_ore_servizio_capped', parseFloat(filters.minOreCapped))
+    if (filters.maxOreCapped) q = q.lte('totale_ore_servizio_capped', parseFloat(filters.maxOreCapped))
+    if (filters.minFondiDonati) q = q.gte('totale_fondi_donati', parseFloat(filters.minFondiDonati))
+    if (filters.maxFondiDonati) q = q.lte('totale_fondi_donati', parseFloat(filters.maxFondiDonati))
+    if (filters.minFondiDonatiCapped) q = q.gte('fondi_donati_usd_capped', parseFloat(filters.minFondiDonatiCapped))
+    if (filters.maxFondiDonatiCapped) q = q.lte('fondi_donati_usd_capped', parseFloat(filters.maxFondiDonatiCapped))
+    if (filters.minDonazioneLcif) q = q.gte('donazione_lcif', parseFloat(filters.minDonazioneLcif))
+    if (filters.maxDonazioneLcif) q = q.lte('donazione_lcif', parseFloat(filters.maxDonazioneLcif))
+    if (filters.minFondiRaccolti) q = q.gte('totale_fondi_raccolti', parseFloat(filters.minFondiRaccolti))
+    if (filters.maxFondiRaccolti) q = q.lte('totale_fondi_raccolti', parseFloat(filters.maxFondiRaccolti))
+    if (filters.minFondiRaccoltiCapped) q = q.gte('fondi_raccolti_usd_capped', parseFloat(filters.minFondiRaccoltiCapped))
+    if (filters.maxFondiRaccoltiCapped) q = q.lte('fondi_raccolti_usd_capped', parseFloat(filters.maxFondiRaccoltiCapped))
+    if (filters.minAlberi) q = q.gte('alberi_piantati', parseFloat(filters.minAlberi))
+    if (filters.maxAlberi) q = q.lte('alberi_piantati', parseFloat(filters.maxAlberi))
+    return q as T
+  }
+
   async function loadAttivita() {
     setLoading(true)
     setError(null)
 
-    let query = supabase.from('vista_report_ricerca').select('*', { count: 'exact' })
-
-    if (filters.search) query = query.or(`titolo.ilike.%${filters.search}%,descrizione.ilike.%${filters.search}%`)
-    if (filters.stato.length) query = query.in('stato', filters.stato)
-    if (filters.zona.length) query = query.in('sponsor_zona', filters.zona)
-    if (filters.causa.length) query = query.in('causa', filters.causa)
-    if (filters.tipoProgetto.length) query = query.in('tipo_progetto', filters.tipoProgetto)
-    if (filters.livelloAttivita.length) query = query.in('livello_attivita', filters.livelloAttivita)
-    if (filters.circoscrizione.length) query = query.in('sponsor_circoscrizione', filters.circoscrizione)
-    if (filters.club.length) query = query.in('sponsor_nome_account', filters.club)
-    if (filters.organizzazioneBeneficiata) query = query.ilike('organizzazione_beneficiata', `%${filters.organizzazioneBeneficiata}%`)
-    if (filters.rapportoCompleto) query = query.eq('rapporto_completo', filters.rapportoCompleto === 'true')
-    if (filters.attivitaDistintiva) query = query.eq('attivita_distintiva', filters.attivitaDistintiva === 'true')
-    if (filters.finanziateLcif) query = query.eq('finanziata_lcif', filters.finanziateLcif === 'true')
-    if (filters.dataInizioDa) query = query.gte('data_inizio', filters.dataInizioDa)
-    if (filters.dataInizioA) query = query.lte('data_inizio', filters.dataInizioA)
-    if (filters.dataConclusioneDa) query = query.gte('data_conclusione', filters.dataConclusioneDa)
-    if (filters.dataConclusioneA) query = query.lte('data_conclusione', filters.dataConclusioneA)
-    if (filters.minPersone) query = query.gte('persone_servite', parseFloat(filters.minPersone))
-    if (filters.maxPersone) query = query.lte('persone_servite', parseFloat(filters.maxPersone))
-    if (filters.minPersoneLimite) query = query.gte('persone_servite_limite', parseFloat(filters.minPersoneLimite))
-    if (filters.maxPersoneLimite) query = query.lte('persone_servite_limite', parseFloat(filters.maxPersoneLimite))
-    if (filters.minVolontari) query = query.gte('totale_volontari', parseFloat(filters.minVolontari))
-    if (filters.maxVolontari) query = query.lte('totale_volontari', parseFloat(filters.maxVolontari))
-    if (filters.minOre) query = query.gte('totale_ore_servizio', parseFloat(filters.minOre))
-    if (filters.maxOre) query = query.lte('totale_ore_servizio', parseFloat(filters.maxOre))
-    if (filters.minOreCapped) query = query.gte('totale_ore_servizio_capped', parseFloat(filters.minOreCapped))
-    if (filters.maxOreCapped) query = query.lte('totale_ore_servizio_capped', parseFloat(filters.maxOreCapped))
-    if (filters.minFondiDonati) query = query.gte('totale_fondi_donati', parseFloat(filters.minFondiDonati))
-    if (filters.maxFondiDonati) query = query.lte('totale_fondi_donati', parseFloat(filters.maxFondiDonati))
-    if (filters.minFondiDonatiCapped) query = query.gte('fondi_donati_usd_capped', parseFloat(filters.minFondiDonatiCapped))
-    if (filters.maxFondiDonatiCapped) query = query.lte('fondi_donati_usd_capped', parseFloat(filters.maxFondiDonatiCapped))
-    if (filters.minDonazioneLcif) query = query.gte('donazione_lcif', parseFloat(filters.minDonazioneLcif))
-    if (filters.maxDonazioneLcif) query = query.lte('donazione_lcif', parseFloat(filters.maxDonazioneLcif))
-    if (filters.minFondiRaccolti) query = query.gte('totale_fondi_raccolti', parseFloat(filters.minFondiRaccolti))
-    if (filters.maxFondiRaccolti) query = query.lte('totale_fondi_raccolti', parseFloat(filters.maxFondiRaccolti))
-    if (filters.minFondiRaccoltiCapped) query = query.gte('fondi_raccolti_usd_capped', parseFloat(filters.minFondiRaccoltiCapped))
-    if (filters.maxFondiRaccoltiCapped) query = query.lte('fondi_raccolti_usd_capped', parseFloat(filters.maxFondiRaccoltiCapped))
-    if (filters.minAlberi) query = query.gte('alberi_piantati', parseFloat(filters.minAlberi))
-    if (filters.maxAlberi) query = query.lte('alberi_piantati', parseFloat(filters.maxAlberi))
-
+    let query = applyFilters(supabase.from('vista_report_ricerca').select('*', { count: 'exact' }))
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
-    const { data, count, error: queryError } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+    // Query principale + aggregati in parallelo
+    const totaliQ = applyFilters(supabase.from('vista_report_ricerca').select(
+      'persone:persone_servite.sum(), volontari:totale_volontari.sum(), ore:totale_ore_servizio.sum(), donati:totale_fondi_donati.sum(), raccolti:totale_fondi_raccolti.sum()'
+    ))
+    const [main, agg] = await Promise.all([
+      query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1),
+      totaliQ,
+    ])
 
-    if (queryError) setError('Errore nel caricamento delle attività. Riprova.')
-    else { setAttivita(data || []); setTotalCount(count ?? 0) }
+    if (main.error) {
+      setError('Errore nel caricamento delle attività. Riprova.')
+    } else {
+      setAttivita(main.data || [])
+      setTotalCount(main.count ?? 0)
+    }
+    if (!agg.error && agg.data?.[0]) {
+      const t = agg.data[0] as any
+      setTotali({
+        persone: Number(t.persone ?? 0),
+        volontari: Number(t.volontari ?? 0),
+        ore: Number(t.ore ?? 0),
+        donati: Number(t.donati ?? 0),
+        raccolti: Number(t.raccolti ?? 0),
+      })
+    }
     setLoading(false)
   }
 
@@ -235,7 +261,7 @@ export default function AttivitaPage() {
   }
 
   const advancedCount = useMemo(() => countAdvancedFilters(filters), [filters])
-  const basicCount = (filters.search ? 1 : 0) + (filters.club.length ? 1 : 0) + (filters.circoscrizione.length ? 1 : 0)
+  const basicCount = (filters.search ? 1 : 0) + (filters.zona.length ? 1 : 0) + (filters.club.length ? 1 : 0) + (filters.circoscrizione.length ? 1 : 0)
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
   const start = totalCount === 0 ? 0 : page * PAGE_SIZE + 1
   const end = Math.min((page + 1) * PAGE_SIZE, totalCount)
@@ -274,13 +300,14 @@ export default function AttivitaPage() {
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
             <CardContent className="pt-0 space-y-3">
               {/* Basic */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <Input
                   placeholder="Cerca titolo, descrizione..."
                   value={filters.search}
                   onChange={(e) => upd({ search: e.target.value })}
                   className="sm:col-span-2 lg:col-span-1 bg-background/50"
                 />
+                <MultiSelect options={zone} selected={filters.zona} onChange={(v) => upd({ zona: v })} placeholder="Zona" />
                 <MultiSelect options={clubs} selected={filters.club} onChange={(v) => upd({ club: v })} placeholder="Club" />
                 <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => upd({ circoscrizione: v })} placeholder="Circoscrizione" />
               </div>
@@ -311,7 +338,6 @@ export default function AttivitaPage() {
                       <SectionLabel>Categorizzazione</SectionLabel>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <MultiSelect options={stati} selected={filters.stato} onChange={(v) => upd({ stato: v })} placeholder="Stato" />
-                        <MultiSelect options={zone} selected={filters.zona} onChange={(v) => upd({ zona: v })} placeholder="Zona" />
                         <MultiSelect options={cause} selected={filters.causa} onChange={(v) => upd({ causa: v })} placeholder="Causa" />
                         <MultiSelect options={tipiProgetto} selected={filters.tipoProgetto} onChange={(v) => upd({ tipoProgetto: v })} placeholder="Tipo progetto" />
                         <MultiSelect options={livelliAttivita} selected={filters.livelloAttivita} onChange={(v) => upd({ livelloAttivita: v })} placeholder="Livello attività" />
@@ -399,7 +425,7 @@ export default function AttivitaPage() {
       <motion.div variants={itemVariants}>
         <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
               <CardTitle className="text-base font-semibold">
                 Elenco Attività
                 {!loading && <span className="ml-2 text-sm font-normal text-muted-foreground">({totalCount} totali)</span>}
@@ -408,6 +434,40 @@ export default function AttivitaPage() {
                 <span className="text-xs text-muted-foreground">{start}–{end} di {totalCount}</span>
               )}
             </div>
+            {!loading && totalCount > 0 && (
+              <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-primary mb-1.5">
+                  Indicazioni totali
+                  <span className="ml-1 text-muted-foreground font-normal normal-case">(somma sui risultati filtrati)</span>
+                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                  <span className="whitespace-nowrap">
+                    <span className="font-bold text-foreground tabular-nums">{totali.persone.toLocaleString('it-IT')}</span>
+                    <span className="text-muted-foreground ml-1">persone servite</span>
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="whitespace-nowrap">
+                    <span className="font-bold text-foreground tabular-nums">{totali.volontari.toLocaleString('it-IT')}</span>
+                    <span className="text-muted-foreground ml-1">volontari</span>
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="whitespace-nowrap">
+                    <span className="font-bold text-foreground tabular-nums">{totali.ore.toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span>
+                    <span className="text-muted-foreground ml-1">ore servizio</span>
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="whitespace-nowrap">
+                    <span className="font-bold text-foreground tabular-nums">€ {totali.donati.toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span>
+                    <span className="text-muted-foreground ml-1">donati</span>
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="whitespace-nowrap">
+                    <span className="font-bold text-foreground tabular-nums">€ {totali.raccolti.toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span>
+                    <span className="text-muted-foreground ml-1">raccolti</span>
+                  </span>
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             {error ? (
