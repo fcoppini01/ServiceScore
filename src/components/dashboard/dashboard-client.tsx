@@ -171,16 +171,16 @@ export default function DashboardClient(props: DashboardClientProps) {
         <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <Building2 className="h-4 w-4 text-yellow-500" /> Indicatori Club
+              <Building2 className="h-4 w-4 text-yellow-500" /> Club Metrics
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               <MetricCell label="Totale Club" value={fmtNum(clubMetrics.total)} />
-              <MetricCell label="Club nuovi aperti nell'anno" value={clubMetrics.newFY ?? 'n/d'} hint={clubMetrics.newFY == null ? 'serve export storico club da LCI' : `New Clubs in FY ${fyLabel}`} />
-              <MetricCell label="Club riorganizzati nell'anno" value={clubMetrics.reorgFY ?? 'n/d'} hint={clubMetrics.reorgFY == null ? 'serve export storico club da LCI' : `Reorg Clubs in FY ${fyLabel}`} />
-              <MetricCell label="Club chiusi nell'anno" value={clubMetrics.droppedFY ?? 'n/d'} hint={clubMetrics.droppedFY == null ? 'serve export storico club da LCI' : `Dropped Clubs in FY ${fyLabel}`} />
-              <MetricCell label="Club sospesi (in osservazione)" value={clubMetrics.statusQuoFY ?? 'n/d'} hint={clubMetrics.statusQuoFY == null ? 'serve export storico club da LCI' : `Status Quo Clubs in FY ${fyLabel}`} />
+              <MetricCell label={`New Clubs in FY ${fyLabel}`} value={clubMetrics.newFY ?? 'n/d'} hint={clubMetrics.newFY == null ? 'dato non tracciato' : undefined} />
+              <MetricCell label={`Reorg Clubs in FY ${fyLabel}`} value={clubMetrics.reorgFY ?? 'n/d'} hint={clubMetrics.reorgFY == null ? 'dato non tracciato' : undefined} />
+              <MetricCell label={`Dropped Clubs in FY ${fyLabel}`} value={clubMetrics.droppedFY ?? 'n/d'} hint={clubMetrics.droppedFY == null ? 'dato non tracciato' : undefined} />
+              <MetricCell label={`Status Quo Clubs in FY ${fyLabel}`} value={clubMetrics.statusQuoFY ?? 'n/d'} hint={clubMetrics.statusQuoFY == null ? 'dato non tracciato' : undefined} />
             </div>
           </CardContent>
         </Card>
@@ -191,16 +191,16 @@ export default function DashboardClient(props: DashboardClientProps) {
         <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <Users className="h-4 w-4 text-blue-500" /> Indicatori Soci
+              <Users className="h-4 w-4 text-blue-500" /> Membership Metrics
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              <MetricCell label="Soci totali" value={fmtNum(membershipMetrics.total)} />
-              <MetricCell label="Soci entrati nell'anno" value={fmtNum(membershipMetrics.addedFY)} hint={`Anno prec.: ${fmtNum(membershipMetrics.addedPFY)}`} />
-              <MetricCell label="Soci usciti nell'anno" value={membershipMetrics.droppedFY ?? 'n/d'} hint={membershipMetrics.droppedFY == null ? 'serve data di uscita nei CSV soci' : undefined} />
-              <MetricCell label="Crescita netta nell'anno" value={membershipMetrics.netGrowthFY ?? 'n/d'} hint={membershipMetrics.netGrowthFY == null ? 'entrati − usciti (richiede dato sopra)' : 'entrati − usciti'} />
-              <MetricCell label="Crescita % nell'anno" value={fmtPct(membershipMetrics.netGrowthPctFY)} hint={membershipMetrics.netGrowthPctFY == null ? 'su totale soci (richiede dato sopra)' : 'su totale soci'} />
+              <MetricCell label="Total Membership" value={fmtNum(membershipMetrics.total)} />
+              <MetricCell label={`Members Added in FY ${fyLabel}`} value={fmtNum(membershipMetrics.addedFY)} hint={`PFY: ${fmtNum(membershipMetrics.addedPFY)}`} />
+              <MetricCell label={`Drop Members in FY ${fyLabel}`} value={membershipMetrics.droppedFY ?? 'n/d'} hint={membershipMetrics.droppedFY == null ? 'dato non tracciato' : undefined} />
+              <MetricCell label={`Net Growth in FY ${fyLabel}`} value={membershipMetrics.netGrowthFY ?? 'n/d'} hint={membershipMetrics.netGrowthFY == null ? 'richiede Drop Members' : undefined} />
+              <MetricCell label={`Net Growth in FY ${fyLabel} %`} value={fmtPct(membershipMetrics.netGrowthPctFY)} hint={membershipMetrics.netGrowthPctFY == null ? 'richiede Drop Members' : undefined} />
             </div>
           </CardContent>
         </Card>
@@ -211,15 +211,15 @@ export default function DashboardClient(props: DashboardClientProps) {
         <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <Activity className="h-4 w-4 text-red-500" /> Indicatori Attività di Servizio
+              <Activity className="h-4 w-4 text-red-500" /> Service Metrics
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <MetricCell label="Attività di servizio nell'anno" value={fmtNum(serviceMetrics.activitiesFY)} />
-              <MetricCell label="Persone servite nell'anno" value={fmtNum(serviceMetrics.peopleServedFY)} />
-              <MetricCell label="Ore di volontariato nell'anno" value={fmtNum(serviceMetrics.volunteerHoursFY)} />
-              <MetricCell label="Club che hanno comunicato attività" value={`${fmtNum(serviceMetrics.clubsReportingFY)} (${fmtPct(serviceMetrics.clubsReportingPctFY)})`} hint={`${serviceMetrics.clubsReportingFY} su ${clubMetrics.total} club totali`} />
+              <MetricCell label={`Overall Activity Count in FY ${fyLabel}`} value={fmtNum(serviceMetrics.activitiesFY)} />
+              <MetricCell label={`Overall People Served in FY ${fyLabel}`} value={fmtNum(serviceMetrics.peopleServedFY)} />
+              <MetricCell label={`Overall Volunteer Hours in FY ${fyLabel}`} value={fmtNum(serviceMetrics.volunteerHoursFY)} />
+              <MetricCell label={`Clubs Reporting in FY ${fyLabel}`} value={`${fmtNum(serviceMetrics.clubsReportingFY)} (${fmtPct(serviceMetrics.clubsReportingPctFY)})`} hint={`${serviceMetrics.clubsReportingFY} / ${clubMetrics.total}`} />
             </div>
           </CardContent>
         </Card>
