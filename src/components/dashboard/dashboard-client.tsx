@@ -349,14 +349,14 @@ export default function DashboardClient(props: DashboardClientProps) {
       </motion.div>
 
       {/* ===== Dashboard Soci · composizione per Club ===== */}
-      <motion.div variants={itemVariants} className="mt-10 mb-3">
+      <motion.div id="dashboard-soci" variants={itemVariants} className="mt-10 mb-3 scroll-mt-20">
         <h2 className="text-base font-semibold text-muted-foreground uppercase tracking-wide">Dashboard Soci per Club</h2>
         <p className="text-xs text-muted-foreground">Composizione anagrafica del singolo Club</p>
       </motion.div>
       <DashboardSoci />
 
       {/* ===== Dashboard Attività · sintesi per Club ===== */}
-      <motion.div variants={itemVariants} className="mt-8 mb-3">
+      <motion.div id="dashboard-attivita" variants={itemVariants} className="mt-8 mb-3 scroll-mt-20">
         <h2 className="text-base font-semibold text-muted-foreground uppercase tracking-wide">Dashboard Attività per Club</h2>
         <p className="text-xs text-muted-foreground">Sintesi delle attività del singolo Club, divise tra Amministrazione e Service</p>
       </motion.div>

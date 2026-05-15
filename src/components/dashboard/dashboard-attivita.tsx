@@ -89,38 +89,38 @@ export function DashboardAttivita() {
         <CardContent className="space-y-5">
 
           {/* Selettori */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center lg:flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <label className="text-sm font-medium">Club:</label>
+              <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+              <label className="text-sm font-medium shrink-0">Club:</label>
+              <select
+                value={club}
+                onChange={(e) => setClub(e.target.value)}
+                className="flex-1 h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring min-w-0 lg:min-w-[240px] lg:max-w-[360px] truncate"
+              >
+                {clubs.length === 0 && <option value="">Caricamento...</option>}
+                {clubs.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
-            <select
-              value={club}
-              onChange={(e) => setClub(e.target.value)}
-              className="h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring min-w-[240px]"
-            >
-              {clubs.length === 0 && <option value="">Caricamento...</option>}
-              {clubs.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
 
-            <div className="flex items-center gap-2 ml-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <label className="text-sm font-medium">Anno sociale:</label>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+              <label className="text-sm font-medium shrink-0">Anno sociale:</label>
+              <select
+                value={annoSociale}
+                onChange={(e) => setAnnoSociale(parseInt(e.target.value))}
+                className="flex-1 lg:flex-none h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring"
+              >
+                {getRecentAnniSociali(8).map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+              </select>
             </div>
-            <select
-              value={annoSociale}
-              onChange={(e) => setAnnoSociale(parseInt(e.target.value))}
-              className="h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring"
-            >
-              {getRecentAnniSociali(8).map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-            </select>
 
-            {!loading && club && (
-              <span className="text-xs text-muted-foreground">
-                {totals.tot.n} attività · anno {annoLabel}
-              </span>
-            )}
-            {loading && <span className="text-xs text-muted-foreground italic">Caricamento dati…</span>}
+            <div className="lg:ml-auto text-xs text-muted-foreground">
+              {!loading && club && (
+                <span>{totals.tot.n} attività · anno {annoLabel}</span>
+              )}
+              {loading && <span className="italic">Caricamento dati…</span>}
+            </div>
           </div>
 
           {/* Tabella */}

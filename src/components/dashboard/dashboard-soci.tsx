@@ -89,15 +89,15 @@ export function DashboardSoci() {
         <CardContent className="space-y-5">
 
           {/* Selettore Club */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
+          <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-col sm:flex-row sm:flex-wrap">
+            <div className="flex items-center gap-2 shrink-0">
               <Building2 className="h-4 w-4 text-muted-foreground" />
               <label className="text-sm font-medium">Club:</label>
             </div>
             <select
               value={club}
               onChange={(e) => setClub(e.target.value)}
-              className="h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring min-w-[260px]"
+              className="h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring w-full sm:w-auto sm:min-w-[240px] sm:max-w-[420px] truncate"
             >
               {clubs.length === 0 && <option value="">Caricamento...</option>}
               {clubs.map(c => <option key={c} value={c}>{c}</option>)}
