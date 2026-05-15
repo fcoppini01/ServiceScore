@@ -8,6 +8,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { Building2, Users, Activity, Sparkles, TrendingUp, BarChart3, PieChart as PieIcon, MapPin, Clock } from 'lucide-react'
+import { DashboardSoci } from '@/components/dashboard/dashboard-soci'
 
 const PIE_COLORS = ['#0055ff', '#ffe500', '#ff4444', '#6366f1', '#a3a3a3']
 
@@ -345,6 +346,13 @@ export default function DashboardClient(props: DashboardClientProps) {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* ===== Dashboard Soci · composizione per Club ===== */}
+      <motion.div variants={itemVariants} className="mt-10 mb-3">
+        <h2 className="text-base font-semibold text-muted-foreground uppercase tracking-wide">Dashboard Soci per Club</h2>
+        <p className="text-xs text-muted-foreground">Composizione anagrafica del singolo Club</p>
+      </motion.div>
+      <DashboardSoci />
 
       {/* ===== Sezione storica (all-time) — preservata dalla dashboard precedente ===== */}
       <motion.div variants={itemVariants} className="mt-10 mb-3">
