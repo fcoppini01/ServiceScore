@@ -138,29 +138,23 @@ body:has(.print-landscape) {
   /* nessun effetto a schermo */
 }
 @media print {
+  /* DEFAULT: A4 LANDSCAPE — copre la maggior parte dei quadri (Soci,
+     Officer) che con 5-7 colonne potrebbero essere stretti in portrait. */
   @page {
-    size: A4;
-    margin: 1.2cm;
+    size: A4 landscape;
+    margin: 0.8cm;
   }
   body:has(.print-landscape) {
     /* placeholder */
   }
+  /* A3 LANDSCAPE — riservato ai quadri con molte colonne (es. attività
+     con 11 colonne). Si attiva con classe .print-landscape sull'area. */
   @page landscape-page {
     size: A3 landscape;
     margin: 0.8cm;
   }
   .print-landscape {
     page: landscape-page;
-  }
-  /* Sui quadri landscape (A3) le tabelle possono avere font più grande
-     dato che lo spazio orizzontale è quasi doppio rispetto ad A4 */
-  .print-landscape table {
-    font-size: 10px !important;
-  }
-  .print-landscape th, .print-landscape td {
-    padding: 3px 5px !important;
-    word-break: break-word !important;
-    white-space: normal !important;
   }
   html, body {
     background: #ffffff !important;
@@ -187,10 +181,15 @@ body:has(.print-landscape) {
     box-shadow: none !important;
     border-color: #999 !important;
   }
+  /* REGOLE CRITICHE: garantiscono che TUTTE le colonne entrino sempre,
+     a costo di andare a capo. Annullo nowrap/truncate/max-width che a
+     schermo aiutano la leggibilità ma in stampa farebbero "scappare"
+     colonne fuori pagina. */
   .print-area table {
     width: 100% !important;
     border-collapse: collapse !important;
-    font-size: 11px !important;
+    table-layout: auto !important;
+    font-size: 10px !important;
     page-break-inside: auto;
   }
   .print-area thead {
@@ -202,19 +201,42 @@ body:has(.print-landscape) {
   }
   .print-area th, .print-area td {
     border: 1px solid #999 !important;
-    padding: 4px 6px !important;
+    padding: 3px 5px !important;
     text-align: left !important;
+    /* Forza il wrap del contenuto: niente più "scape" oltre la pagina */
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: none !important;
   }
   .print-area th {
     background: #f0f0f0 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     font-weight: 700 !important;
+    font-size: 9px !important;
   }
   .print-area h1, .print-area h2 {
     color: #000000 !important;
     background: none !important;
     margin-bottom: 8px !important;
     -webkit-text-fill-color: #000 !important;
+    page-break-after: avoid; /* evita titoli orfani senza la tabella */
+  }
+  /* Sui quadri A3 landscape la tabella può respirare di più */
+  .print-landscape table {
+    font-size: 9.5px !important;
+  }
+  .print-landscape th, .print-landscape td {
+    padding: 2px 4px !important;
+  }
+  /* Annulla utility Tailwind che a schermo aiutano ma in stampa rompono */
+  .print-area .whitespace-nowrap,
+  .print-area .truncate {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
   }
 }
