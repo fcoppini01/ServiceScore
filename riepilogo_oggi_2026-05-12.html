@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Digitalions – Riepilogo Lavori 12 Maggio 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; padding: 40px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 26px; color: #0055ff; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 13px; margin-bottom: 32px; border-bottom: 2px solid #0055ff; padding-bottom: 12px; }
+  h2 { font-size: 16px; color: #0055ff; margin: 28px 0 10px; padding: 6px 10px; background: #f0f4ff; border-left: 4px solid #0055ff; border-radius: 2px; }
+  h3 { font-size: 13px; font-weight: 600; margin: 14px 0 6px; color: #333; }
+  p { margin-bottom: 8px; line-height: 1.6; }
+  ul { margin: 6px 0 10px 20px; }
+  li { margin-bottom: 4px; line-height: 1.6; }
+  code { background: #f4f4f4; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas', monospace; font-size: 12px; color: #c7254e; }
+  pre { background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 4px; padding: 12px; margin: 8px 0 12px; overflow-x: auto; font-family: 'Consolas', monospace; font-size: 11.5px; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 12px; }
+  th { background: #0055ff; color: white; padding: 7px 10px; text-align: left; }
+  td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-red { background: #fee2e2; color: #b91c1c; }
+  .badge-yellow { background: #fef9c3; color: #92400e; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .section-intro { color: #555; margin-bottom: 10px; font-style: italic; }
+  .commit { font-family: 'Consolas', monospace; font-size: 11px; color: #555; background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+  .page-break { page-break-before: always; }
+  .callout { background: #fff7ed; border-left: 4px solid #f59e0b; padding: 10px 12px; border-radius: 0 4px 4px 0; margin: 10px 0; }
+  .callout-blue { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 10px 12px; border-radius: 0 4px 4px 0; margin: 10px 0; }
+  footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid #ddd; color: #888; font-size: 11px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Digitalions · Riepilogo Lavori del 12 Maggio 2026</h1>
+<div class="subtitle">Sistema gestionale Lions Club Distretto 108 LA &nbsp;|&nbsp; Sessione del 12.05.2026 &nbsp;|&nbsp; Sviluppato con Claude Code</div>
+
+<div class="callout-blue">
+  <strong>Sintesi della giornata.</strong> Riorganizzazione dei filtri di Service (Zona a livello 1, pannello "Indicazioni totali" con somme aggregate), creazione di due nuovi quadri di stampa per le attività di club nell'anno sociale, rinomina dell'applicazione da <em>ServiceScore</em> a <strong>Digitalions</strong>, e ricostruzione completa della Dashboard come "quadro d'insieme" del Distretto in corso anno (FY) con confronto al precedente (PFY).
+</div>
+
+<!-- ===== 1. RINOMINA APP ===== -->
+<h2>1. Rinomina applicazione: ServiceScore → Digitalions</h2>
+<p class="section-intro">Cambio del brand della webapp da "ServiceScore" a "Digitalions" su tutti i punti di esposizione utente.</p>
+<table>
+  <tr><th>File</th><th>Dove appare</th></tr>
+  <tr><td><code>src/app/layout.tsx</code></td><td>Metadata (title, description, OpenGraph, Twitter card)</td></tr>
+  <tr><td><code>src/components/header.tsx</code></td><td>Brand text accanto al logo Lions in alto a sinistra</td></tr>
+  <tr><td><code>src/app/page.tsx</code></td><td>Hero della homepage e copyright del footer</td></tr>
+  <tr><td><code>src/app/loading.tsx</code></td><td>Schermata di caricamento</td></tr>
+  <tr><td><code>src/app/login/page.tsx</code></td><td>Sottotitolo card login</td></tr>
+  <tr><td><code>src/app/register/page.tsx</code></td><td>Sottotitolo card registrazione</td></tr>
+</table>
+<p class="callout"><strong>Nota:</strong> il dominio Vercel (<code>servicescore108la-01informatica-progetti.vercel.app</code>) e l'URL del repo GitHub restano gli stessi — il rename è solo a livello applicativo, non infrastrutturale. Volendo si può chiedere a Vercel di rinominare il progetto in <code>digitalions</code> per ottenere un nuovo URL, ma è un'operazione separata.</p>
+
+<!-- ===== 2. QUADRI ATTIVITA ===== -->
+<h2>2. Sezione Attività · 2 nuovi Quadri di Stampa</h2>
+<p class="section-intro">Due nuovi quadri stampabili per la rendicontazione del club nell'anno sociale Lions (1 luglio → 30 giugno).</p>
+
+<h3>2.1 Helper anno sociale (<code>src/lib/anno-sociale.ts</code>)</h3>
+<p>Modulo dedicato per il calcolo dell'anno fiscale Lions, con auto-detect dell'anno corrente in base alla data odierna:</p>
+<pre>// Esempio: oggi 12/05/2026 → siamo in FY 2025/26
+getCurrentAnnoSocialeStart()   // → 2025
+getAnnoSocialeRange(2025)       // → { from: '2025-07-01', to: '2026-06-30', label: '2025/26' }
+getRecentAnniSociali(8)         // → ultimi 8 anni sociali per il select</pre>
+
+<h3>2.2 Quadro A: tutte le attività del club nell'anno sociale</h3>
+<p><strong>Route:</strong> <code>/attivita/quadri/club-anno</code></p>
+<p>L'utente seleziona un club e un anno sociale (default: corrente). Vengono mostrate tutte le attività del club in quel periodo, ordinate per data crescente.</p>
+<table>
+  <tr><th>Colonna</th><th>Sorgente DB</th></tr>
+  <tr><td>Data inizio</td><td><code>data_inizio</code></td></tr>
+  <tr><td>Stato</td><td><code>stato</code> (Comunicato, Pronto, Pianificato, Bozza)</td></tr>
+  <tr><td>Titolo</td><td><code>titolo</code></td></tr>
+  <tr><td>Causa</td><td><code>causa</code></td></tr>
+  <tr><td>Tipo progetto</td><td><code>tipo_progetto</code></td></tr>
+  <tr><td>Persone servite</td><td><code>persone_servite</code></td></tr>
+  <tr><td>Totale volontari</td><td><code>totale_volontari</code></td></tr>
+  <tr><td>Total Volunteer Hours capped</td><td><code>totale_ore_servizio_capped</code></td></tr>
+  <tr><td>Total Funds Donated USD capped</td><td><code>fondi_donati_usd_capped</code></td></tr>
+  <tr><td>Organizzazione beneficiata</td><td><code>organizzazione_beneficiata</code></td></tr>
+  <tr><td>Total Funds Raised USD capped</td><td><code>fondi_raccolti_usd_capped</code></td></tr>
+</table>
+<p>Riga <strong>TOTALI</strong> in fondo che somma i 5 numerici. Pulsante "Stampa / Salva PDF" con stampa in <code>A4 landscape</code> (le 11 colonne richiedono orientamento orizzontale).</p>
+
+<h3>2.3 Quadro B: Amministrazione vs Service nell'anno sociale</h3>
+<p><strong>Route:</strong> <code>/attivita/quadri/club-anno-amm-service</code></p>
+<p>Stesse colonne del Quadro A, ma con una differenza chiave: <strong>Persone Servite - Limite Massimo</strong> (<code>persone_servite_limite</code>) al posto di <em>Persone servite</em>.</p>
+<p>Le attività vengono divise in <strong>due tabelle separate</strong>:</p>
+<ul>
+  <li><span class="badge badge-blue">SERVICE</span> &mdash; tutte le attività con <code>causa &ne; 'Amministrazione'</code> (eventi, raccolte fondi, service umanitari, ecc.)</li>
+  <li><span class="badge badge-yellow">AMMINISTRAZIONE</span> &mdash; le attività con <code>causa = 'Amministrazione'</code> (Direttivi, Riunioni di Club, ecc.)</li>
+</ul>
+<p>Ogni tabella ha il proprio subtotale, e in fondo un riquadro evidenziato con i <strong>Totali Complessivi</strong> (Service + Amministrazione). Stampa landscape.</p>
+
+<h3>2.4 Stili print landscape</h3>
+<p>Aggiunta classe <code>.print-landscape</code> in <code>globals.css</code> con regola <code>@page { size: A4 landscape; }</code> via <code>page: landscape-page</code>. Applicata ai due nuovi quadri attività.</p>
+
+<!-- ===== 3. DASHBOARD ===== -->
+<h2 class="page-break">3. Dashboard ricostruita come "Quadro d'insieme del Distretto"</h2>
+<p class="section-intro">Sostituite le metriche generiche (totali soci/club/attività/ore) con una struttura orientata all'anno sociale corrente (FY) e al confronto con il precedente (PFY).</p>
+
+<h3>3.1 Tre pannelli di metriche (KPI)</h3>
+<table>
+  <tr><th>Pannello</th><th>KPI</th><th>Stato</th></tr>
+  <tr><td rowspan="5"><strong>Club Metrics</strong></td><td>Totale Club</td><td><span class="badge badge-green">OK</span></td></tr>
+  <tr><td>New Clubs in FY</td><td><span class="badge badge-yellow">n/d &mdash; non tracciato</span></td></tr>
+  <tr><td>Reorg Clubs in FY</td><td><span class="badge badge-yellow">n/d &mdash; non tracciato</span></td></tr>
+  <tr><td>Dropped Clubs in FY</td><td><span class="badge badge-yellow">n/d &mdash; non tracciato</span></td></tr>
+  <tr><td>Status Quo Clubs in FY</td><td><span class="badge badge-yellow">n/d &mdash; non tracciato</span></td></tr>
+  <tr><td rowspan="5"><strong>Membership Metrics</strong></td><td>Total Membership</td><td><span class="badge badge-green">OK</span></td></tr>
+  <tr><td>Members Added in FY (+ confronto PFY)</td><td><span class="badge badge-green">OK</span></td></tr>
+  <tr><td>Drop Members in FY</td><td><span class="badge badge-yellow">n/d &mdash; richiede data uscita</span></td></tr>
+  <tr><td>Net Growth in FY</td><td><span class="badge badge-yellow">n/d &mdash; richiede Drop Members</span></td></tr>
+  <tr><td>Net Growth in FY %</td><td><span class="badge badge-yellow">n/d &mdash; richiede Drop Members</span></td></tr>
+  <tr><td rowspan="4"><strong>Service Metrics</strong></td><td>Overall Activity Count in FY</td><td><span class="badge badge-green">OK</span></td></tr>
+  <tr><td>Overall People Served in FY</td><td><span class="badge badge-green">OK</span></td></tr>
+  <tr><td>Overall Volunteer Hours in FY</td><td><span class="badge badge-green">OK</span></td></tr>
+  <tr><td>Clubs Reporting in FY (%)</td><td><span class="badge badge-green">OK &mdash; n_distinct/total</span></td></tr>
+</table>
+<p>I KPI marcati <em>n/d</em> mostrano placeholder con tooltip esplicativo ("dato non tracciato", "richiede data uscita"). Quando arriveranno gli export Lions con quei dati, basterà valorizzare le rispettive proprietà nell'oggetto passato al client component.</p>
+
+<h3>3.2 Grafici annuali (Lug → Giu, FY vs PFY)</h3>
+<table>
+  <tr><th>Grafico</th><th>Logica</th></tr>
+  <tr><td>Andamento Numero Club</td><td>Line chart FY vs PFY · dato mensile non tracciato &rarr; mostrato totale corrente costante con nota esplicativa</td></tr>
+  <tr><td>Andamento Numero Soci</td><td>Line chart <strong>cumulativo</strong> dai <code>data_ingresso</code>. Per ogni mese fiscale: numero soci con data ingresso ≤ fine mese (binary search lato client su array ordinato)</td></tr>
+</table>
+
+<h3>3.3 Attività per Causa &mdash; cumulativo mensile FY</h3>
+<p>Line chart multi-serie: una linea cumulativa per ogni causa (9 colori distinti) sui 12 mesi fiscali. Permette di vedere il "ritmo" delle attività per ciascuna causa durante l'anno.</p>
+
+<h3>3.4 Tabella Riepilogo per Causa FY</h3>
+<table>
+  <tr><th>Colonna</th><th>Calcolo</th></tr>
+  <tr><td>Causa</td><td>distinct su <code>causa</code> nelle attività FY</td></tr>
+  <tr><td>Numero</td><td>conteggio attività</td></tr>
+  <tr><td>Incidenza %</td><td>(numero causa / totale attività FY) &times; 100</td></tr>
+  <tr><td>Fondi raccolti (€)</td><td>somma <code>totale_fondi_raccolti</code></td></tr>
+  <tr><td>Fondi raccolti capped ($)</td><td>somma <code>fondi_raccolti_usd_capped</code></td></tr>
+</table>
+<p>Ordinata per <em>Numero</em> decrescente, riga <strong>TOTALE</strong> in fondo (con 100.0% di incidenza).</p>
+
+<h3>3.5 Header e logica FY/PFY</h3>
+<p>Header dashboard: "Anno sociale <strong>2025/26</strong> (FY) vs <strong>2024/25</strong> (PFY)". Il calcolo è automatico:</p>
+<pre>// 1 luglio → 30 giugno
+fyStart = month >= 6 ? year : year - 1   // 12 mag 2026 → fyStart = 2025
+fy = { from: '2025-07-01', to: '2026-06-30', label: '2025/26' }
+pfy = { from: '2024-07-01', to: '2025-06-30', label: '2024/25' }</pre>
+
+<!-- ===== 4. RIPRISTINO GRAFICI STORICI ===== -->
+<h2>4. Ripristino dei grafici della Dashboard precedente</h2>
+<p class="section-intro">Dopo la ricostruzione, l'utente ha chiesto di rimettere anche i grafici della versione precedente. Ora compaiono in coda alla pagina, sotto un header dedicato "Distribuzione storica complessiva &mdash; Dati cumulativi indipendenti dall'anno sociale corrente".</p>
+<table>
+  <tr><th>Grafico</th><th>Tipo</th><th>Sorgente</th></tr>
+  <tr><td>Distribuzione per Genere</td><td>Pie chart (donut)</td><td><code>vista_soci_ricerca.sesso</code></td></tr>
+  <tr><td>Distribuzione per Fascia d'Età</td><td>Pie chart (donut)</td><td><code>vista_soci_ricerca.fascia_eta</code></td></tr>
+  <tr><td>Attività per Causa (storico)</td><td>Bar chart</td><td><code>vista_report_ricerca.causa</code> all-time</td></tr>
+  <tr><td>Attività per Zona (storico)</td><td>Bar chart</td><td><code>vista_report_ricerca.sponsor_zona</code> all-time</td></tr>
+  <tr><td>Attività Recenti</td><td>Tabella ultime 10</td><td><code>vista_report_ricerca</code> ordinato per <code>data_inizio</code> desc</td></tr>
+</table>
+<p>Le 5 query "storiche" vengono eseguite in parallelo con le 7 query FY/PFY nell'unica <code>Promise.all</code> del server component &mdash; nessuna latenza aggiuntiva.</p>
+
+<!-- ===== 5. LAVORI APERTI ===== -->
+<h2 class="page-break">5. Lavori aperti / Note per future sessioni</h2>
+
+<h3>5.1 Sezione Attività &mdash; richieste completate oggi (commit <code>1067d2d</code>)</h3>
+<div class="callout-blue">
+  Due richieste mirate alla pagina di Service sono state implementate:
+  <ul>
+    <li><strong>Zona riportata in livello 1 dei filtri</strong> &mdash; nella grid base ora ci sono 4 elementi: <em>Cerca · Zona · Club · Circoscrizione</em>. Tutti gli altri (Stato, Causa, Tipo progetto, ecc.) restano in "Filtri avanzati".</li>
+    <li><strong>Pannellino "Indicazioni totali"</strong> sotto il titolo dell'Elenco Attività, con somma di <em>Persone servite, Volontari, Ore servizio, Fondi donati €, Fondi raccolti €</em>. Calcolato server-side via <code>.sum()</code> aggregato in una query parallela alla paginata, e si adegua dinamicamente ai filtri attivi (cambiando un multi-select, i totali si aggiornano).</li>
+  </ul>
+  Implementazione: nuovo helper <code>applyFilters()</code> riutilizzabile su entrambe le query (paginata + aggregata), e nuovo state <code>totali</code> aggiornato dentro <code>loadAttivita()</code>.
+</div>
+
+<h3>5.2 KPI Dashboard in attesa di dati</h3>
+<table>
+  <tr><th>KPI</th><th>Cosa serve per attivarlo</th></tr>
+  <tr><td>New / Reorg / Dropped / Status Quo Clubs in FY</td><td>Export Lions con storico status club: data creazione, data riorganizzazione, data dropping. Probabilmente disponibile in un report "MyLCI Club Status History"</td></tr>
+  <tr><td>Drop Members in FY</td><td>Campo <code>data_uscita</code> o flag <code>attivo</code> nella tabella <code>soci</code>. Attualmente abbiamo solo <code>data_ingresso</code>: sappiamo chi è entrato ma non chi è uscito.</td></tr>
+  <tr><td>Net Growth in FY (+ %)</td><td>Si calcola automaticamente non appena è disponibile Drop Members (Net Growth = Added &minus; Dropped)</td></tr>
+  <tr><td>Andamento Numero Club mensile</td><td>Storico mensile delle creazioni/chiusure club. Richiede uno storico più granulare.</td></tr>
+</table>
+
+<h3>5.3 Pendenze da sessioni precedenti</h3>
+<ul>
+  <li>Riabilitare protezione route in <code>middleware.ts</code> quando l'auth sarà in produzione &mdash; e contestualmente rimuovere le policy <code>anon</code> aggiunte in precedenza sulle 4 tabelle</li>
+  <li>Outlier <code>persone_servite = 300.000</code> in una singola attività &mdash; verificare con il referente Lions se è un dato reale o un errore di compilazione</li>
+  <li>Bug ID-club nell'export <code>report.csv</code> di Lions (sempre stesso ID per tutte le righe) &mdash; segnalare a Lions; nostra fix con match per nome è già in produzione</li>
+</ul>
+
+<!-- ===== 6. COMMIT LOG ===== -->
+<h2>6. Cronologia commit del 12 Maggio 2026</h2>
+<table>
+  <tr><th>Hash</th><th>Descrizione</th></tr>
+  <tr><td><span class="commit">1067d2d</span></td><td>Attivita: Zona torna livello 1 + pannello "Indicazioni totali" con somme aggregate filtrate</td></tr>
+  <tr><td><span class="commit">05e1967</span></td><td>Attivita: 2 nuovi quadri di stampa per club/anno sociale</td></tr>
+  <tr><td><span class="commit">7517537</span></td><td>Rename app a Digitalions + ristrutturazione Dashboard</td></tr>
+  <tr><td><span class="commit">4cc2120</span></td><td>Dashboard: ripristinati i grafici precedenti dopo le nuove sezioni FY</td></tr>
+</table>
+
+<!-- ===== 7. FILE TOCCATI ===== -->
+<h2>7. File modificati / creati</h2>
+<table>
+  <tr><th>Tipo</th><th>Path</th><th>Cosa</th></tr>
+  <tr><td><span class="badge badge-green">NEW</span></td><td><code>src/lib/anno-sociale.ts</code></td><td>Helper FY/PFY (1 lug → 30 giu)</td></tr>
+  <tr><td><span class="badge badge-green">NEW</span></td><td><code>src/app/attivita/quadri/club-anno/page.tsx</code></td><td>Quadro A: tutte le attività del club / anno</td></tr>
+  <tr><td><span class="badge badge-green">NEW</span></td><td><code>src/app/attivita/quadri/club-anno-amm-service/page.tsx</code></td><td>Quadro B: split Amministrazione vs Service</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/app/attivita/page.tsx</code></td><td>Aggiunti link ai due nuovi quadri nella sezione "Quadri di Stampa"</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/app/globals.css</code></td><td>Classe <code>.print-landscape</code> per stampa orizzontale</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/app/layout.tsx</code></td><td>Metadata, title, OpenGraph, Twitter card &mdash; ServiceScore &rarr; Digitalions</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/components/header.tsx</code></td><td>Brand text nella navbar</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/app/page.tsx</code></td><td>Hero homepage e footer</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/app/loading.tsx</code></td><td>Schermata caricamento</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/app/login/page.tsx</code> / <code>register/page.tsx</code></td><td>Sottotitoli card auth</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/app/dashboard/page.tsx</code></td><td>Server component: 12 query in parallelo (7 nuove FY + 5 storiche)</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/components/dashboard/dashboard-client.tsx</code></td><td>Riscrittura completa con i nuovi pannelli FY, grafici cumulativi, tabella causa, sezione storica in coda</td></tr>
+  <tr><td><span class="badge badge-blue">MOD</span></td><td><code>src/app/attivita/page.tsx</code></td><td>Zona spostata in filtri base (livello 1) · estratto helper <code>applyFilters()</code> · nuovo state <code>totali</code> + query aggregata <code>.sum()</code> in parallelo · pannello "Indicazioni totali" sotto il titolo dell'elenco</td></tr>
+</table>
+
+<footer>
+  Digitalions · Distretto Lions 108 LA · Documento generato il 12 Maggio 2026<br>
+  Sviluppato con Claude Code (Anthropic) · github.com/fcoppini01/ServiceScore
+</footer>
+
+</body>
+</html>

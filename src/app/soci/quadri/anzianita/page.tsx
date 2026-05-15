@@ -7,9 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { MultiSelect } from '@/components/ui/multi-select'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ArrowLeft, Printer, Users } from 'lucide-react'
+
+const FASCE = ['Under 30', '31-40', '41-50', '51-60', '61-70', 'Over 70']
 
 export default function QuadroAnzianitaPage() {
   const [soci, setSoci] = useState<any[]>([])
@@ -18,6 +21,7 @@ export default function QuadroAnzianitaPage() {
   const [isClient, setIsClient] = useState(false)
   const [anzMin, setAnzMin] = useState('')
   const [anzMax, setAnzMax] = useState('')
+  const [fasce, setFasce] = useState<string[]>([])
 
   useEffect(() => {
     setIsClient(true)
@@ -26,17 +30,18 @@ export default function QuadroAnzianitaPage() {
   useEffect(() => {
     if (!isClient) return
     loadSoci()
-  }, [isClient, anzMin, anzMax])
+  }, [isClient, anzMin, anzMax, fasce])
 
   async function loadSoci() {
     setLoading(true)
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, nome, cognome, data_ingresso, anzianita_lionistica')
+      .select('matricola_socio, nome, cognome, data_ingresso, anzianita_lionistica, fascia_anzianita')
       .not('anzianita_lionistica', 'is', null)
     if (anzMin) query = query.gte('anzianita_lionistica', parseInt(anzMin))
     if (anzMax) query = query.lte('anzianita_lionistica', parseInt(anzMax))
+    if (fasce.length) query = query.in('fascia_anzianita', fasce)
     const { data, error } = await query.order('anzianita_lionistica', { ascending: false, nullsFirst: false }).range(0, 9999)
     if (error) setError('Errore nel caricamento. Riprova.')
     else setSoci(data || [])
@@ -73,17 +78,23 @@ export default function QuadroAnzianitaPage() {
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end mb-3">
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Anzianità minima (anni)</p>
-                <Input type="number" min="0" placeholder="Da" value={anzMin} onChange={(e) => setAnzMin(e.target.value)} className="text-sm bg-background/50" />
+                <p className="text-[10px] text-muted-foreground mb-1">Fasce di anzianità</p>
+                <MultiSelect options={FASCE} selected={fasce} onChange={setFasce} placeholder="Tutte le fasce" />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Anzianità massima (anni)</p>
-                <Input type="number" min="0" placeholder="A" value={anzMax} onChange={(e) => setAnzMax(e.target.value)} className="text-sm bg-background/50" />
+                <p className="text-[10px] text-muted-foreground mb-1">Oppure intervallo personalizzato (anni)</p>
+                <div className="flex items-center gap-1.5">
+                  <Input type="number" min="0" placeholder="Da" value={anzMin} onChange={(e) => setAnzMin(e.target.value)} className="text-sm bg-background/50" />
+                  <span className="text-xs text-muted-foreground shrink-0">—</span>
+                  <Input type="number" min="0" placeholder="A" value={anzMax} onChange={(e) => setAnzMax(e.target.value)} className="text-sm bg-background/50" />
+                </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => { setAnzMin(''); setAnzMax('') }} className="text-xs">Cancella filtro</Button>
             </div>
+            {(anzMin || anzMax || fasce.length > 0) && (
+              <Button variant="outline" size="sm" onClick={() => { setAnzMin(''); setAnzMax(''); setFasce([]) }} className="text-xs">Cancella filtri</Button>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -113,7 +124,8 @@ export default function QuadroAnzianitaPage() {
                       <TableHead>Nome</TableHead>
                       <TableHead>Cognome</TableHead>
                       <TableHead className="whitespace-nowrap">Data di Ingresso</TableHead>
-                      <TableHead className="whitespace-nowrap text-right">Anni di Anzianità Lionistica</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Anni</TableHead>
+                      <TableHead className="whitespace-nowrap">Fascia anzianità</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -123,6 +135,7 @@ export default function QuadroAnzianitaPage() {
                         <TableCell className="font-medium whitespace-nowrap">{s.cognome}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{formatDate(s.data_ingresso)}</TableCell>
                         <TableCell className="tabular-nums text-right whitespace-nowrap">{s.anzianita_lionistica}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{s.fascia_anzianita}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

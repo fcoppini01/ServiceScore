@@ -1,0 +1,16 @@
+FY = Fiscal Year, in italiano "anno fiscale" — un periodo di 12 mesi usato per la rendicontazione che non coincide necessariamente con l'anno solare (gennaio-dicembre).
+
+Per i Lions Club l'anno sociale (FY) va dal 1° luglio al 30 giugno dell'anno successivo. Quindi:
+
+FY 2025/26 = dal 1 luglio 2025 al 30 giugno 2026 ← anno corrente (siamo a metà maggio 2026)
+PFY 2024/25 = dal 1 luglio 2024 al 30 giugno 2025 ← "Previous Fiscal Year", l'anno prima
+Il motivo: i Lions cambiano governance (Presidente Internazionale, Governatori distrettuali, ecc.) a luglio, non a gennaio. Quindi tutta la reportistica (numero soci, attività, fondi) si misura dal Congresso al Congresso, luglio → giugno.
+
+Negli acronimi sulla Dashboard:
+
+FY = "in FY" significa "nell'anno sociale in corso" (1 lug 2025 → 30 giu 2026)
+PFY = "Previous Fiscal Year", l'anno sociale precedente, usato per confronti tipo "rispetto allo stesso periodo dell'anno scorso"
+Se preferisci posso sostituire le diciture "FY" / "PFY" con qualcosa di più italiano sulla dashboard — tipo:
+
+"AS 2025/26" / "AS prec. 2024/25" (AS = Anno Sociale)
+oppure "Anno corrente" / "Anno precedente"

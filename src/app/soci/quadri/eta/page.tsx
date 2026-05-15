@@ -7,9 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { MultiSelect } from '@/components/ui/multi-select'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ArrowLeft, Printer, Users } from 'lucide-react'
+
+const FASCE = ['Under 30', '31-40', '41-50', '51-60', '61-70', 'Over 70']
 
 export default function QuadroEtaPage() {
   const [soci, setSoci] = useState<any[]>([])
@@ -18,6 +21,7 @@ export default function QuadroEtaPage() {
   const [isClient, setIsClient] = useState(false)
   const [etaMin, setEtaMin] = useState('')
   const [etaMax, setEtaMax] = useState('')
+  const [fasce, setFasce] = useState<string[]>([])
 
   useEffect(() => {
     setIsClient(true)
@@ -26,17 +30,18 @@ export default function QuadroEtaPage() {
   useEffect(() => {
     if (!isClient) return
     loadSoci()
-  }, [isClient, etaMin, etaMax])
+  }, [isClient, etaMin, etaMax, fasce])
 
   async function loadSoci() {
     setLoading(true)
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, titolo, nome, cognome, data_nascita, eta')
+      .select('matricola_socio, titolo, nome, cognome, data_nascita, eta, fascia_eta')
       .not('eta', 'is', null)
     if (etaMin) query = query.gte('eta', parseInt(etaMin))
     if (etaMax) query = query.lte('eta', parseInt(etaMax))
+    if (fasce.length) query = query.in('fascia_eta', fasce)
     const { data, error } = await query.order('eta', { ascending: true, nullsFirst: false }).range(0, 9999)
     if (error) setError('Errore nel caricamento. Riprova.')
     else setSoci(data || [])
@@ -74,17 +79,23 @@ export default function QuadroEtaPage() {
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end mb-3">
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Età minima</p>
-                <Input type="number" min="0" max="120" placeholder="Da" value={etaMin} onChange={(e) => setEtaMin(e.target.value)} className="text-sm bg-background/50" />
+                <p className="text-[10px] text-muted-foreground mb-1">Fasce di età</p>
+                <MultiSelect options={FASCE} selected={fasce} onChange={setFasce} placeholder="Tutte le fasce" />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Età massima</p>
-                <Input type="number" min="0" max="120" placeholder="A" value={etaMax} onChange={(e) => setEtaMax(e.target.value)} className="text-sm bg-background/50" />
+                <p className="text-[10px] text-muted-foreground mb-1">Oppure intervallo personalizzato (anni)</p>
+                <div className="flex items-center gap-1.5">
+                  <Input type="number" min="0" max="120" placeholder="Da" value={etaMin} onChange={(e) => setEtaMin(e.target.value)} className="text-sm bg-background/50" />
+                  <span className="text-xs text-muted-foreground shrink-0">—</span>
+                  <Input type="number" min="0" max="120" placeholder="A" value={etaMax} onChange={(e) => setEtaMax(e.target.value)} className="text-sm bg-background/50" />
+                </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => { setEtaMin(''); setEtaMax('') }} className="text-xs">Cancella filtro</Button>
             </div>
+            {(etaMin || etaMax || fasce.length > 0) && (
+              <Button variant="outline" size="sm" onClick={() => { setEtaMin(''); setEtaMax(''); setFasce([]) }} className="text-xs">Cancella filtri</Button>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -117,6 +128,7 @@ export default function QuadroEtaPage() {
                       <TableHead>Cognome</TableHead>
                       <TableHead className="whitespace-nowrap">Compleanno</TableHead>
                       <TableHead className="whitespace-nowrap text-right">Età</TableHead>
+                      <TableHead className="whitespace-nowrap">Fascia</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -128,6 +140,7 @@ export default function QuadroEtaPage() {
                         <TableCell className="font-medium whitespace-nowrap">{s.cognome}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{formatDate(s.data_nascita)}</TableCell>
                         <TableCell className="tabular-nums text-right whitespace-nowrap">{s.eta}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{s.fascia_eta}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

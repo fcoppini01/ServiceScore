@@ -20,11 +20,13 @@ interface Filters {
   search: string
   sesso: string[]
   fasciaEta: string[]
+  fasciaAnzianita: string[]
   etaMin: string
   etaMax: string
   zona: string[]
   circoscrizione: string[]
   categoriaAssociativa: string[]
+  programma: string[]
   club: string[]
   professione: string
   citta: string
@@ -33,19 +35,23 @@ interface Filters {
   anzianitaMax: string
 }
 
+const FASCE_ETA = ['Under 30', '31-40', '41-50', '51-60', '61-70', 'Over 70']
+
 const EMPTY_FILTERS: Filters = {
-  search: '', sesso: [], fasciaEta: [], etaMin: '', etaMax: '',
-  zona: [], circoscrizione: [], categoriaAssociativa: [], club: [],
+  search: '', sesso: [], fasciaEta: [], fasciaAnzianita: [], etaMin: '', etaMax: '',
+  zona: [], circoscrizione: [], categoriaAssociativa: [], programma: [], club: [],
   professione: '', citta: '', provincia: '',
   anzianitaMin: '', anzianitaMax: '',
 }
 
 function countAdvancedFilters(f: Filters) {
   let c = 0
+  if (f.fasciaAnzianita.length) c++
   if (f.etaMin || f.etaMax) c++
   if (f.zona.length) c++
   if (f.circoscrizione.length) c++
   if (f.categoriaAssociativa.length) c++
+  if (f.programma.length) c++
   if (f.club.length) c++
   if (f.professione) c++
   if (f.citta) c++
@@ -64,6 +70,7 @@ export default function SociPage() {
   const [zone, setZone] = useState<string[]>([])
   const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
   const [categorie, setCategorie] = useState<string[]>([])
+  const [programmi, setProgrammi] = useState<string[]>([])
   const [clubs, setClubs] = useState<string[]>([])
   const [sessiDisponibili, setSessiDisponibili] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
@@ -90,18 +97,20 @@ export default function SociPage() {
   }
 
   async function loadFilterOptions() {
-    const [zoneRes, circRes, catRes, clubRes, sessoRes] = await Promise.all([
+    const [zoneRes, circRes, catRes, clubRes, sessoRes, progRes] = await Promise.all([
       supabase.from('club').select('zona').not('zona', 'is', null),
       supabase.from('club').select('circoscrizione').not('circoscrizione', 'is', null),
       supabase.from('soci').select('categoria_associativa').not('categoria_associativa', 'is', null),
       supabase.from('club').select('nome_club').not('nome_club', 'is', null),
       supabase.from('soci').select('sesso').not('sesso', 'is', null),
+      supabase.from('soci').select('programma').not('programma', 'is', null),
     ])
     if (zoneRes.data) setZone([...new Set(zoneRes.data.map(z => z.zona))].sort() as string[])
     if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map(c => c.circoscrizione))].sort() as string[])
     if (catRes.data) setCategorie([...new Set(catRes.data.map(c => c.categoria_associativa))].filter(Boolean).sort() as string[])
     if (clubRes.data) setClubs([...new Set(clubRes.data.map(c => c.nome_club))].filter(Boolean).sort() as string[])
     if (sessoRes.data) setSessiDisponibili([...new Set(sessoRes.data.map(s => s.sesso))].filter(Boolean).sort() as string[])
+    if (progRes.data) setProgrammi([...new Set(progRes.data.map(p => p.programma))].filter(Boolean).sort() as string[])
   }
 
   async function loadSoci() {
@@ -113,9 +122,11 @@ export default function SociPage() {
     if (filters.search) query = query.or(`nome.ilike.%${filters.search}%,cognome.ilike.%${filters.search}%,matricola_socio.ilike.%${filters.search}%`)
     if (filters.sesso.length) query = query.in('sesso', filters.sesso)
     if (filters.fasciaEta.length) query = query.in('fascia_eta', filters.fasciaEta)
+    if (filters.fasciaAnzianita.length) query = query.in('fascia_anzianita', filters.fasciaAnzianita)
     if (filters.zona.length) query = query.in('club_zona', filters.zona)
     if (filters.circoscrizione.length) query = query.in('club_circoscrizione', filters.circoscrizione)
     if (filters.categoriaAssociativa.length) query = query.in('categoria_associativa', filters.categoriaAssociativa)
+    if (filters.programma.length) query = query.in('programma', filters.programma)
     if (filters.club.length) query = query.in('nome_club', filters.club)
     if (filters.professione) query = query.ilike('professione', `%${filters.professione}%`)
     if (filters.citta) query = query.ilike('citta', `%${filters.citta}%`)
@@ -212,7 +223,7 @@ export default function SociPage() {
                   placeholder="Genere"
                 />
                 <MultiSelect
-                  options={['Under 30', '30-50', '51-70', 'Over 70']}
+                  options={FASCE_ETA}
                   selected={filters.fasciaEta}
                   onChange={(v) => updateFilters({ ...filters, fasciaEta: v })}
                   placeholder="Fascia d'età"
@@ -245,7 +256,11 @@ export default function SociPage() {
                         <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <MultiSelect options={categorie} selected={filters.categoriaAssociativa} onChange={(v) => updateFilters({ ...filters, categoriaAssociativa: v })} placeholder="Categoria associativa" />
+                        <MultiSelect options={categorie} selected={filters.categoriaAssociativa} onChange={(v) => updateFilters({ ...filters, categoriaAssociativa: v })} placeholder="Categoria" />
+                        <MultiSelect options={programmi} selected={filters.programma} onChange={(v) => updateFilters({ ...filters, programma: v })} placeholder="Programma" />
+                        <MultiSelect options={FASCE_ETA} selected={filters.fasciaAnzianita} onChange={(v) => updateFilters({ ...filters, fasciaAnzianita: v })} placeholder="Fascia anzianità" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <Input placeholder="Professione..." value={filters.professione} onChange={(e) => updateFilters({ ...filters, professione: e.target.value })} className="bg-background/50" />
                         <Input placeholder="Città..." value={filters.citta} onChange={(e) => updateFilters({ ...filters, citta: e.target.value })} className="bg-background/50" />
                       </div>
@@ -347,6 +362,7 @@ export default function SociPage() {
                         <Badge variant="outline" className="text-[10px] h-5">{socio.club_zona}</Badge>
                         {socio.club_circoscrizione && <Badge variant="outline" className="text-[10px] h-5">{socio.club_circoscrizione}</Badge>}
                         {socio.categoria_associativa && <Badge variant="outline" className="text-[10px] h-5 max-w-[140px] truncate">{socio.categoria_associativa}</Badge>}
+                        {socio.programma && <Badge variant="outline" className="text-[10px] h-5 max-w-[140px] truncate">{socio.programma}</Badge>}
                         {socio.anzianita_lionistica != null && <span className="text-[10px] text-muted-foreground">{socio.anzianita_lionistica} anni Lions</span>}
                       </div>
                       {(socio.citta || socio.stato_provincia) && (
@@ -376,7 +392,10 @@ export default function SociPage() {
                         <SortableHead field="sesso" label="Gen." sort={sort} onSort={handleSort} />
                         <SortableHead field="fascia_eta" label="Fascia" sort={sort} onSort={handleSort} />
                         <SortableHead field="anzianita_lionistica" label="Anzianità" sort={sort} onSort={handleSort} />
+                        <SortableHead field="fascia_anzianita" label="F. Anz." sort={sort} onSort={handleSort} />
                         <SortableHead field="categoria_associativa" label="Categoria" sort={sort} onSort={handleSort} />
+                        <SortableHead field="tipo_associazione_intera" label="Categoria Associativa" sort={sort} onSort={handleSort} />
+                        <SortableHead field="programma" label="Programma" sort={sort} onSort={handleSort} />
                         <SortableHead field="professione" label="Professione" sort={sort} onSort={handleSort} />
                         <SortableHead field="citta" label="Città" sort={sort} onSort={handleSort} />
                         <SortableHead field="stato_provincia" label="Prov." sort={sort} onSort={handleSort} />
@@ -400,7 +419,10 @@ export default function SociPage() {
                           <TableCell className="text-xs whitespace-nowrap">{socio.sesso}</TableCell>
                           <TableCell className="whitespace-nowrap"><Badge className="text-xs">{socio.fascia_eta}</Badge></TableCell>
                           <TableCell className="text-sm whitespace-nowrap">{socio.anzianita_lionistica != null ? `${socio.anzianita_lionistica} anni` : ''}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[150px] truncate" title={socio.categoria_associativa}>{socio.categoria_associativa}</TableCell>
+                          <TableCell className="whitespace-nowrap">{socio.fascia_anzianita && <Badge variant="outline" className="text-xs">{socio.fascia_anzianita}</Badge>}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.categoria_associativa}>{socio.categoria_associativa}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[220px] truncate" title={socio.tipo_associazione_intera}>{socio.tipo_associazione_intera}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.programma}>{socio.programma}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[150px] truncate" title={socio.professione}>{socio.professione}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.citta}>{socio.citta}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{socio.stato_provincia}</TableCell>

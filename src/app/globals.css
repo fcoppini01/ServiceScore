@@ -146,11 +146,21 @@ body:has(.print-landscape) {
     /* placeholder */
   }
   @page landscape-page {
-    size: A4 landscape;
-    margin: 1cm;
+    size: A3 landscape;
+    margin: 0.8cm;
   }
   .print-landscape {
     page: landscape-page;
+  }
+  /* Sui quadri landscape (A3) le tabelle possono avere font più grande
+     dato che lo spazio orizzontale è quasi doppio rispetto ad A4 */
+  .print-landscape table {
+    font-size: 10px !important;
+  }
+  .print-landscape th, .print-landscape td {
+    padding: 3px 5px !important;
+    word-break: break-word !important;
+    white-space: normal !important;
   }
   html, body {
     background: #ffffff !important;
