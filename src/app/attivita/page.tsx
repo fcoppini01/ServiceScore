@@ -12,8 +12,9 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity, FileText, Briefcase } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity, FileText, Briefcase, Printer } from 'lucide-react'
 import Link from 'next/link'
+import { filtersToQueryString } from '@/lib/filters-url'
 
 const PAGE_SIZE = 20
 
@@ -447,9 +448,16 @@ export default function AttivitaPage() {
                 Elenco Attività
                 {!loading && <span className="ml-2 text-sm font-normal text-muted-foreground">({totalCount} totali)</span>}
               </CardTitle>
-              {!loading && totalCount > 0 && (
-                <span className="text-xs text-muted-foreground">{start}–{end} di {totalCount}</span>
-              )}
+              <div className="flex items-center gap-2">
+                {!loading && totalCount > 0 && (
+                  <span className="text-xs text-muted-foreground">{start}–{end} di {totalCount}</span>
+                )}
+                <Link href={`/attivita/stampa${filtersToQueryString({ ...filters, sortField: sort?.field, sortDir: sort?.dir })}`}>
+                  <Button size="sm" variant="outline" className="text-xs gap-1.5" disabled={loading || totalCount === 0} title="Stampa esattamente i risultati attualmente filtrati">
+                    <Printer className="h-3.5 w-3.5" /> Stampa risultati
+                  </Button>
+                </Link>
+              </div>
             </div>
             {!loading && totalCount > 0 && (
               <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">

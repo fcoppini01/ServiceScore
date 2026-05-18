@@ -22,26 +22,44 @@ export default function QuadroAnzianitaPage() {
   const [anzMin, setAnzMin] = useState('')
   const [anzMax, setAnzMax] = useState('')
   const [fasce, setFasce] = useState<string[]>([])
+  const [zone, setZone] = useState<string[]>([])
+  const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
+  const [clubs, setClubs] = useState<string[]>([])
+  const [filtroZona, setFiltroZona] = useState<string[]>([])
+  const [filtroCirc, setFiltroCirc] = useState<string[]>([])
+  const [filtroClub, setFiltroClub] = useState<string[]>([])
 
   useEffect(() => {
     setIsClient(true)
+    Promise.all([
+      supabase.from('club').select('zona').not('zona', 'is', null),
+      supabase.from('club').select('circoscrizione').not('circoscrizione', 'is', null),
+      supabase.from('club').select('nome_club').not('nome_club', 'is', null),
+    ]).then(([zoneRes, circRes, clubRes]) => {
+      if (zoneRes.data) setZone([...new Set(zoneRes.data.map(z => z.zona))].filter(Boolean).sort() as string[])
+      if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map(c => c.circoscrizione))].filter(Boolean).sort() as string[])
+      if (clubRes.data) setClubs([...new Set(clubRes.data.map(c => c.nome_club))].filter(Boolean).sort() as string[])
+    })
   }, [])
 
   useEffect(() => {
     if (!isClient) return
     loadSoci()
-  }, [isClient, anzMin, anzMax, fasce])
+  }, [isClient, anzMin, anzMax, fasce, filtroZona, filtroCirc, filtroClub])
 
   async function loadSoci() {
     setLoading(true)
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, nome, cognome, data_ingresso, anzianita_lionistica, fascia_anzianita')
+      .select('matricola_socio, nome, cognome, data_ingresso, anzianita_lionistica, fascia_anzianita, club_zona, club_circoscrizione, nome_club')
       .not('anzianita_lionistica', 'is', null)
     if (anzMin) query = query.gte('anzianita_lionistica', parseInt(anzMin))
     if (anzMax) query = query.lte('anzianita_lionistica', parseInt(anzMax))
     if (fasce.length) query = query.in('fascia_anzianita', fasce)
+    if (filtroZona.length) query = query.in('club_zona', filtroZona)
+    if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
+    if (filtroClub.length) query = query.in('nome_club', filtroClub)
     const { data, error } = await query.order('anzianita_lionistica', { ascending: false, nullsFirst: false }).range(0, 9999)
     if (error) setError('Errore nel caricamento. Riprova.')
     else setSoci(data || [])
@@ -92,8 +110,22 @@ export default function QuadroAnzianitaPage() {
                 </div>
               </div>
             </div>
-            {(anzMin || anzMax || fasce.length > 0) && (
-              <Button variant="outline" size="sm" onClick={() => { setAnzMin(''); setAnzMax(''); setFasce([]) }} className="text-xs">Cancella filtri</Button>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Zona (opzionale)</p>
+                <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Tutte le zone" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Circoscrizione (opzionale)</p>
+                <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Tutte le circoscrizioni" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Club (opzionale)</p>
+                <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Tutti i club" />
+              </div>
+            </div>
+            {(anzMin || anzMax || fasce.length > 0 || filtroZona.length > 0 || filtroCirc.length > 0 || filtroClub.length > 0) && (
+              <Button variant="outline" size="sm" onClick={() => { setAnzMin(''); setAnzMax(''); setFasce([]); setFiltroZona([]); setFiltroCirc([]); setFiltroClub([]) }} className="text-xs">Cancella filtri</Button>
             )}
           </CardContent>
         </Card>
@@ -123,6 +155,7 @@ export default function QuadroAnzianitaPage() {
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead>Cognome</TableHead>
+                      <TableHead>Club</TableHead>
                       <TableHead className="whitespace-nowrap">Data di Ingresso</TableHead>
                       <TableHead className="whitespace-nowrap text-right">Anni</TableHead>
                       <TableHead className="whitespace-nowrap">Fascia anzianità</TableHead>
@@ -133,6 +166,7 @@ export default function QuadroAnzianitaPage() {
                       <TableRow key={s.matricola_socio} className="hover:bg-muted/40 print:hover:bg-transparent">
                         <TableCell className="whitespace-nowrap">{s.nome}</TableCell>
                         <TableCell className="font-medium whitespace-nowrap">{s.cognome}</TableCell>
+                        <TableCell className="text-xs">{s.nome_club}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{formatDate(s.data_ingresso)}</TableCell>
                         <TableCell className="tabular-nums text-right whitespace-nowrap">{s.anzianita_lionistica}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{s.fascia_anzianita}</TableCell>

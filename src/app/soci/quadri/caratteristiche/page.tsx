@@ -23,6 +23,13 @@ export default function QuadroCaratteristichePage() {
   const [filtroCat, setFiltroCat] = useState<string[]>([])
   const [filtroProg, setFiltroProg] = useState<string[]>([])
 
+  const [zone, setZone] = useState<string[]>([])
+  const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
+  const [clubs, setClubs] = useState<string[]>([])
+  const [filtroZona, setFiltroZona] = useState<string[]>([])
+  const [filtroCirc, setFiltroCirc] = useState<string[]>([])
+  const [filtroClub, setFiltroClub] = useState<string[]>([])
+
   useEffect(() => {
     setIsClient(true)
     loadFilterOptions()
@@ -31,17 +38,23 @@ export default function QuadroCaratteristichePage() {
   useEffect(() => {
     if (!isClient) return
     loadSoci()
-  }, [isClient, filtroTipo, filtroCat, filtroProg])
+  }, [isClient, filtroTipo, filtroCat, filtroProg, filtroZona, filtroCirc, filtroClub])
 
   async function loadFilterOptions() {
-    const [tipiRes, catRes, progRes] = await Promise.all([
+    const [tipiRes, catRes, progRes, zoneRes, circRes, clubRes] = await Promise.all([
       supabase.from('soci').select('tipo_associazione_intera').not('tipo_associazione_intera', 'is', null),
       supabase.from('soci').select('categoria_associativa').not('categoria_associativa', 'is', null),
       supabase.from('soci').select('programma').not('programma', 'is', null),
+      supabase.from('club').select('zona').not('zona', 'is', null),
+      supabase.from('club').select('circoscrizione').not('circoscrizione', 'is', null),
+      supabase.from('club').select('nome_club').not('nome_club', 'is', null),
     ])
     if (tipiRes.data) setTipiAssoc([...new Set(tipiRes.data.map((t: any) => t.tipo_associazione_intera))].filter(Boolean).sort() as string[])
     if (catRes.data) setCategorie([...new Set(catRes.data.map((c: any) => c.categoria_associativa))].filter(Boolean).sort() as string[])
     if (progRes.data) setProgrammi([...new Set(progRes.data.map((p: any) => p.programma))].filter(Boolean).sort() as string[])
+    if (zoneRes.data) setZone([...new Set(zoneRes.data.map((z: any) => z.zona))].filter(Boolean).sort() as string[])
+    if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map((c: any) => c.circoscrizione))].filter(Boolean).sort() as string[])
+    if (clubRes.data) setClubs([...new Set(clubRes.data.map((c: any) => c.nome_club))].filter(Boolean).sort() as string[])
   }
 
   async function loadSoci() {
@@ -49,10 +62,13 @@ export default function QuadroCaratteristichePage() {
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, cognome, nome, tipo_associazione_intera, categoria_associativa, programma')
+      .select('matricola_socio, cognome, nome, tipo_associazione_intera, categoria_associativa, programma, nome_club, club_zona, club_circoscrizione')
     if (filtroTipo.length) query = query.in('tipo_associazione_intera', filtroTipo)
     if (filtroCat.length) query = query.in('categoria_associativa', filtroCat)
     if (filtroProg.length) query = query.in('programma', filtroProg)
+    if (filtroZona.length) query = query.in('club_zona', filtroZona)
+    if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
+    if (filtroClub.length) query = query.in('nome_club', filtroClub)
     const { data, error } = await query.order('cognome', { ascending: true, nullsFirst: false }).range(0, 9999)
     if (error) setError('Errore nel caricamento. Riprova.')
     else setSoci(data || [])
@@ -83,14 +99,19 @@ export default function QuadroCaratteristichePage() {
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <MultiSelect options={tipiAssoc} selected={filtroTipo} onChange={setFiltroTipo} placeholder="Tipo associazione" />
               <MultiSelect options={categorie} selected={filtroCat} onChange={setFiltroCat} placeholder="Categoria associativa" />
               <MultiSelect options={programmi} selected={filtroProg} onChange={setFiltroProg} placeholder="Programma" />
             </div>
-            {(filtroTipo.length + filtroCat.length + filtroProg.length) > 0 && (
-              <Button variant="outline" size="sm" onClick={() => { setFiltroTipo([]); setFiltroCat([]); setFiltroProg([]) }} className="text-xs mt-3">Cancella filtri</Button>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Zona (opzionale)" />
+              <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Circoscrizione (opzionale)" />
+              <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Club (opzionale)" />
+            </div>
+            {(filtroTipo.length + filtroCat.length + filtroProg.length + filtroZona.length + filtroCirc.length + filtroClub.length) > 0 && (
+              <Button variant="outline" size="sm" onClick={() => { setFiltroTipo([]); setFiltroCat([]); setFiltroProg([]); setFiltroZona([]); setFiltroCirc([]); setFiltroClub([]) }} className="text-xs">Cancella filtri</Button>
             )}
           </CardContent>
         </Card>
@@ -121,6 +142,7 @@ export default function QuadroCaratteristichePage() {
                       <TableHead>Tipo Associazione</TableHead>
                       <TableHead>Categoria Associativa</TableHead>
                       <TableHead>Programma</TableHead>
+                      <TableHead>Club</TableHead>
                       <TableHead>Cognome</TableHead>
                       <TableHead>Nome</TableHead>
                     </TableRow>
@@ -131,6 +153,7 @@ export default function QuadroCaratteristichePage() {
                         <TableCell className="text-xs">{s.tipo_associazione_intera ?? ''}</TableCell>
                         <TableCell className="text-xs">{s.categoria_associativa ?? ''}</TableCell>
                         <TableCell className="text-xs">{s.programma ?? ''}</TableCell>
+                        <TableCell className="text-xs">{s.nome_club ?? ''}</TableCell>
                         <TableCell className="font-medium whitespace-nowrap">{s.cognome}</TableCell>
                         <TableCell className="whitespace-nowrap">{s.nome}</TableCell>
                       </TableRow>
