@@ -4,10 +4,12 @@ import Link from "next/link"
 import Image from "next/image"
 import { Card } from "@/components/ui/card"
 import { GlowCard, PulseGlow, FadeInUp, StaggerContainer } from "@/lib/mac-effects"
+import { GeometricBackground } from "@/components/geometric-background"
 import { motion } from "framer-motion"
 import { LayoutDashboard, Users, Target, ShieldCheck } from "lucide-react"
 
-const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+// Piccoli punti luminosi che salgono — restano sopra le forme geometriche
+const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
   left: `${((i * 137.5) % 100).toFixed(1)}%`,
   top: `${((i * 97.3 + 23) % 100).toFixed(1)}%`,
   duration: 3 + (i % 5) * 0.5,
@@ -86,15 +88,18 @@ export default function Home() {
       variants={containerVariants}
       className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden"
     >
-      {/* Background effects */}
+      {/* Glow di sfondo (low-light effect) */}
       <PulseGlow className="top-1/4 left-1/4 w-[600px] h-[600px]" />
       <PulseGlow className="bottom-1/4 right-1/4 w-[400px] h-[400px]" glowColor="#ffe500" />
 
-      {/* Ambient particles */}
+      {/* Figure geometriche animate: Lions blu/oro + accenti 01 cyan/rosso/magenta */}
+      <GeometricBackground />
+
+      {/* Particelle luminose che salgono — sopra le forme geometriche */}
       {PARTICLES.map((p, i) => (
         <motion.div
           key={i}
-          className="absolute w-1 h-1 rounded-full"
+          className="absolute w-1 h-1 rounded-full pointer-events-none"
           style={{
             left: p.left,
             top: p.top,

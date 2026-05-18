@@ -181,7 +181,73 @@ const card = (slide, x, y, w, h, fillColor, opts = {}) => {
 }
 
 // ================================================================
-// SLIDE 3 — QUADRI PDF DISPONIBILI OGGI
+// SLIDE 3 — LA DASHBOARD DEL DISTRETTO
+// ================================================================
+{
+  const s = pres.addSlide()
+  s.background = { color: C.off }
+  titleBar(s, "La Dashboard · il quadro d'insieme del Distretto")
+  subtitleText(s, "Tutto a colpo d'occhio: dal totale Distretto fino al singolo Club, in un'unica pagina")
+
+  const blocks = [
+    {
+      n: "1",
+      color: C.blue,
+      title: "Indicatori del Distretto · FY vs PFY",
+      desc: "Tre pannelli in alto con KPI di sintesi (Club Metrics, Membership Metrics, Service Metrics) calcolati sull'anno sociale in corso e confrontati con il precedente.",
+    },
+    {
+      n: "2",
+      color: C.purple,
+      title: "Grafici annuali progressivi",
+      desc: "Andamento mensile del numero soci (Lug→Giu, FY vs PFY) e delle attività di servizio per causa. Tabella riepilogo: numero, % e fondi raccolti per ciascuna causa.",
+    },
+    {
+      n: "3",
+      color: C.green,
+      title: "Dashboard Soci per Club  ✨ nuovo",
+      desc: "Selezioni un Club e vedi la sua composizione anagrafica: Fasce d'età (Under 50, 50-60, 60-70, Over 70) e Anzianità lionistica (Under 2, 2-5, 5-10, 10-15, 15-20, Over 20). Con quantità e %.",
+    },
+    {
+      n: "4",
+      color: C.orange,
+      title: "Dashboard Attività per Club  ✨ nuovo",
+      desc: "Per il Club selezionato nell'anno sociale: numero attività, persone servite, volontari, ore. Divise in Amministrazione vs Service con % rispetto al totale del Club.",
+    },
+    {
+      n: "5",
+      color: C.gold,
+      title: "Distribuzione storica complessiva",
+      desc: "Pie chart per Genere e Fascia d'età · Bar chart attività per Causa e Zona · Tabella delle ultime 10 attività comunicate.",
+    },
+  ]
+  blocks.forEach((b, i) => {
+    const y = 1.55 + i * 0.7
+    card(s, 0.5, y, 9, 0.65, C.white, { borderColor: C.grayLight })
+    // Number badge
+    s.addShape(pres.shapes.OVAL, {
+      x: 0.65, y: y + 0.13, w: 0.4, h: 0.4, fill: { color: b.color }, line: { type: "none" },
+    })
+    s.addText(b.n, {
+      x: 0.65, y: y + 0.13, w: 0.4, h: 0.4,
+      fontFace: F.header, fontSize: 17, bold: true, color: C.white, align: "center", valign: "middle", margin: 0,
+    })
+    s.addText(b.title, {
+      x: 1.25, y: y + 0.08, w: 8.0, h: 0.3,
+      fontFace: F.header, fontSize: 12.5, bold: true, color: C.ink, margin: 0,
+    })
+    s.addText(b.desc, {
+      x: 1.25, y: y + 0.38, w: 8.0, h: 0.28,
+      fontFace: F.body, fontSize: 9.5, color: C.grayDark, margin: 0, valign: "top",
+    })
+  })
+
+  footerTag(s)
+  pageNumber(s, 3)
+}
+
+// ================================================================
+// SLIDE 4 — QUADRI PDF DISPONIBILI OGGI
 // ================================================================
 {
   const s = pres.addSlide()
@@ -317,13 +383,12 @@ const card = (slide, x, y, w, h, fillColor, opts = {}) => {
   })
 
   footerTag(s)
-  pageNumber(s, 3)
+  pageNumber(s, 4)
 }
 
 // ================================================================
-// SLIDE 4 — COSA MANCA (overview 3 fronti)
+// SLIDE 5 — COSA MANCA (overview 3 fronti)
 // ================================================================
-// (era slide 3 — ora rinumerata a 4)
 {
   const s = pres.addSlide()
   s.background = { color: C.navy }
@@ -376,11 +441,11 @@ const card = (slide, x, y, w, h, fillColor, opts = {}) => {
   s.addText("Digitalions · digitalions108la.it · Distretto Lions 108 LA", {
     x: 0.5, y: 5.32, w: 7, h: 0.22, fontFace: F.body, fontSize: 9, color: C.gray, italic: true,
   })
-  pageNumber(s, 4)
+  pageNumber(s, 5)
 }
 
 // ================================================================
-// SLIDE 5 — FRONTE 1 · FEATURE DA SVILUPPARE
+// SLIDE 6 — FRONTE 1 · FEATURE DA SVILUPPARE
 // ================================================================
 {
   const s = pres.addSlide()
@@ -432,11 +497,11 @@ const card = (slide, x, y, w, h, fillColor, opts = {}) => {
   })
 
   footerTag(s)
-  pageNumber(s, 5)
+  pageNumber(s, 6)
 }
 
 // ================================================================
-// SLIDE 6 — FRONTE 2 · DATI DA LIONS
+// SLIDE 7 — FRONTE 2 · DATI DA LIONS
 // ================================================================
 {
   const s = pres.addSlide()
@@ -543,11 +608,11 @@ const card = (slide, x, y, w, h, fillColor, opts = {}) => {
   })
 
   footerTag(s)
-  pageNumber(s, 6)
+  pageNumber(s, 7)
 }
 
 // ================================================================
-// SLIDE 7 — FRONTE 3 · DECISIONI DEL DIRETTIVO
+// SLIDE 8 — FRONTE 3 · DECISIONI DEL DIRETTIVO
 // ================================================================
 {
   const s = pres.addSlide()
@@ -584,11 +649,11 @@ const card = (slide, x, y, w, h, fillColor, opts = {}) => {
   })
 
   footerTag(s)
-  pageNumber(s, 7)
+  pageNumber(s, 8)
 }
 
 // ================================================================
-// SLIDE 8 — ROADMAP
+// SLIDE 9 — ROADMAP
 // ================================================================
 {
   const s = pres.addSlide()
@@ -652,54 +717,6 @@ const card = (slide, x, y, w, h, fillColor, opts = {}) => {
       x: x + 0.2, y: y + 0.7, w: 2.55, h: 2.7,
       fontFace: F.body, fontSize: 10.5, color: C.grayDark, paraSpaceAfter: 4,
     })
-  })
-
-  footerTag(s)
-  pageNumber(s, 8)
-}
-
-// ================================================================
-// SLIDE 9 — COSTI
-// ================================================================
-{
-  const s = pres.addSlide()
-  s.background = { color: C.off }
-  titleBar(s, "Costi di infrastruttura")
-  subtitleText(s, "Trasparenza totale · lo sviluppo (manutenzione, nuove feature) è separato e a forfait")
-
-  const sc = [
-    { title: "Oggi · Free Tier", price: "€ 0",
-      desc: "Vercel Free + Supabase Free + GitHub Free. Fino a ~50 utenti attivi/giorno, 500MB DB.", color: C.green },
-    { title: "Pro · uso da Direttivo", price: "≈ € 25 / mese",
-      desc: "Supabase Pro (8GB DB, backup giornalieri, no pausa automatica). Dominio già attivo.", color: C.blue },
-    { title: "Multi-Distretto", price: "≈ € 80 / mese",
-      desc: "Vercel Pro + Supabase Pro + monitoring. ~500 utenti, 8GB DB con replica, backup 7gg.", color: C.purple },
-  ]
-  sc.forEach((it, i) => {
-    const x = 0.5 + i * 3.05
-    const y = 1.55
-    card(s, x, y, 2.9, 2.7, C.white, { borderColor: it.color })
-    s.addShape(pres.shapes.RECTANGLE, {
-      x, y, w: 2.9, h: 0.45, fill: { color: it.color }, line: { type: "none" },
-    })
-    s.addText(it.title, {
-      x: x + 0.15, y: y + 0.06, w: 2.6, h: 0.33,
-      fontFace: F.header, fontSize: 12, bold: true, color: C.white, margin: 0, valign: "middle",
-    })
-    s.addText(it.price, {
-      x: x + 0.15, y: y + 0.6, w: 2.6, h: 0.8,
-      fontFace: F.header, fontSize: 28, bold: true, color: it.color, align: "center", margin: 0,
-    })
-    s.addText(it.desc, {
-      x: x + 0.15, y: y + 1.5, w: 2.6, h: 1.15,
-      fontFace: F.body, fontSize: 10, color: C.grayDark, margin: 0, valign: "top",
-    })
-  })
-
-  card(s, 0.5, 4.5, 9, 0.55, C.white, { borderColor: C.gold })
-  s.addText("💡  Lo sviluppo (manutenzione evolutiva, fix, nuove feature) è oggetto di contratto a parte con 01Informatica · proposta scritta dopo le decisioni di oggi", {
-    x: 0.7, y: 4.5, w: 8.7, h: 0.55,
-    fontFace: F.body, fontSize: 10.5, color: C.grayDark, italic: true, margin: 0, valign: "middle",
   })
 
   footerTag(s)
