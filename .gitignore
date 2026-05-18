@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .claude/
+
+# Backup locali di sicurezza dei file CSV (non vanno nel repo)
+Dati_Lions/backup_*/
