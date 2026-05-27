@@ -12,20 +12,21 @@ const AMMINISTRAZIONE = 'Amministrazione'
 
 type Att = {
   causa: string | null
-  persone_servite: number | null
+  persone_servite_limite: number | null
   totale_volontari: number | null
-  totale_ore_servizio: number | null
+  totale_ore_servizio_capped: number | null
 }
 
 const fmtNum = (n: number) => n.toLocaleString('it-IT', { maximumFractionDigits: 0 })
 const fmtPct = (n: number, tot: number) => tot > 0 ? `${((n / tot) * 100).toFixed(1)}%` : '—'
 
 function aggregate(rows: Att[]) {
+  // valori CAPPED/LIMITE come nei report ufficiali LCI
   return rows.reduce((acc, r) => ({
     n: acc.n + 1,
-    persone: acc.persone + (Number(r.persone_servite) || 0),
+    persone: acc.persone + (Number(r.persone_servite_limite) || 0),
     volontari: acc.volontari + (Number(r.totale_volontari) || 0),
-    ore: acc.ore + (Number(r.totale_ore_servizio) || 0),
+    ore: acc.ore + (Number(r.totale_ore_servizio_capped) || 0),
   }), { n: 0, persone: 0, volontari: 0, ore: 0 })
 }
 
@@ -36,14 +37,14 @@ export function DashboardAttivita() {
   const [rows, setRows] = useState<Att[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Carica lista club che hanno attività
+  // Carica lista club dalla tabella club (completa, non dipende dal volume attività)
   useEffect(() => {
-    supabase.from('vista_report_ricerca')
-      .select('sponsor_nome_account')
-      .not('sponsor_nome_account', 'is', null)
+    supabase.from('club')
+      .select('nome_club')
+      .not('nome_club', 'is', null)
       .range(0, 9999)
       .then(({ data }) => {
-        const u = [...new Set((data ?? []).map((c: any) => c.sponsor_nome_account).filter(Boolean) as string[])].sort()
+        const u = [...new Set((data ?? []).map((c: any) => c.nome_club).filter(Boolean) as string[])].sort()
         setClubs(u)
         if (u.length > 0) setClub(u[0])
       })
@@ -55,11 +56,11 @@ export function DashboardAttivita() {
     const { from, to } = getAnnoSocialeRange(annoSociale)
     setLoading(true)
     supabase.from('vista_report_ricerca')
-      .select('causa, persone_servite, totale_volontari, totale_ore_servizio')
+      .select('causa, persone_servite_limite, totale_volontari, totale_ore_servizio_capped')
       .eq('sponsor_nome_account', club)
       .gte('data_inizio', from)
       .lte('data_inizio', to)
-      .range(0, 9999)
+      .range(0, 49999)
       .then(({ data }) => {
         setRows((data ?? []) as Att[])
         setLoading(false)

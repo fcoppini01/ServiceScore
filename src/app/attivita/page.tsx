@@ -159,22 +159,25 @@ export default function AttivitaPage() {
   }
 
   async function loadFilterOptions() {
-    const [zoneRes, circRes, causaRes, tipoRes, livelloRes, statiRes, clubsRes] = await Promise.all([
-      supabase.from('vista_report_ricerca').select('sponsor_zona').not('sponsor_zona', 'is', null),
-      supabase.from('vista_report_ricerca').select('sponsor_circoscrizione').not('sponsor_circoscrizione', 'is', null),
-      supabase.from('vista_report_ricerca').select('causa').not('causa', 'is', null),
-      supabase.from('vista_report_ricerca').select('tipo_progetto').not('tipo_progetto', 'is', null),
-      supabase.from('vista_report_ricerca').select('livello_attivita').not('livello_attivita', 'is', null),
-      supabase.from('vista_report_ricerca').select('stato').not('stato', 'is', null),
-      supabase.from('vista_report_ricerca').select('sponsor_nome_account').not('sponsor_nome_account', 'is', null),
+    // Club/zona/circoscrizione dalla tabella club (poche righe, completa) per
+    // non incappare nel limite righe quando le attività sono migliaia.
+    // Causa/tipo/livello/stato dalla vista DISTINCT dedicata.
+    const [clubTab, opzioniRes] = await Promise.all([
+      supabase.from('club').select('nome_club, zona, circoscrizione').range(0, 9999),
+      supabase.from('vista_report_opzioni').select('campo, valore').range(0, 9999),
     ])
-    if (zoneRes.data) setZone([...new Set(zoneRes.data.map(z => z.sponsor_zona))].filter(Boolean).sort() as string[])
-    if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map(c => c.sponsor_circoscrizione))].filter(Boolean).sort() as string[])
-    if (causaRes.data) setCause([...new Set(causaRes.data.map(c => c.causa))].filter(Boolean).sort() as string[])
-    if (tipoRes.data) setTipiProgetto([...new Set(tipoRes.data.map(t => t.tipo_progetto))].filter(Boolean).sort() as string[])
-    if (livelloRes.data) setLivelliAttivita([...new Set(livelloRes.data.map(l => l.livello_attivita))].filter(Boolean).sort() as string[])
-    if (statiRes.data) setStati([...new Set(statiRes.data.map(s => s.stato))].filter(Boolean).sort() as string[])
-    if (clubsRes.data) setClubs([...new Set(clubsRes.data.map(c => c.sponsor_nome_account))].filter(Boolean).sort() as string[])
+    if (clubTab.data) {
+      setClubs([...new Set(clubTab.data.map((c: any) => c.nome_club))].filter(Boolean).sort() as string[])
+      setZone([...new Set(clubTab.data.map((c: any) => c.zona))].filter(Boolean).sort() as string[])
+      setCircoscrizioni([...new Set(clubTab.data.map((c: any) => c.circoscrizione))].filter(Boolean).sort() as string[])
+    }
+    if (opzioniRes.data) {
+      const byField = (campo: string) => opzioniRes.data!.filter((o: any) => o.campo === campo).map((o: any) => o.valore).filter(Boolean).sort()
+      setCause(byField('causa') as string[])
+      setTipiProgetto(byField('tipo_progetto') as string[])
+      setLivelliAttivita(byField('livello_attivita') as string[])
+      setStati(byField('stato') as string[])
+    }
   }
 
   // Applica i filtri correnti a una qualsiasi query Supabase (riusato per
@@ -229,9 +232,12 @@ export default function AttivitaPage() {
     let query = applyFilters(supabase.from('vista_report_ricerca').select('*', { count: 'exact' }))
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
-    // Query principale + aggregati in parallelo
+    // Query principale + aggregati in parallelo.
+    // Usiamo i valori CAPPED / LIMITE come fa LCI nei report ufficiali:
+    // i valori grezzi contengono errori di compilazione dei club (es. una
+    // rotatoria con "180.000 persone servite") che gonfiano i totali.
     const totaliQ = applyFilters(supabase.from('vista_report_ricerca').select(
-      'persone:persone_servite.sum(), volontari:totale_volontari.sum(), ore:totale_ore_servizio.sum(), donati:totale_fondi_donati.sum(), raccolti:totale_fondi_raccolti.sum()'
+      'persone:persone_servite_limite.sum(), volontari:totale_volontari.sum(), ore:totale_ore_servizio_capped.sum(), donati:fondi_donati_usd_capped.sum(), raccolti:fondi_raccolti_usd_capped.sum()'
     ))
     const [main, agg] = await Promise.all([
       query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1),
@@ -463,7 +469,7 @@ export default function AttivitaPage() {
               <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-primary mb-1.5">
                   Indicazioni totali
-                  <span className="ml-1 text-muted-foreground font-normal normal-case">(somma sui risultati filtrati)</span>
+                  <span className="ml-1 text-muted-foreground font-normal normal-case">(valori capped/limite LCI sui risultati filtrati)</span>
                 </p>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
                   <span className="whitespace-nowrap">
@@ -482,12 +488,12 @@ export default function AttivitaPage() {
                   </span>
                   <span className="text-muted-foreground">·</span>
                   <span className="whitespace-nowrap">
-                    <span className="font-bold text-foreground tabular-nums">€ {totali.donati.toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span>
+                    <span className="font-bold text-foreground tabular-nums">$ {totali.donati.toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span>
                     <span className="text-muted-foreground ml-1">donati</span>
                   </span>
                   <span className="text-muted-foreground">·</span>
                   <span className="whitespace-nowrap">
-                    <span className="font-bold text-foreground tabular-nums">€ {totali.raccolti.toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span>
+                    <span className="font-bold text-foreground tabular-nums">$ {totali.raccolti.toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span>
                     <span className="text-muted-foreground ml-1">raccolti</span>
                   </span>
                 </div>

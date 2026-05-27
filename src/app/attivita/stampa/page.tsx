@@ -126,7 +126,7 @@ function StampaAttivitaInner() {
     if (filters.minAlberi) q = q.gte('alberi_piantati', parseFloat(filters.minAlberi))
     if (filters.maxAlberi) q = q.lte('alberi_piantati', parseFloat(filters.maxAlberi))
 
-    q.order(filters.sortField, { ascending: filters.sortDir === 'asc', nullsFirst: false }).range(0, 9999).then(({ data, error }) => {
+    q.order(filters.sortField, { ascending: filters.sortDir === 'asc', nullsFirst: false }).range(0, 49999).then(({ data, error }) => {
       if (error) setError('Errore nel caricamento. Riprova.')
       else setRows(data || [])
       setLoading(false)

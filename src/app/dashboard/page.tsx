@@ -40,10 +40,10 @@ export default async function DashboardPage() {
     supabase.from('soci').select('matricola_socio', { count: 'exact', head: false })
       .gte('data_ingresso', pfy.from).lte('data_ingresso', pfy.to),
     supabase.from('soci').select('data_ingresso').not('data_ingresso', 'is', null).range(0, 9999),
-    supabase.from('vista_report_ricerca').select('id_attivita, data_inizio, causa, persone_servite, totale_ore_servizio, totale_fondi_raccolti, fondi_raccolti_usd_capped, sponsor_nome_account')
-      .gte('data_inizio', fy.from).lte('data_inizio', fy.to).range(0, 9999),
-    supabase.from('vista_report_ricerca').select('id_attivita, data_inizio, causa, persone_servite, totale_ore_servizio, totale_fondi_raccolti, fondi_raccolti_usd_capped, sponsor_nome_account')
-      .gte('data_inizio', pfy.from).lte('data_inizio', pfy.to).range(0, 9999),
+    supabase.from('vista_report_ricerca').select('id_attivita, data_inizio, causa, persone_servite_limite, totale_ore_servizio_capped, totale_fondi_raccolti, fondi_raccolti_usd_capped, sponsor_nome_account')
+      .gte('data_inizio', fy.from).lte('data_inizio', fy.to).range(0, 49999),
+    supabase.from('vista_report_ricerca').select('id_attivita, data_inizio, causa, persone_servite_limite, totale_ore_servizio_capped, totale_fondi_raccolti, fondi_raccolti_usd_capped, sponsor_nome_account')
+      .gte('data_inizio', pfy.from).lte('data_inizio', pfy.to).range(0, 49999),
     supabase.from('vista_soci_ricerca').select('sesso').not('sesso', 'is', null).range(0, 9999),
     supabase.from('vista_soci_ricerca').select('fascia_eta').not('fascia_eta', 'is', null).range(0, 9999),
     supabase.from('vista_report_ricerca').select('causa').not('causa', 'is', null).range(0, 9999),
@@ -51,10 +51,10 @@ export default async function DashboardPage() {
     supabase.from('vista_report_ricerca').select('id_attivita, titolo, sponsor_nome_account, sponsor_zona, causa, stato, totale_ore_servizio, totale_fondi_raccolti').order('data_inizio', { ascending: false }).limit(10),
   ])
 
-  // Aggregazioni service FY
+  // Aggregazioni service FY — valori CAPPED/LIMITE come nei report ufficiali LCI
   const actFY = activitiesFY ?? []
-  const totPeopleServedFY = actFY.reduce((s, a: any) => s + (Number(a.persone_servite) || 0), 0)
-  const totVolunteerHoursFY = actFY.reduce((s, a: any) => s + (Number(a.totale_ore_servizio) || 0), 0)
+  const totPeopleServedFY = actFY.reduce((s, a: any) => s + (Number(a.persone_servite_limite) || 0), 0)
+  const totVolunteerHoursFY = actFY.reduce((s, a: any) => s + (Number(a.totale_ore_servizio_capped) || 0), 0)
   const clubsReportingFY = new Set(actFY.map((a: any) => a.sponsor_nome_account).filter(Boolean)).size
   const clubsReportingPct = totalClubs ? (clubsReportingFY / totalClubs) * 100 : 0
 

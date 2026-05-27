@@ -115,12 +115,11 @@ export default function QuadroClubAnnoAmmServicePage() {
   }, [isClient, club, filtroZona, annoSociale])
 
   async function loadFilterOptions() {
-    const [clubsRes, zoneRes] = await Promise.all([
-      supabase.from('vista_report_ricerca').select('sponsor_nome_account').not('sponsor_nome_account', 'is', null).range(0, 9999),
-      supabase.from('vista_report_ricerca').select('sponsor_zona').not('sponsor_zona', 'is', null).range(0, 9999),
-    ])
-    if (clubsRes.data) setClubs([...new Set(clubsRes.data.map((c: any) => c.sponsor_nome_account))].filter(Boolean).sort() as string[])
-    if (zoneRes.data) setZone([...new Set(zoneRes.data.map((z: any) => z.sponsor_zona))].filter(Boolean).sort() as string[])
+    const { data } = await supabase.from('club').select('nome_club, zona').range(0, 9999)
+    if (data) {
+      setClubs([...new Set(data.map((c: any) => c.nome_club))].filter(Boolean).sort() as string[])
+      setZone([...new Set(data.map((c: any) => c.zona))].filter(Boolean).sort() as string[])
+    }
   }
 
   async function loadActivities() {
@@ -134,7 +133,7 @@ export default function QuadroClubAnnoAmmServicePage() {
       .lte('data_inizio', to)
     if (club.length) q = q.in('sponsor_nome_account', club)
     if (filtroZona.length) q = q.in('sponsor_zona', filtroZona)
-    const { data, error } = await q.order('data_inizio', { ascending: true }).range(0, 9999)
+    const { data, error } = await q.order('data_inizio', { ascending: true }).range(0, 49999)
     if (error) setError('Errore nel caricamento. Riprova.')
     else setActivities(data || [])
     setLoading(false)
