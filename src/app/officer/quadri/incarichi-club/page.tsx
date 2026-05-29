@@ -94,7 +94,7 @@ export default function QuadroIncarichiClubPage() {
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Quadro di Sintesi degli Incarichi con le Nomine dai Club
+        Classificazione degli Incarichi con le Nomine dai Club
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
         Distretto Lions 108 LA · {officer.length} incarichi

@@ -61,7 +61,7 @@ export default function QuadroEtaPage() {
     if (filtroZona.length) query = query.in('club_zona', filtroZona)
     if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
     if (filtroClub.length) query = query.in('nome_club', filtroClub)
-    const { data, error } = await query.order('eta', { ascending: true, nullsFirst: false }).range(0, 9999)
+    const { data, error } = await query.order('eta', { ascending: false, nullsFirst: false }).range(0, 9999)
     if (error) setError('Errore nel caricamento. Riprova.')
     else setSoci(data || [])
     setLoading(false)
@@ -89,10 +89,10 @@ export default function QuadroEtaPage() {
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Quadro di Riordino Soci per Fasce di Età
+        Classificazione Soci per Fasce di Età
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
-        Distretto Lions 108 LA · {soci.length} soci · Ordinati per età crescente
+        Distretto Lions 108 LA · {soci.length} soci · Ordinati per età decrescente
       </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">

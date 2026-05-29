@@ -161,7 +161,7 @@ export default function QuadroClubAnnoAmmServicePage() {
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Quadro delle Attività del Club con Evidenza di Amministrazione e Service
+        Classificazione delle Attività del Club con Evidenza di Amministrazione e Service
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
         {club.length > 0 || filtroZona.length > 0 ? (

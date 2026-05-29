@@ -11,7 +11,7 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Users, FileText, Calendar, Award, Printer } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Users, Printer } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
 
@@ -37,6 +37,7 @@ interface Filters {
 }
 
 const FASCE_ETA = ['Under 30', '31-40', '41-50', '51-60', '61-70', 'Over 70']
+const FASCE_ANZIANITA = ['Under 2', '2-5', '5-10', '10-15', '15-20', 'Over 20']
 
 const EMPTY_FILTERS: Filters = {
   search: '', sesso: [], fasciaEta: [], fasciaAnzianita: [], etaMin: '', etaMax: '',
@@ -167,27 +168,6 @@ export default function SociPage() {
         Elenco soci del Distretto 108 LA
       </motion.p>
 
-      <motion.div variants={itemVariants} className="mb-6">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Quadri di Riordino</p>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/soci/quadri/eta">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5">
-              <Calendar className="h-3.5 w-3.5" /> Per fasce di età
-            </Button>
-          </Link>
-          <Link href="/soci/quadri/anzianita">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5">
-              <Award className="h-3.5 w-3.5" /> Per anzianità lionistica
-            </Button>
-          </Link>
-          <Link href="/soci/quadri/caratteristiche">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5">
-              <FileText className="h-3.5 w-3.5" /> Caratteristiche associative
-            </Button>
-          </Link>
-        </div>
-      </motion.div>
-
       <motion.div variants={itemVariants}>
         <Card className="mb-6 border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
@@ -259,7 +239,7 @@ export default function SociPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <MultiSelect options={categorie} selected={filters.categoriaAssociativa} onChange={(v) => updateFilters({ ...filters, categoriaAssociativa: v })} placeholder="Categoria" />
                         <MultiSelect options={programmi} selected={filters.programma} onChange={(v) => updateFilters({ ...filters, programma: v })} placeholder="Programma" />
-                        <MultiSelect options={FASCE_ETA} selected={filters.fasciaAnzianita} onChange={(v) => updateFilters({ ...filters, fasciaAnzianita: v })} placeholder="Fascia anzianità" />
+                        <MultiSelect options={FASCE_ANZIANITA} selected={filters.fasciaAnzianita} onChange={(v) => updateFilters({ ...filters, fasciaAnzianita: v })} placeholder="Fascia anzianità" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <Input placeholder="Professione..." value={filters.professione} onChange={(e) => updateFilters({ ...filters, professione: e.target.value })} className="bg-background/50" />

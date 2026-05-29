@@ -12,7 +12,7 @@ import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ArrowLeft, Printer, Users } from 'lucide-react'
 
-const FASCE = ['Under 30', '31-40', '41-50', '51-60', '61-70', 'Over 70']
+const FASCE = ['Under 2', '2-5', '5-10', '10-15', '15-20', 'Over 20']
 
 export default function QuadroAnzianitaPage() {
   const [soci, setSoci] = useState<any[]>([])
@@ -87,7 +87,7 @@ export default function QuadroAnzianitaPage() {
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Quadro di Riordino Soci per Anzianità Lionistica
+        Classificazione Soci per Anzianità Lionistica
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
         Distretto Lions 108 LA · {soci.length} soci · Ordinati per anzianità decrescente

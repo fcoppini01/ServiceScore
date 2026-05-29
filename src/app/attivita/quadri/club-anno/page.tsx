@@ -90,7 +90,7 @@ export default function QuadroClubAnnoPage() {
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Quadro di Tutte le Attività del Club nell&apos;Anno Sociale
+        Classificazione di Tutte le Attività del Club nell&apos;Anno Sociale
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
         {club.length > 0 || filtroZona.length > 0 ? (

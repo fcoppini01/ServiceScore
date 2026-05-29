@@ -27,27 +27,27 @@ const NAV_ITEMS: NavItem[] = [
     href: "/soci",
     label: "Soci",
     sublinks: [
-      { href: "/soci", label: "Elenco Soci" },
-      { href: "/soci/quadri/eta", label: "Quadro per fasce di età" },
-      { href: "/soci/quadri/anzianita", label: "Quadro per anzianità lionistica" },
-      { href: "/soci/quadri/caratteristiche", label: "Quadro caratteristiche associative" },
+      { href: "/soci", label: "Prima Pagina" },
+      { href: "/soci/quadri/eta", label: "Classificazione per fasce di età" },
+      { href: "/soci/quadri/anzianita", label: "Classificazione per anzianità lionistica" },
+      { href: "/soci/quadri/caratteristiche", label: "Classificazione per categoria associativa" },
     ],
   },
   {
     href: "/attivita",
     label: "Attività",
     sublinks: [
-      { href: "/attivita", label: "Elenco Attività" },
-      { href: "/attivita/quadri/club-anno", label: "Quadro attività del club / anno" },
-      { href: "/attivita/quadri/club-anno-amm-service", label: "Quadro Amministrazione vs Service" },
+      { href: "/attivita", label: "Prima Pagina" },
+      { href: "/attivita/quadri/club-anno", label: "Classificazione attività del club / anno" },
+      { href: "/attivita/quadri/club-anno-amm-service", label: "Classificazione Amministrazione vs Service" },
     ],
   },
   {
     href: "/officer",
     label: "Officer",
     sublinks: [
-      { href: "/officer", label: "Elenco Officer" },
-      { href: "/officer/quadri/incarichi-club", label: "Quadro incarichi con nomine dai Club" },
+      { href: "/officer", label: "Prima Pagina" },
+      { href: "/officer/quadri/incarichi-club", label: "Classificazione incarichi con nomine dai Club" },
     ],
   },
 ]
