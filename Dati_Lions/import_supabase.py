@@ -119,6 +119,26 @@ def import_table(table: str, csv_file: str, batch_size: int = 200):
             raise
     print(f"  Inserite {inserted} righe                        ")
 
+def apply_future_proof_grants():
+    """
+    Riapplica i GRANT espliciti su tutte le tabelle/viste dello schema public
+    + i DEFAULT PRIVILEGES per le future tabelle.
+    Necessario perche' dal 30 ott 2026 Supabase non espone piu' di default
+    lo schema public alla Data API: nuove tabelle = niente accesso anon/
+    authenticated finche' non si fa GRANT esplicito.
+    Vedi grants_future_proof.sql per la documentazione completa.
+    """
+    print("\n> Applico GRANT future-proof (Data API policy 30/10/2026)...")
+    sql_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "grants_future_proof.sql")
+    if not os.path.exists(sql_file):
+        print(f"  ATTENZIONE: {sql_file} non trovato, salto.")
+        return
+    with open(sql_file, "r", encoding="utf-8") as f:
+        sql = f.read()
+    exec_sql(sql)
+    print("  OK (grant + default privileges applicati)")
+
 if __name__ == "__main__":
     here = os.path.dirname(os.path.abspath(__file__))
     os.chdir(here)
@@ -134,7 +154,10 @@ if __name__ == "__main__":
     import_table("officer_club",    "3_officer_supabase.csv")
     import_table("attivita_report", "4_report_supabase.csv", batch_size=150)
 
-    # 3. Verifica counts
+    # 3. GRANT future-proof (idempotente, copre eventuali nuove tabelle/viste)
+    apply_future_proof_grants()
+
+    # 4. Verifica counts
     print("\n> Verifica counts post-import:")
     res = exec_sql("""SELECT
         (SELECT COUNT(*) FROM club) AS club,
