@@ -109,7 +109,13 @@ export default function OfficerPage() {
     if (filters.dataInizioA) query = query.lte('data_inizio', filters.dataInizioA)
     if (filters.dataConclusioneDa) query = query.gte('data_conclusione', filters.dataConclusioneDa)
     if (filters.dataConclusioneA) query = query.lte('data_conclusione', filters.dataConclusioneA)
-    if (filters.soloAttivi) query = query.is('data_conclusione', null)
+    if (filters.soloAttivi) {
+      const d = new Date()
+      const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      query = query
+        .or(`data_inizio.is.null,data_inizio.lte.${oggi}`)
+        .or(`data_conclusione.is.null,data_conclusione.gte.${oggi}`)
+    }
 
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
@@ -225,7 +231,7 @@ export default function OfficerPage() {
                           onChange={(e) => updateFilters({ ...filters, soloAttivi: e.target.checked })}
                           className="h-4 w-4 rounded border-input accent-primary"
                         />
-                        <span className="text-sm">Solo incarichi attivi (senza data di conclusione)</span>
+                        <span className="text-sm">Solo incarichi attivi (mandato in corso oggi)</span>
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>

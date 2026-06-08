@@ -55,7 +55,13 @@ export default function QuadroIncarichiClubPage() {
     if (filtroTitolo.length) query = query.in('titolo_ufficiale', filtroTitolo)
     if (filtroZona.length) query = query.in('club_zona', filtroZona)
     if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
-    if (soloAttivi) query = query.is('data_conclusione', null)
+    if (soloAttivi) {
+      const d = new Date()
+      const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      query = query
+        .or(`data_inizio.is.null,data_inizio.lte.${oggi}`)
+        .or(`data_conclusione.is.null,data_conclusione.gte.${oggi}`)
+    }
     const { data, error } = await query
       .order('titolo_ufficiale', { ascending: true, nullsFirst: false })
       .order('nome_club', { ascending: true, nullsFirst: false })
@@ -98,7 +104,7 @@ export default function QuadroIncarichiClubPage() {
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
         Distretto Lions 108 LA · {officer.length} incarichi
-        {soloAttivi && ' attivi'}
+        {soloAttivi && ' attivi (in corso oggi)'}
         {filtroZona.length > 0 && ` · Zone: ${filtroZona.join(', ')}`}
         {filtroCirc.length > 0 && ` · Circoscrizioni: ${filtroCirc.join(', ')}`}
         · Ordinati per titolo ufficiale e club
@@ -120,7 +126,7 @@ export default function QuadroIncarichiClubPage() {
                   onChange={(e) => setSoloAttivi(e.target.checked)}
                   className="h-4 w-4 rounded border-input accent-primary"
                 />
-                <span className="text-sm">Solo incarichi attivi</span>
+                <span className="text-sm">Solo incarichi attivi (in corso oggi)</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
