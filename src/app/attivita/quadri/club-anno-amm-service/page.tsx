@@ -174,7 +174,8 @@ export default function QuadroClubAnnoAmmServicePage() {
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Filtri territoriali — ordine fisso Club, Zona (+ Anno sociale a destra) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Club (selezione multipla)</p>
                 <MultiSelect options={clubs} selected={club} onChange={setClub} placeholder="Seleziona club…" />
@@ -182,6 +183,10 @@ export default function QuadroClubAnnoAmmServicePage() {
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Oppure Zone (in alternativa)</p>
                 <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Tutte le zone" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Distretto</p>
+                <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="108 LA" />
               </div>
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Anno sociale</p>

@@ -43,3 +43,10 @@ next-env.d.ts
 
 # Backup locali di sicurezza dei file CSV (non vanno nel repo)
 Dati_Lions/backup_*/
+Dati_Lions/*.bak_*
+Dati_Lions/upsert_batches/
+
+# Documenti generati dagli script (build artifact)
+presentazione/*.docx
+presentazione/*.pptx
+presentazione/node_modules/

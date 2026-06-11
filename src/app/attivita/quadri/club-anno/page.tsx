@@ -90,7 +90,7 @@ export default function QuadroClubAnnoPage() {
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Classificazione di Tutte le Attività del Club nell&apos;Anno Sociale
+        Classificazione delle Attività comunicate dal club nell&apos;anno sociale
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
         {club.length > 0 || filtroZona.length > 0 ? (
@@ -103,7 +103,8 @@ export default function QuadroClubAnnoPage() {
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Filtri territoriali — ordine fisso Club, Zona (+ Anno sociale a destra) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Club (selezione multipla)</p>
                 <MultiSelect options={clubs} selected={club} onChange={setClub} placeholder="Seleziona club…" />
@@ -111,6 +112,10 @@ export default function QuadroClubAnnoPage() {
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Oppure Zone (in alternativa)</p>
                 <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Tutte le zone" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Distretto</p>
+                <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="108 LA" />
               </div>
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Anno sociale</p>
@@ -153,6 +158,18 @@ export default function QuadroClubAnnoPage() {
                 <span className="text-sm">Nessuna attività trovata per la selezione · anno {annoLabel}</span>
               </div>
             ) : (
+              <>
+              {/* Complessivo in cima (richiesta Direttivo) */}
+              <div className="mb-4 rounded-lg border-2 border-primary/30 bg-primary/5 px-4 py-3 print:border-black print:bg-transparent">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2 print:text-black">Complessivo delle attività</p>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                  <div><span className="text-muted-foreground print:text-black">Persone (limite max)</span><br /><span className="font-bold tabular-nums">{fmt(totali.persone)}</span></div>
+                  <div><span className="text-muted-foreground print:text-black">Volontari</span><br /><span className="font-bold tabular-nums">{fmt(totali.volontari)}</span></div>
+                  <div><span className="text-muted-foreground print:text-black">Ore capped</span><br /><span className="font-bold tabular-nums">{fmt(totali.ore)}</span></div>
+                  <div><span className="text-muted-foreground print:text-black">Donati USD capped</span><br /><span className="font-bold tabular-nums">{fmt(totali.donati)}</span></div>
+                  <div><span className="text-muted-foreground print:text-black">Raccolti USD capped</span><br /><span className="font-bold tabular-nums">{fmt(totali.raccolti)}</span></div>
+                </div>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <TableHeader>
@@ -188,18 +205,10 @@ export default function QuadroClubAnnoPage() {
                         <TableCell className="tabular-nums text-right">{fmt(Number(a.fondi_raccolti_usd_capped) || 0)}</TableCell>
                       </TableRow>
                     ))}
-                    <TableRow className="font-bold bg-muted/40 print:bg-transparent print:border-t-2 print:border-black">
-                      <TableCell colSpan={6} className="text-right">TOTALI</TableCell>
-                      <TableCell className="tabular-nums text-right">{fmt(totali.persone)}</TableCell>
-                      <TableCell className="tabular-nums text-right">{fmt(totali.volontari)}</TableCell>
-                      <TableCell className="tabular-nums text-right">{fmt(totali.ore)}</TableCell>
-                      <TableCell className="tabular-nums text-right">{fmt(totali.donati)}</TableCell>
-                      <TableCell></TableCell>
-                      <TableCell className="tabular-nums text-right">{fmt(totali.raccolti)}</TableCell>
-                    </TableRow>
                   </TableBody>
                 </table>
               </div>
+              </>
             )}
           </CardContent>
         </Card>

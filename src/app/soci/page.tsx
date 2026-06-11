@@ -11,7 +11,7 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Users, Printer } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Users, Printer, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
 
@@ -24,41 +24,52 @@ interface Filters {
   fasciaAnzianita: string[]
   etaMin: string
   etaMax: string
+  // Filtri territoriali (ordine fisso: Club, Zona, Circoscrizione, Distretto)
+  club: string[]
   zona: string[]
   circoscrizione: string[]
+  distretto: string[]
   categoriaAssociativa: string[]
+  tipoAssociazione: string[]
   programma: string[]
-  club: string[]
   professione: string
   citta: string
   provincia: string
   anzianitaMin: string
   anzianitaMax: string
+  // Escludi soci con data ingresso < 1/7/2023 (date probabilmente segnaposto Lions)
+  escludiAnte202307: boolean
 }
 
 const FASCE_ETA = ['Under 30', '31-40', '41-50', '51-60', '61-70', 'Over 70']
 const FASCE_ANZIANITA = ['Under 2', '2-5', '5-10', '10-15', '15-20', 'Over 20']
+const DISTRETTI = ['108 LA']
 
 const EMPTY_FILTERS: Filters = {
   search: '', sesso: [], fasciaEta: [], fasciaAnzianita: [], etaMin: '', etaMax: '',
-  zona: [], circoscrizione: [], categoriaAssociativa: [], programma: [], club: [],
+  club: [], zona: [], circoscrizione: [], distretto: [],
+  categoriaAssociativa: [], tipoAssociazione: [], programma: [],
   professione: '', citta: '', provincia: '',
   anzianitaMin: '', anzianitaMax: '',
+  escludiAnte202307: false,
 }
 
 function countAdvancedFilters(f: Filters) {
   let c = 0
-  if (f.fasciaAnzianita.length) c++
-  if (f.etaMin || f.etaMax) c++
+  if (f.club.length) c++
   if (f.zona.length) c++
   if (f.circoscrizione.length) c++
+  if (f.distretto.length) c++
+  if (f.fasciaAnzianita.length) c++
+  if (f.etaMin || f.etaMax) c++
   if (f.categoriaAssociativa.length) c++
+  if (f.tipoAssociazione.length) c++
   if (f.programma.length) c++
-  if (f.club.length) c++
   if (f.professione) c++
   if (f.citta) c++
   if (f.provincia) c++
   if (f.anzianitaMin || f.anzianitaMax) c++
+  if (f.escludiAnte202307) c++
   return c
 }
 
@@ -72,6 +83,7 @@ export default function SociPage() {
   const [zone, setZone] = useState<string[]>([])
   const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
   const [categorie, setCategorie] = useState<string[]>([])
+  const [tipiAssoc, setTipiAssoc] = useState<string[]>([])
   const [programmi, setProgrammi] = useState<string[]>([])
   const [clubs, setClubs] = useState<string[]>([])
   const [sessiDisponibili, setSessiDisponibili] = useState<string[]>([])
@@ -99,20 +111,23 @@ export default function SociPage() {
   }
 
   async function loadFilterOptions() {
-    const [zoneRes, circRes, catRes, clubRes, sessoRes, progRes] = await Promise.all([
-      supabase.from('club').select('zona').not('zona', 'is', null),
-      supabase.from('club').select('circoscrizione').not('circoscrizione', 'is', null),
-      supabase.from('soci').select('categoria_associativa').not('categoria_associativa', 'is', null),
-      supabase.from('club').select('nome_club').not('nome_club', 'is', null),
-      supabase.from('soci').select('sesso').not('sesso', 'is', null),
-      supabase.from('soci').select('programma').not('programma', 'is', null),
+    // Carico le opzioni territoriali dalla tabella club (completa, non dipende dal volume soci)
+    // e le opzioni anagrafiche dalla tabella soci. Range esteso per evitare il default 1000 di PostgREST.
+    const [clubTab, sociTab] = await Promise.all([
+      supabase.from('club').select('nome_club, zona, circoscrizione').range(0, 9999),
+      supabase.from('soci').select('sesso, categoria_associativa, tipo_associazione_intera, programma').range(0, 9999),
     ])
-    if (zoneRes.data) setZone([...new Set(zoneRes.data.map(z => z.zona))].sort() as string[])
-    if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map(c => c.circoscrizione))].sort() as string[])
-    if (catRes.data) setCategorie([...new Set(catRes.data.map(c => c.categoria_associativa))].filter(Boolean).sort() as string[])
-    if (clubRes.data) setClubs([...new Set(clubRes.data.map(c => c.nome_club))].filter(Boolean).sort() as string[])
-    if (sessoRes.data) setSessiDisponibili([...new Set(sessoRes.data.map(s => s.sesso))].filter(Boolean).sort() as string[])
-    if (progRes.data) setProgrammi([...new Set(progRes.data.map(p => p.programma))].filter(Boolean).sort() as string[])
+    if (clubTab.data) {
+      setClubs([...new Set(clubTab.data.map((c: any) => c.nome_club))].filter(Boolean).sort() as string[])
+      setZone([...new Set(clubTab.data.map((c: any) => c.zona))].filter(Boolean).sort() as string[])
+      setCircoscrizioni([...new Set(clubTab.data.map((c: any) => c.circoscrizione))].filter(Boolean).sort() as string[])
+    }
+    if (sociTab.data) {
+      setSessiDisponibili([...new Set(sociTab.data.map((s: any) => s.sesso))].filter(Boolean).sort() as string[])
+      setCategorie([...new Set(sociTab.data.map((s: any) => s.categoria_associativa))].filter(Boolean).sort() as string[])
+      setTipiAssoc([...new Set(sociTab.data.map((s: any) => s.tipo_associazione_intera))].filter(Boolean).sort() as string[])
+      setProgrammi([...new Set(sociTab.data.map((s: any) => s.programma))].filter(Boolean).sort() as string[])
+    }
   }
 
   async function loadSoci() {
@@ -125,11 +140,14 @@ export default function SociPage() {
     if (filters.sesso.length) query = query.in('sesso', filters.sesso)
     if (filters.fasciaEta.length) query = query.in('fascia_eta', filters.fasciaEta)
     if (filters.fasciaAnzianita.length) query = query.in('fascia_anzianita', filters.fasciaAnzianita)
+    // Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto
+    if (filters.club.length) query = query.in('nome_club', filters.club)
     if (filters.zona.length) query = query.in('club_zona', filters.zona)
     if (filters.circoscrizione.length) query = query.in('club_circoscrizione', filters.circoscrizione)
+    // distretto: oggi unico ("108 LA"), filtro presente per coerenza UX, no-op a livello query
     if (filters.categoriaAssociativa.length) query = query.in('categoria_associativa', filters.categoriaAssociativa)
+    if (filters.tipoAssociazione.length) query = query.in('tipo_associazione_intera', filters.tipoAssociazione)
     if (filters.programma.length) query = query.in('programma', filters.programma)
-    if (filters.club.length) query = query.in('nome_club', filters.club)
     if (filters.professione) query = query.ilike('professione', `%${filters.professione}%`)
     if (filters.citta) query = query.ilike('citta', `%${filters.citta}%`)
     if (filters.provincia) query = query.ilike('stato_provincia', `%${filters.provincia}%`)
@@ -137,6 +155,8 @@ export default function SociPage() {
     if (filters.anzianitaMax) query = query.lte('anzianita_lionistica', parseInt(filters.anzianitaMax))
     if (filters.etaMin) query = query.gte('eta', parseInt(filters.etaMin))
     if (filters.etaMax) query = query.lte('eta', parseInt(filters.etaMax))
+    // Esclude soci con data_ingresso anteriore al 1/7/2023 (date probabilmente "fittizie" Lions)
+    if (filters.escludiAnte202307) query = query.gte('data_ingresso', '2023-07-01')
 
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
@@ -162,11 +182,19 @@ export default function SociPage() {
   return (
     <motion.main initial="hidden" animate="visible" variants={containerVariants} className="container mx-auto p-4 sm:p-8">
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent">
-        Gestione Soci
+        Elenco Generale Soci
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4">
         Elenco soci del Distretto 108 LA
       </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6">
+        <Link href="/soci/rapporti">
+          <Button variant="outline" size="sm" className="text-xs gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Rapporti
+          </Button>
+        </Link>
+      </motion.div>
 
       <motion.div variants={itemVariants}>
         <Card className="mb-6 border border-border/50 hover:border-primary/30 transition-all duration-300 bg-card/50 backdrop-blur-sm">
@@ -231,17 +259,20 @@ export default function SociPage() {
                     className="overflow-hidden"
                   >
                     <div className="space-y-3 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
                         <MultiSelect options={zone} selected={filters.zona} onChange={(v) => updateFilters({ ...filters, zona: v })} placeholder="Zona" />
                         <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
-                        <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
+                        <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => updateFilters({ ...filters, distretto: v })} placeholder="Distretto" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <MultiSelect options={categorie} selected={filters.categoriaAssociativa} onChange={(v) => updateFilters({ ...filters, categoriaAssociativa: v })} placeholder="Categoria" />
+                        <MultiSelect options={tipiAssoc} selected={filters.tipoAssociazione} onChange={(v) => updateFilters({ ...filters, tipoAssociazione: v })} placeholder="Tipo associazione" />
                         <MultiSelect options={programmi} selected={filters.programma} onChange={(v) => updateFilters({ ...filters, programma: v })} placeholder="Programma" />
-                        <MultiSelect options={FASCE_ANZIANITA} selected={filters.fasciaAnzianita} onChange={(v) => updateFilters({ ...filters, fasciaAnzianita: v })} placeholder="Fascia anzianità" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <MultiSelect options={FASCE_ANZIANITA} selected={filters.fasciaAnzianita} onChange={(v) => updateFilters({ ...filters, fasciaAnzianita: v })} placeholder="Fascia anzianità" />
                         <Input placeholder="Professione..." value={filters.professione} onChange={(e) => updateFilters({ ...filters, professione: e.target.value })} className="bg-background/50" />
                         <Input placeholder="Città..." value={filters.citta} onChange={(e) => updateFilters({ ...filters, citta: e.target.value })} className="bg-background/50" />
                       </div>
@@ -263,6 +294,18 @@ export default function SociPage() {
                             <Input type="number" placeholder="A" min="0" value={filters.anzianitaMax} onChange={(e) => updateFilters({ ...filters, anzianitaMax: e.target.value })} className="text-sm bg-background/50" />
                           </div>
                         </div>
+                      </div>
+                      {/* Esclude soci con data ingresso anteriore al 1/7/2023 (date probabilmente fittizie) */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={filters.escludiAnte202307}
+                            onChange={(e) => updateFilters({ ...filters, escludiAnte202307: e.target.checked })}
+                            className="h-4 w-4 rounded border-input accent-primary"
+                          />
+                          <span className="text-xs">Escludi soci con data di ingresso anteriore al 1/7/2023</span>
+                        </label>
                       </div>
                     </div>
                   </motion.div>
@@ -387,6 +430,8 @@ export default function SociPage() {
                         <SortableHead field="professione" label="Professione" sort={sort} onSort={handleSort} />
                         <SortableHead field="citta" label="Città" sort={sort} onSort={handleSort} />
                         <SortableHead field="stato_provincia" label="Prov." sort={sort} onSort={handleSort} />
+                        <SortableHead field="telefono_cellulare" label="Cellulare" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="email_preferita" label="Email" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -414,6 +459,8 @@ export default function SociPage() {
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[150px] truncate" title={socio.professione}>{socio.professione}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.citta}>{socio.citta}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{socio.stato_provincia}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{socio.telefono_cellulare}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[200px] truncate" title={socio.email_preferita}>{socio.email_preferita}</TableCell>
                         </motion.tr>
                       ))}
                     </TableBody>

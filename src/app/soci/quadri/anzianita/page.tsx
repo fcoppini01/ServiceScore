@@ -110,18 +110,23 @@ export default function QuadroAnzianitaPage() {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+            {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Zona (opzionale)</p>
+                <p className="text-[10px] text-muted-foreground mb-1">Club</p>
+                <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Tutti i club" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Zona</p>
                 <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Tutte le zone" />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Circoscrizione (opzionale)</p>
+                <p className="text-[10px] text-muted-foreground mb-1">Circoscrizione</p>
                 <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Tutte le circoscrizioni" />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Club (opzionale)</p>
-                <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Tutti i club" />
+                <p className="text-[10px] text-muted-foreground mb-1">Distretto</p>
+                <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="108 LA" />
               </div>
             </div>
             {(anzMin || anzMax || fasce.length > 0 || filtroZona.length > 0 || filtroCirc.length > 0 || filtroClub.length > 0) && (

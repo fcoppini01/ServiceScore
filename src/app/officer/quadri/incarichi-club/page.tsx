@@ -17,13 +17,17 @@ export default function QuadroIncarichiClubPage() {
   const [error, setError] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [titoli, setTitoli] = useState<string[]>([])
+  const [clubs, setClubs] = useState<string[]>([])
   const [zone, setZone] = useState<string[]>([])
   const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
   const [filtroTitolo, setFiltroTitolo] = useState<string[]>([])
+  const [filtroClub, setFiltroClub] = useState<string[]>([])
   const [filtroZona, setFiltroZona] = useState<string[]>([])
   const [filtroCirc, setFiltroCirc] = useState<string[]>([])
-  const [soloAttivi, setSoloAttivi] = useState(true)
+  const [filtroDistretto, setFiltroDistretto] = useState<string[]>([])
+  const [soloAttivi, setSoloAttivi] = useState(false)
   const [groupByTitolo, setGroupByTitolo] = useState(true)
+  const DISTRETTI = ['108 LA']
 
   useEffect(() => {
     setIsClient(true)
@@ -33,17 +37,20 @@ export default function QuadroIncarichiClubPage() {
   useEffect(() => {
     if (!isClient) return
     loadOfficer()
-  }, [isClient, filtroTitolo, filtroZona, filtroCirc, soloAttivi])
+  }, [isClient, filtroTitolo, filtroClub, filtroZona, filtroCirc, filtroDistretto, soloAttivi])
 
   async function loadFilterOptions() {
-    const [titoliRes, zoneRes, circRes] = await Promise.all([
-      supabase.from('vista_officer_ricerca').select('titolo_ufficiale').not('titolo_ufficiale', 'is', null),
-      supabase.from('vista_officer_ricerca').select('club_zona').not('club_zona', 'is', null),
-      supabase.from('vista_officer_ricerca').select('club_circoscrizione').not('club_circoscrizione', 'is', null),
+    // Club/Zona/Circ dalla tabella club (completa), titoli dalla view officer.
+    const [titoliRes, clubTab] = await Promise.all([
+      supabase.from('vista_officer_ricerca').select('titolo_ufficiale').not('titolo_ufficiale', 'is', null).range(0, 9999),
+      supabase.from('club').select('nome_club, zona, circoscrizione').range(0, 9999),
     ])
     if (titoliRes.data) setTitoli([...new Set(titoliRes.data.map((t: any) => t.titolo_ufficiale))].filter(Boolean).sort() as string[])
-    if (zoneRes.data) setZone([...new Set(zoneRes.data.map((z: any) => z.club_zona))].filter(Boolean).sort() as string[])
-    if (circRes.data) setCircoscrizioni([...new Set(circRes.data.map((c: any) => c.club_circoscrizione))].filter(Boolean).sort() as string[])
+    if (clubTab.data) {
+      setClubs([...new Set(clubTab.data.map((c: any) => c.nome_club))].filter(Boolean).sort() as string[])
+      setZone([...new Set(clubTab.data.map((c: any) => c.zona))].filter(Boolean).sort() as string[])
+      setCircoscrizioni([...new Set(clubTab.data.map((c: any) => c.circoscrizione))].filter(Boolean).sort() as string[])
+    }
   }
 
   async function loadOfficer() {
@@ -53,8 +60,10 @@ export default function QuadroIncarichiClubPage() {
       .from('vista_officer_ricerca')
       .select('id_incarico, titolo_ufficiale, nome_club, club_zona, club_circoscrizione, nome, cognome, data_inizio, data_conclusione')
     if (filtroTitolo.length) query = query.in('titolo_ufficiale', filtroTitolo)
+    if (filtroClub.length) query = query.in('nome_club', filtroClub)
     if (filtroZona.length) query = query.in('club_zona', filtroZona)
     if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
+    // distretto: oggi unico, no-op a livello query
     if (soloAttivi) {
       const d = new Date()
       const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -113,10 +122,14 @@ export default function QuadroIncarichiClubPage() {
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <MultiSelect options={titoli} selected={filtroTitolo} onChange={setFiltroTitolo} placeholder="Titolo ufficiale" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Club" />
               <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Zona" />
               <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Circoscrizione" />
+              <MultiSelect options={DISTRETTI} selected={filtroDistretto} onChange={setFiltroDistretto} placeholder="Distretto" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <MultiSelect options={titoli} selected={filtroTitolo} onChange={setFiltroTitolo} placeholder="Titolo ufficiale" />
             </div>
             <div className="flex items-center gap-6 flex-wrap">
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -137,8 +150,8 @@ export default function QuadroIncarichiClubPage() {
                 />
                 <span className="text-sm">Raggruppa per titolo</span>
               </label>
-              {(filtroTitolo.length + filtroZona.length + filtroCirc.length) > 0 && (
-                <Button variant="outline" size="sm" onClick={() => { setFiltroTitolo([]); setFiltroZona([]); setFiltroCirc([]) }} className="text-xs">Cancella filtri</Button>
+              {(filtroTitolo.length + filtroClub.length + filtroZona.length + filtroCirc.length + filtroDistretto.length) > 0 && (
+                <Button variant="outline" size="sm" onClick={() => { setFiltroTitolo([]); setFiltroClub([]); setFiltroZona([]); setFiltroCirc([]); setFiltroDistretto([]) }} className="text-xs">Cancella filtri</Button>
               )}
             </div>
           </CardContent>

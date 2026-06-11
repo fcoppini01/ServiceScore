@@ -162,7 +162,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   return (
     <motion.main initial="hidden" animate="visible" variants={containerVariants} className="container mx-auto p-4 sm:p-8">
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent">
-        Dashboard Digitalions
+        Dashboard DigitaLions
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6">
         Quadro d&apos;insieme del Distretto 108 LA · Anno sociale <strong className="text-foreground">{fyLabel}</strong> (FY) vs <strong className="text-foreground">{pfyLabel}</strong> (PFY)

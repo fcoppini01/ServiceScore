@@ -105,10 +105,12 @@ export default function QuadroCaratteristichePage() {
               <MultiSelect options={categorie} selected={filtroCat} onChange={setFiltroCat} placeholder="Categoria associativa" />
               <MultiSelect options={programmi} selected={filtroProg} onChange={setFiltroProg} placeholder="Programma" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Zona (opzionale)" />
-              <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Circoscrizione (opzionale)" />
-              <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Club (opzionale)" />
+            {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Club" />
+              <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Zona" />
+              <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Circoscrizione" />
+              <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="Distretto: 108 LA" />
             </div>
             {(filtroTipo.length + filtroCat.length + filtroProg.length + filtroZona.length + filtroCirc.length + filtroClub.length) > 0 && (
               <Button variant="outline" size="sm" onClick={() => { setFiltroTipo([]); setFiltroCat([]); setFiltroProg([]); setFiltroZona([]); setFiltroCirc([]); setFiltroClub([]) }} className="text-xs">Cancella filtri</Button>

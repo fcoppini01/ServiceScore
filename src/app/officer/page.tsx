@@ -20,9 +20,11 @@ const PAGE_SIZE = 20
 interface Filters {
   search: string
   titolo: string[]
+  // Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto
+  club: string[]
   zona: string[]
   circoscrizione: string[]
-  club: string[]
+  distretto: string[]
   soloAttivi: boolean
   dataInizioDa: string
   dataInizioA: string
@@ -30,8 +32,11 @@ interface Filters {
   dataConclusioneA: string
 }
 
+const DISTRETTI = ['108 LA']
+
 const EMPTY_FILTERS: Filters = {
-  search: '', titolo: [], zona: [], circoscrizione: [], club: [],
+  search: '', titolo: [],
+  club: [], zona: [], circoscrizione: [], distretto: [],
   soloAttivi: false,
   dataInizioDa: '', dataInizioA: '',
   dataConclusioneDa: '', dataConclusioneA: '',
@@ -39,8 +44,10 @@ const EMPTY_FILTERS: Filters = {
 
 function countAdvancedFilters(f: Filters) {
   let c = 0
-  if (f.circoscrizione.length) c++
   if (f.club.length) c++
+  if (f.zona.length) c++
+  if (f.circoscrizione.length) c++
+  if (f.distretto.length) c++
   if (f.soloAttivi) c++
   if (f.dataInizioDa || f.dataInizioA) c++
   if (f.dataConclusioneDa || f.dataConclusioneA) c++
@@ -142,21 +149,18 @@ export default function OfficerPage() {
   return (
     <motion.main initial="hidden" animate="visible" variants={containerVariants} className="container mx-auto p-4 sm:p-8">
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent">
-        Gestione Officer
+        Elenco Officer
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4">
         Incarichi ufficiali del Distretto 108 LA
       </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Quadri di Sintesi</p>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/officer/quadri/incarichi-club">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5">
-              <FileText className="h-3.5 w-3.5" /> Incarichi con nomine dai Club
-            </Button>
-          </Link>
-        </div>
+        <Link href="/officer/rapporti">
+          <Button variant="outline" size="sm" className="text-xs gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Rapporti
+          </Button>
+        </Link>
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -179,24 +183,18 @@ export default function OfficerPage() {
           </CardHeader>
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
             <CardContent className="pt-0 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   placeholder="Cerca nome, cognome..."
                   value={filters.search}
                   onChange={(e) => updateFilters({ ...filters, search: e.target.value })}
-                  className="bg-background/50 sm:col-span-2 lg:col-span-1"
+                  className="bg-background/50"
                 />
                 <MultiSelect
                   options={titoli}
                   selected={filters.titolo}
                   onChange={(v) => updateFilters({ ...filters, titolo: v })}
                   placeholder="Incarico / Titolo"
-                />
-                <MultiSelect
-                  options={zone}
-                  selected={filters.zona}
-                  onChange={(v) => updateFilters({ ...filters, zona: v })}
-                  placeholder="Zona"
                 />
               </div>
 
@@ -220,9 +218,12 @@ export default function OfficerPage() {
                     className="overflow-hidden"
                   >
                     <div className="space-y-3 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
+                      {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
+                        <MultiSelect options={zone} selected={filters.zona} onChange={(v) => updateFilters({ ...filters, zona: v })} placeholder="Zona" />
+                        <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
+                        <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => updateFilters({ ...filters, distretto: v })} placeholder="Distretto" />
                       </div>
                       <label className="flex items-center gap-2 cursor-pointer select-none">
                         <input

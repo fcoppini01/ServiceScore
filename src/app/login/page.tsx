@@ -78,7 +78,7 @@ export default function LoginPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                Digitalions · Distretto 108 LA
+                DigitaLions · Distretto 108 LA
               </motion.p>
             </div>
 

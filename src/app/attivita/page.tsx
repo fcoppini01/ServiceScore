@@ -12,7 +12,7 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity, FileText, Briefcase, Printer } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity, FileText, Printer } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
 
@@ -21,15 +21,16 @@ const PAGE_SIZE = 20
 interface Filters {
   search: string
   stato: string[]
-  zona: string[]
   causa: string[]
+  // Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto
+  club: string[]
+  zona: string[]
+  circoscrizione: string[]
+  distretto: string[]
   // Advanced — Categorizzazione
   tipoProgetto: string[]
   livelloAttivita: string[]
-  circoscrizione: string[]
-  club: string[]
   organizzazioneBeneficiata: string
-  rapportoCompleto: string
   attivitaDistintiva: string
   finanziateLcif: string
   // Advanced — Date
@@ -53,10 +54,13 @@ interface Filters {
   minAlberi: string; maxAlberi: string
 }
 
+const DISTRETTI = ['108 LA']
+
 const EMPTY_FILTERS: Filters = {
-  search: '', stato: [], zona: [], causa: [],
-  tipoProgetto: [], livelloAttivita: [], circoscrizione: [], club: [],
-  organizzazioneBeneficiata: '', rapportoCompleto: '', attivitaDistintiva: '', finanziateLcif: '',
+  search: '', stato: [], causa: [],
+  club: [], zona: [], circoscrizione: [], distretto: [],
+  tipoProgetto: [], livelloAttivita: [],
+  organizzazioneBeneficiata: '', attivitaDistintiva: '', finanziateLcif: '',
   dataInizioDa: '', dataInizioA: '', dataConclusioneDa: '', dataConclusioneA: '',
   minPersone: '', maxPersone: '', minPersoneLimite: '', maxPersoneLimite: '',
   minVolontari: '', maxVolontari: '', minOre: '', maxOre: '', minOreCapped: '', maxOreCapped: '',
@@ -73,7 +77,6 @@ function countAdvancedFilters(f: Filters) {
   if (f.tipoProgetto.length) c++
   if (f.livelloAttivita.length) c++
   if (f.organizzazioneBeneficiata) c++
-  if (f.rapportoCompleto) c++
   if (f.attivitaDistintiva) c++
   if (f.finanziateLcif) c++
   if (f.dataInizioDa || f.dataInizioA) c++
@@ -193,7 +196,6 @@ export default function AttivitaPage() {
     if (filters.circoscrizione.length) q = q.in('sponsor_circoscrizione', filters.circoscrizione)
     if (filters.club.length) q = q.in('sponsor_nome_account', filters.club)
     if (filters.organizzazioneBeneficiata) q = q.ilike('organizzazione_beneficiata', `%${filters.organizzazioneBeneficiata}%`)
-    if (filters.rapportoCompleto) q = q.eq('rapporto_completo', filters.rapportoCompleto === 'true')
     if (filters.attivitaDistintiva) q = q.eq('attivita_distintiva', filters.attivitaDistintiva === 'true')
     if (filters.finanziateLcif) q = q.eq('finanziata_lcif', filters.finanziateLcif === 'true')
     if (filters.dataInizioDa) q = q.gte('data_inizio', filters.dataInizioDa)
@@ -281,26 +283,18 @@ export default function AttivitaPage() {
   return (
     <motion.main initial="hidden" animate="visible" variants={containerVariants} className="container mx-auto p-4 sm:p-8">
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent">
-        Attività di Servizio
+        Storico Attività
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4">
         Reportistica attività del Distretto 108 LA
       </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Quadri di Stampa</p>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/attivita/quadri/club-anno">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5">
-              <FileText className="h-3.5 w-3.5" /> Tutte le attività del club / anno
-            </Button>
-          </Link>
-          <Link href="/attivita/quadri/club-anno-amm-service">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5">
-              <Briefcase className="h-3.5 w-3.5" /> Amministrazione vs Service
-            </Button>
-          </Link>
-        </div>
+        <Link href="/attivita/rapporti">
+          <Button variant="outline" size="sm" className="text-xs gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Rapporti
+          </Button>
+        </Link>
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -324,16 +318,20 @@ export default function AttivitaPage() {
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
             <CardContent className="pt-0 space-y-3">
               {/* Basic */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
                 <Input
                   placeholder="Cerca titolo, descrizione..."
                   value={filters.search}
                   onChange={(e) => upd({ search: e.target.value })}
-                  className="sm:col-span-2 lg:col-span-1 bg-background/50"
+                  className="bg-background/50"
                 />
-                <MultiSelect options={zone} selected={filters.zona} onChange={(v) => upd({ zona: v })} placeholder="Zona" />
+              </div>
+              {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <MultiSelect options={clubs} selected={filters.club} onChange={(v) => upd({ club: v })} placeholder="Club" />
+                <MultiSelect options={zone} selected={filters.zona} onChange={(v) => upd({ zona: v })} placeholder="Zona" />
                 <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => upd({ circoscrizione: v })} placeholder="Circoscrizione" />
+                <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => upd({ distretto: v })} placeholder="Distretto" />
               </div>
 
               {/* Advanced toggle */}
@@ -366,17 +364,6 @@ export default function AttivitaPage() {
                         <MultiSelect options={tipiProgetto} selected={filters.tipoProgetto} onChange={(v) => upd({ tipoProgetto: v })} placeholder="Tipo progetto" />
                         <MultiSelect options={livelliAttivita} selected={filters.livelloAttivita} onChange={(v) => upd({ livelloAttivita: v })} placeholder="Livello attività" />
                         <Input placeholder="Organizzazione beneficiata..." value={filters.organizzazioneBeneficiata} onChange={(e) => upd({ organizzazioneBeneficiata: e.target.value })} className="bg-background/50" />
-                        <div>
-                          <p className="text-[10px] text-muted-foreground mb-1">Rapporto completo</p>
-                          <Select value={filters.rapportoCompleto} onValueChange={(v) => upd({ rapportoCompleto: v ?? '' })}>
-                            <SelectTrigger className="bg-background/50"><SelectValue placeholder="Tutti" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">Tutti</SelectItem>
-                              <SelectItem value="true">Sì</SelectItem>
-                              <SelectItem value="false">No</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
                         <div>
                           <p className="text-[10px] text-muted-foreground mb-1">Attività distintiva</p>
                           <Select value={filters.attivitaDistintiva} onValueChange={(v) => upd({ attivitaDistintiva: v ?? '' })}>

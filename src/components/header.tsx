@@ -27,27 +27,24 @@ const NAV_ITEMS: NavItem[] = [
     href: "/soci",
     label: "Soci",
     sublinks: [
-      { href: "/soci", label: "Prima Pagina" },
-      { href: "/soci/quadri/eta", label: "Classificazione per fasce di età" },
-      { href: "/soci/quadri/anzianita", label: "Classificazione per anzianità lionistica" },
-      { href: "/soci/quadri/caratteristiche", label: "Classificazione per categoria associativa" },
+      { href: "/soci", label: "Elenco Generale Soci" },
+      { href: "/soci/rapporti", label: "Rapporti Soci" },
     ],
   },
   {
     href: "/attivita",
     label: "Attività",
     sublinks: [
-      { href: "/attivita", label: "Prima Pagina" },
-      { href: "/attivita/quadri/club-anno", label: "Classificazione attività del club / anno" },
-      { href: "/attivita/quadri/club-anno-amm-service", label: "Classificazione Amministrazione vs Service" },
+      { href: "/attivita", label: "Storico Attività" },
+      { href: "/attivita/rapporti", label: "Rapporti Attività" },
     ],
   },
   {
     href: "/officer",
     label: "Officer",
     sublinks: [
-      { href: "/officer", label: "Prima Pagina" },
-      { href: "/officer/quadri/incarichi-club", label: "Classificazione incarichi con nomine dai Club" },
+      { href: "/officer", label: "Elenco Officer" },
+      { href: "/officer/rapporti", label: "Rapporti Officer" },
     ],
   },
 ]
@@ -170,7 +167,7 @@ export function Header() {
               className="opacity-90 group-hover:opacity-100 transition-opacity"
             />
             <span className="font-bold text-base text-primary group-hover:opacity-80 transition-opacity">
-              Digitalions
+              DigitaLions
             </span>
           </Link>
 
