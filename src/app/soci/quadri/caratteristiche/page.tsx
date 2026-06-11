@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ArrowLeft, Printer, Users } from 'lucide-react'
+import { ArrowLeft, Printer, Users, FileSpreadsheet } from 'lucide-react'
+import { exportToExcel, todayStamp } from '@/lib/excel-export'
 
 export default function QuadroCaratteristichePage() {
   const [soci, setSoci] = useState<any[]>([])
@@ -85,9 +86,34 @@ export default function QuadroCaratteristichePage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Soci
           </Button>
         </Link>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5">
-          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(
+              soci,
+              [
+                { header: 'Tipo associazione', accessor: (s: any) => s.tipo_associazione_intera ?? '' },
+                { header: 'Categoria associativa', accessor: (s: any) => s.categoria_associativa ?? '' },
+                { header: 'Programma', accessor: (s: any) => s.programma ?? '' },
+                { header: 'Club', accessor: (s: any) => s.nome_club ?? '' },
+                { header: 'Zona', accessor: (s: any) => s.club_zona ?? '' },
+                { header: 'Circoscrizione', accessor: (s: any) => s.club_circoscrizione ?? '' },
+                { header: 'Cognome', accessor: (s: any) => s.cognome },
+                { header: 'Nome', accessor: (s: any) => s.nome },
+              ],
+              `soci_caratteristiche_${todayStamp()}`,
+              'Caratteristiche'
+            )}
+            size="sm"
+            className="text-xs gap-1.5"
+            disabled={soci.length === 0}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5">
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">

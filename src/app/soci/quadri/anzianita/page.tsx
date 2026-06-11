@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ArrowLeft, Printer, Users } from 'lucide-react'
+import { ArrowLeft, Printer, Users, FileSpreadsheet } from 'lucide-react'
+import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 
 const FASCE = ['Under 2', '2-5', '5-10', '10-15', '15-20', 'Over 20']
 
@@ -81,9 +82,34 @@ export default function QuadroAnzianitaPage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Soci
           </Button>
         </Link>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5">
-          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(
+              soci,
+              [
+                { header: 'Nome', accessor: (s: any) => s.nome },
+                { header: 'Cognome', accessor: (s: any) => s.cognome },
+                { header: 'Club', accessor: (s: any) => s.nome_club },
+                { header: 'Zona', accessor: (s: any) => s.club_zona },
+                { header: 'Circoscrizione', accessor: (s: any) => s.club_circoscrizione },
+                { header: 'Data ingresso', accessor: (s: any) => fmtDateIT(s.data_ingresso) },
+                { header: 'Anni anzianità', accessor: (s: any) => s.anzianita_lionistica },
+                { header: 'Fascia anzianità', accessor: (s: any) => s.fascia_anzianita },
+              ],
+              `soci_anzianita_${todayStamp()}`,
+              'Soci per anzianità'
+            )}
+            size="sm"
+            className="text-xs gap-1.5"
+            disabled={soci.length === 0}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5">
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">

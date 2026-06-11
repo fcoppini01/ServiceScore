@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ArrowLeft, Printer, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Printer, ShieldCheck, FileSpreadsheet } from 'lucide-react'
+import { exportToExcel, todayStamp } from '@/lib/excel-export'
 
 export default function QuadroIncarichiClubPage() {
   const [officer, setOfficer] = useState<any[]>([])
@@ -103,9 +104,32 @@ export default function QuadroIncarichiClubPage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Officer
           </Button>
         </Link>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5">
-          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(
+              officer,
+              [
+                { header: 'Titolo ufficiale', accessor: (o: any) => o.titolo_ufficiale },
+                { header: 'Club', accessor: (o: any) => o.nome_club },
+                { header: 'Zona', accessor: (o: any) => o.club_zona },
+                { header: 'Circoscrizione', accessor: (o: any) => o.club_circoscrizione },
+                { header: 'Cognome', accessor: (o: any) => o.cognome },
+                { header: 'Nome', accessor: (o: any) => o.nome },
+              ],
+              `officer_incarichi_${todayStamp()}`,
+              'Incarichi'
+            )}
+            size="sm"
+            className="text-xs gap-1.5"
+            disabled={officer.length === 0}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5">
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">

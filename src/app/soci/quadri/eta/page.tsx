@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ArrowLeft, Printer, Users } from 'lucide-react'
+import { ArrowLeft, Printer, Users, FileSpreadsheet } from 'lucide-react'
+import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 
 const FASCE = ['Under 30', '31-40', '41-50', '51-60', '61-70', 'Over 70']
 
@@ -83,9 +84,36 @@ export default function QuadroEtaPage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Soci
           </Button>
         </Link>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5">
-          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(
+              soci,
+              [
+                { header: 'Matricola', accessor: (s: any) => s.matricola_socio },
+                { header: 'Titolo', accessor: (s: any) => s.titolo ?? '' },
+                { header: 'Nome', accessor: (s: any) => s.nome },
+                { header: 'Cognome', accessor: (s: any) => s.cognome },
+                { header: 'Club', accessor: (s: any) => s.nome_club },
+                { header: 'Zona', accessor: (s: any) => s.club_zona },
+                { header: 'Circoscrizione', accessor: (s: any) => s.club_circoscrizione },
+                { header: 'Data nascita', accessor: (s: any) => fmtDateIT(s.data_nascita) },
+                { header: 'Età', accessor: (s: any) => s.eta },
+                { header: "Fascia d'età", accessor: (s: any) => s.fascia_eta },
+              ],
+              `soci_fasce_eta_${todayStamp()}`,
+              'Soci per età'
+            )}
+            size="sm"
+            className="text-xs gap-1.5"
+            disabled={soci.length === 0}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5">
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">

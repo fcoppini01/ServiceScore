@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ArrowLeft, Printer, Activity } from 'lucide-react'
+import { ArrowLeft, Printer, Activity, FileSpreadsheet } from 'lucide-react'
+import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 import { getCurrentAnnoSocialeStart, getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
 
 const AMMINISTRAZIONE_CAUSA = 'Amministrazione'
@@ -155,9 +156,38 @@ export default function QuadroClubAnnoAmmServicePage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna ad Attività
           </Button>
         </Link>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
-          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(
+              activities,
+              [
+                { header: 'Tipologia', accessor: (a: any) => a.causa === AMMINISTRAZIONE_CAUSA ? 'Amministrazione' : 'Service' },
+                { header: 'Data inizio', accessor: (a: any) => fmtDateIT(a.data_inizio) },
+                { header: 'Stato', accessor: (a: any) => a.stato },
+                { header: 'Titolo', accessor: (a: any) => a.titolo },
+                { header: 'Causa', accessor: (a: any) => a.causa },
+                { header: 'Tipo progetto', accessor: (a: any) => a.tipo_progetto },
+                { header: 'Persone (limite max)', accessor: (a: any) => Number(a.persone_servite_limite) || 0 },
+                { header: 'Volontari', accessor: (a: any) => Number(a.totale_volontari) || 0 },
+                { header: 'Ore capped', accessor: (a: any) => Number(a.totale_ore_servizio_capped) || 0 },
+                { header: 'Donati USD capped', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
+                { header: 'Org. beneficiata', accessor: (a: any) => a.organizzazione_beneficiata ?? '' },
+                { header: 'Raccolti USD capped', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
+              ],
+              `attivita_amm_service_${todayStamp()}`,
+              'Amm vs Service'
+            )}
+            size="sm"
+            className="text-xs gap-1.5"
+            disabled={activities.length === 0}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">

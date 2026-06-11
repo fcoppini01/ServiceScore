@@ -7,8 +7,9 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Printer, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Printer, ShieldCheck, FileSpreadsheet } from 'lucide-react'
 import { getArray, getString } from '@/lib/filters-url'
+import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 
 const LABELS: Record<string, string> = {
   search: 'Cerca',
@@ -96,9 +97,34 @@ function StampaOfficerInner() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Officer
           </Button>
         </Link>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={loading || officer.length === 0}>
-          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(
+              officer,
+              [
+                { header: 'Titolo', accessor: (o: any) => o.titolo_ufficiale },
+                { header: 'Club', accessor: (o: any) => o.nome_club },
+                { header: 'Zona', accessor: (o: any) => o.club_zona },
+                { header: 'Circoscrizione', accessor: (o: any) => o.club_circoscrizione },
+                { header: 'Cognome', accessor: (o: any) => o.cognome },
+                { header: 'Nome', accessor: (o: any) => o.nome },
+                { header: 'Data inizio', accessor: (o: any) => fmtDateIT(o.data_inizio) },
+                { header: 'Data conclusione', accessor: (o: any) => fmtDateIT(o.data_conclusione) },
+              ],
+              `officer_${todayStamp()}`,
+              'Officer'
+            )}
+            size="sm"
+            className="text-xs gap-1.5"
+            disabled={loading || officer.length === 0}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={loading || officer.length === 0}>
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
       </div>
 
       <h1 className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">

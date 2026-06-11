@@ -7,8 +7,9 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Printer, Activity } from 'lucide-react'
+import { ArrowLeft, Printer, Activity, FileSpreadsheet } from 'lucide-react'
 import { getArray, getString } from '@/lib/filters-url'
+import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 
 const LABELS: Record<string, string> = {
   search: 'Cerca',
@@ -162,9 +163,42 @@ function StampaAttivitaInner() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna ad Attività
           </Button>
         </Link>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={loading || rows.length === 0}>
-          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(
+              rows,
+              [
+                { header: 'ID attività', accessor: (a: any) => a.id_attivita },
+                { header: 'Data inizio', accessor: (a: any) => fmtDateIT(a.data_inizio) },
+                { header: 'Data fine', accessor: (a: any) => fmtDateIT(a.data_conclusione) },
+                { header: 'Stato', accessor: (a: any) => a.stato },
+                { header: 'Titolo', accessor: (a: any) => a.titolo },
+                { header: 'Club', accessor: (a: any) => a.sponsor_nome_account },
+                { header: 'Zona', accessor: (a: any) => a.sponsor_zona },
+                { header: 'Causa', accessor: (a: any) => a.causa },
+                { header: 'Tipo progetto', accessor: (a: any) => a.tipo_progetto },
+                { header: 'Livello attività', accessor: (a: any) => a.livello_attivita },
+                { header: 'Persone servite (cap)', accessor: (a: any) => Number(a.persone_servite_limite) || 0 },
+                { header: 'Volontari', accessor: (a: any) => Number(a.totale_volontari) || 0 },
+                { header: 'Ore (cap)', accessor: (a: any) => Number(a.totale_ore_servizio_capped) || 0 },
+                { header: 'Fondi donati USD (cap)', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
+                { header: 'Fondi raccolti USD (cap)', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
+                { header: 'Org. beneficiata', accessor: (a: any) => a.organizzazione_beneficiata },
+              ],
+              `attivita_${todayStamp()}`,
+              'Attività'
+            )}
+            size="sm"
+            className="text-xs gap-1.5"
+            disabled={loading || rows.length === 0}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={loading || rows.length === 0}>
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
       </div>
 
       <h1 className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">

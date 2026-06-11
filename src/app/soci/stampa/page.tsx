@@ -7,8 +7,9 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Printer, Users } from 'lucide-react'
+import { ArrowLeft, Printer, Users, FileSpreadsheet } from 'lucide-react'
 import { getArray, getString } from '@/lib/filters-url'
+import { exportToExcel, todayStamp } from '@/lib/excel-export'
 
 const LABELS: Record<string, string> = {
   search: 'Cerca',
@@ -107,9 +108,44 @@ function StampaSociInner() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Soci
           </Button>
         </Link>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={loading || soci.length === 0}>
-          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(
+              soci,
+              [
+                { header: 'Matricola', accessor: (s: any) => s.matricola_socio },
+                { header: 'Nome', accessor: (s: any) => s.nome },
+                { header: 'Cognome', accessor: (s: any) => s.cognome },
+                { header: 'Club', accessor: (s: any) => s.nome_club },
+                { header: 'Zona', accessor: (s: any) => s.club_zona },
+                { header: 'Circoscrizione', accessor: (s: any) => s.club_circoscrizione },
+                { header: 'Genere', accessor: (s: any) => s.sesso },
+                { header: "Fascia d'età", accessor: (s: any) => s.fascia_eta },
+                { header: 'Anzianità (anni)', accessor: (s: any) => s.anzianita_lionistica },
+                { header: 'Fascia anzianità', accessor: (s: any) => s.fascia_anzianita },
+                { header: 'Categoria', accessor: (s: any) => s.categoria_associativa },
+                { header: 'Tipo associazione', accessor: (s: any) => s.tipo_associazione_intera },
+                { header: 'Programma', accessor: (s: any) => s.programma },
+                { header: 'Professione', accessor: (s: any) => s.professione },
+                { header: 'Città', accessor: (s: any) => s.citta },
+                { header: 'Provincia', accessor: (s: any) => s.stato_provincia },
+                { header: 'Cellulare', accessor: (s: any) => s.telefono_cellulare },
+                { header: 'Email', accessor: (s: any) => s.email_preferita },
+              ],
+              `soci_${todayStamp()}`,
+              'Soci'
+            )}
+            size="sm"
+            className="text-xs gap-1.5"
+            disabled={loading || soci.length === 0}
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={loading || soci.length === 0}>
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
       </div>
 
       <h1 className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
