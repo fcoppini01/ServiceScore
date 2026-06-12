@@ -8,12 +8,13 @@ import { GeometricBackground } from "@/components/geometric-background"
 import { motion } from "framer-motion"
 import { LayoutDashboard, Users, Target, ShieldCheck } from "lucide-react"
 
-// Piccoli punti luminosi che salgono — restano sopra le forme geometriche
-const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
+// Piccoli punti luminosi che salgono — restano sopra le forme geometriche.
+// Ridotto da 14 a 6 per performance (homepage aveva 28 animazioni concorrenti).
+const PARTICLES = Array.from({ length: 6 }, (_, i) => ({
   left: `${((i * 137.5) % 100).toFixed(1)}%`,
   top: `${((i * 97.3 + 23) % 100).toFixed(1)}%`,
-  duration: 3 + (i % 5) * 0.5,
-  delay: (i % 4) * 0.5,
+  duration: 4 + (i % 3),
+  delay: (i % 4) * 0.6,
   blue: i % 2 === 0,
 }))
 
@@ -95,20 +96,23 @@ export default function Home() {
       {/* Figure geometriche animate: Lions blu/oro + accenti 01 cyan/rosso/magenta */}
       <GeometricBackground />
 
-      {/* Particelle luminose che salgono — sopra le forme geometriche */}
-      {PARTICLES.map((p, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 rounded-full pointer-events-none"
-          style={{
-            left: p.left,
-            top: p.top,
-            background: p.blue ? '#0055ff' : '#ffe500',
-          }}
-          animate={{ y: [0, -100, 0], opacity: [0, 1, 0] }}
-          transition={{ duration: p.duration, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
-        />
-      ))}
+      {/* Particelle luminose che salgono — nascoste con prefers-reduced-motion */}
+      <div className="motion-reduce:hidden">
+        {PARTICLES.map((p, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 rounded-full pointer-events-none"
+            style={{
+              left: p.left,
+              top: p.top,
+              background: p.blue ? '#0055ff' : '#ffe500',
+              willChange: 'transform, opacity',
+            }}
+            animate={{ y: [0, -100, 0], opacity: [0, 1, 0] }}
+            transition={{ duration: p.duration, repeat: Infinity, ease: "linear", delay: p.delay }}
+          />
+        ))}
+      </div>
 
       <StaggerContainer delay={0.1}>
         {/* Hero */}
