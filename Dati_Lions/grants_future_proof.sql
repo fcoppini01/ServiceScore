@@ -26,11 +26,16 @@
 -- 1) USAGE sullo schema public (necessario per accedere a qualsiasi oggetto)
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 
--- 2) Grant espliciti su TUTTE le tabelle/viste gia' esistenti
---    (idempotente: GRANT ripetuti non fanno danni)
+-- 2) Grant espliciti, PRINCIPIO DEL MINIMO PRIVILEGIO:
+--    - anon          -> solo SELECT (lettura). MAI scrittura/cancellazione.
+--    - authenticated -> CRUD completo (le RLS filtrano riga per riga)
+--    - service_role  -> CRUD completo (bypass RLS, lato server)
+--    Senza questo hardening, una pen test su anon mostrerebbe HTTP 200 sui
+--    DELETE/UPDATE anche se le RLS bloccano le righe — porta semichiusa.
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE
   ON ALL TABLES IN SCHEMA public
-  TO anon, authenticated, service_role;
+  TO authenticated, service_role;
 
 GRANT USAGE, SELECT
   ON ALL SEQUENCES IN SCHEMA public
@@ -40,12 +45,17 @@ GRANT EXECUTE
   ON ALL FUNCTIONS IN SCHEMA public
   TO anon, authenticated, service_role;
 
--- 3) DEFAULT PRIVILEGES: ogni nuova tabella/vista/sequence/funzione creata
---    dal ruolo "postgres" nello schema public erediterà automaticamente
---    questi grant. Questo e' il fix "future-proof" per il 30/10/2026.
+-- 3) DEFAULT PRIVILEGES: per future tabelle, stesso principio del minimo
+--    privilegio. Importante per il 30/10/2026 (Supabase Data API policy).
+--    REVOKE prima del GRANT per ripulire eventuali default precedenti che
+--    concedevano ALL ad anon.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON TABLES FROM anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  GRANT SELECT ON TABLES TO anon;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES
-  TO anon, authenticated, service_role;
+  TO authenticated, service_role;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   GRANT USAGE, SELECT ON SEQUENCES
