@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { useEffect, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Menu, X, ChevronDown } from "lucide-react"
+import { Menu, X, ChevronDown, ShieldCheck } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 type SubLink = { href: string; label: string }
@@ -190,7 +190,12 @@ export function Header() {
         <div className="flex items-center gap-2">
           {!loading && (
             user ? (
-              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-2">
+                <Link href="/revisione" className="hidden sm:inline-flex">
+                  <Button variant="outline" size="sm" className="text-xs gap-1.5 hover:border-primary/40 hover:text-primary transition-colors">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Revisione
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"
@@ -305,14 +310,21 @@ export function Header() {
               >
                 {!loading && (
                   user ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => { handleLogout(); setMobileMenuOpen(false) }}
-                      className="w-full"
-                    >
-                      Esci
-                    </Button>
+                    <div className="space-y-2">
+                      <Link href="/revisione" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" size="sm" className="w-full gap-1.5">
+                          <ShieldCheck className="h-3.5 w-3.5" /> Revisione
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { handleLogout(); setMobileMenuOpen(false) }}
+                        className="w-full"
+                      >
+                        Esci
+                      </Button>
+                    </div>
                   ) : (
                     <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                       <Button size="sm" className="w-full bg-gradient-to-r from-primary to-[#0055ff]">
