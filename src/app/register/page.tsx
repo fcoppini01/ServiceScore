@@ -22,8 +22,24 @@ export default function RegisterPage() {
     setLoading(true)
     setMessage('')
 
+    // Registrazione riservata ai soci: matricola obbligatoria e verificata
+    const m = matricola.trim()
+    if (!m) {
+      setMessage('Errore: la matricola è obbligatoria. La registrazione è riservata ai soci del Distretto.')
+      setLoading(false); return
+    }
+    const { data: valida, error: vErr } = await supabase.rpc('fn_matricola_esiste', { p_matricola: m })
+    if (vErr) {
+      setMessage('Errore di verifica matricola: ' + vErr.message)
+      setLoading(false); return
+    }
+    if (!valida) {
+      setMessage('Errore: matricola non trovata tra i soci del Distretto. La registrazione è riservata ai soci.')
+      setLoading(false); return
+    }
+
     const callbackUrl = new URL(`${location.origin}/auth/callback`)
-    if (matricola) callbackUrl.searchParams.set('matricola', matricola)
+    callbackUrl.searchParams.set('matricola', m)
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -133,7 +149,7 @@ export default function RegisterPage() {
                 >
                   <label className="text-sm font-medium">
                     Matricola Socio{' '}
-                    <span className="text-muted-foreground font-normal text-xs">(opzionale)</span>
+                    <span className="text-primary font-normal text-xs">(obbligatoria)</span>
                   </label>
                   <Input
                     type="text"
@@ -141,10 +157,11 @@ export default function RegisterPage() {
                     onChange={(e) => setMatricola(e.target.value)}
                     placeholder="Es: 12345"
                     autoComplete="off"
+                    required
                     className="bg-background/50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Inserisci la tua matricola per associare l'account al socio
+                    La registrazione è riservata ai soci: inserisci la tua matricola per collegare l&apos;account.
                   </p>
                 </motion.div>
 

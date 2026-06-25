@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { CheckCircle2, PauseCircle, XCircle, Save, ShieldCheck, LogIn } from 'lucide-react'
+import { CheckCircle2, PauseCircle, XCircle, Save, ShieldCheck, LogIn, FileUp } from 'lucide-react'
+import { parseReportCsv } from '@/lib/parse-report-csv'
 
 // Permessi risolti dal DB (fn_my_permissions)
 type Perm = { ruolo: string; puo_scrivere: boolean; ambito_tipo: string | null; ambito_valore: string | null }
@@ -38,6 +39,8 @@ export default function RevisionePage() {
   const [edits, setEdits] = useState<Record<string, Record<string, string>>>({})
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadMsg, setUploadMsg] = useState<string | null>(null)
 
   useEffect(() => { init() }, [])
 
@@ -92,6 +95,29 @@ export default function RevisionePage() {
       setMsg('Correzioni salvate ✓')
     }
     setBusy(null)
+  }
+
+  // Upload del report.csv ufficiale Lions (solo Super-Admin / Coordinatore GST)
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // consente di ricaricare lo stesso file
+    if (!file) return
+    setUploading(true); setUploadMsg('Lettura del file…')
+    try {
+      const buf = await file.arrayBuffer()
+      const text = new TextDecoder('iso-8859-1').decode(buf) // CSV Lions = ISO-8859-1
+      const { rows, errori, totale } = parseReportCsv(text)
+      if (totale === 0) { setUploadMsg('Nessuna riga valida trovata. ' + errori.join(' ')); setUploading(false); return }
+      setUploadMsg(`Importazione di ${totale} attività in corso… (può richiedere qualche secondo)`)
+      const { data, error } = await supabase.rpc('fn_importa_report', { p_rows: rows })
+      if (error) { setUploadMsg('Errore import: ' + error.message); setUploading(false); return }
+      const res = data as { inseriti: number; aggiornati: number; saltati_approvati: number }
+      setUploadMsg(`Import completato ✓ — ${res.inseriti} nuove · ${res.aggiornati} aggiornate · ${res.saltati_approvati} già approvate (saltate).${errori.length ? ' ⚠️ ' + errori.join(' ') : ''}`)
+      await loadRows()
+    } catch (err: any) {
+      setUploadMsg('Errore: ' + (err?.message ?? String(err)))
+    }
+    setUploading(false)
   }
 
   // Cambia stato di approvazione (3 pulsanti)
@@ -167,6 +193,37 @@ export default function RevisionePage() {
         Correggi i valori se servono, poi scegli: <span className="text-green-600 font-medium">Approva</span> (validata e conteggiata),
         <span className="text-amber-600 font-medium"> Sospendi</span> (in attesa), <span className="text-red-600 font-medium">Rifiuta</span> (scartata, nascosta).
       </motion.p>
+
+      {/* Upload report.csv — solo Super-Admin / Coordinatore GST */}
+      {perm.ambito_tipo === 'distretto' && (
+        <motion.div variants={itemVariants} className="mb-6">
+          <Card className="border border-primary/30 bg-primary/5 backdrop-blur-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <FileUp className="h-4 w-4 text-primary" /> Carica nuovo report.csv
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Carica il file <strong>report.csv</strong> ufficiale Lions. Le attività già <strong>approvate</strong> non vengono toccate;
+                le altre vengono aggiornate mantenendo il loro stato; le nuove entrano <strong>in revisione</strong>.
+              </p>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={handleFile}
+                disabled={uploading}
+                className="block w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary file:text-white hover:file:bg-primary/90 file:cursor-pointer disabled:opacity-50"
+              />
+              {uploadMsg && (
+                <p className={`text-xs px-3 py-2 rounded-lg ${uploadMsg.startsWith('Errore') ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20'}`}>
+                  {uploadMsg}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {msg && (
         <motion.div variants={itemVariants} className="mb-4 text-sm px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
