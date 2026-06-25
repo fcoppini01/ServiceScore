@@ -17,29 +17,35 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
+  // I Super-Admin (01 Informatica) si identificano dall'email @info01.it: non sono soci,
+  // quindi per loro la matricola non è richiesta.
+  const isInfo01 = email.trim().toLowerCase().endsWith('@info01.it')
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setMessage('')
 
-    // Registrazione riservata ai soci: matricola obbligatoria e verificata
     const m = matricola.trim()
-    if (!m) {
-      setMessage('Errore: la matricola è obbligatoria. La registrazione è riservata ai soci del Distretto.')
-      setLoading(false); return
-    }
-    const { data: valida, error: vErr } = await supabase.rpc('fn_matricola_esiste', { p_matricola: m })
-    if (vErr) {
-      setMessage('Errore di verifica matricola: ' + vErr.message)
-      setLoading(false); return
-    }
-    if (!valida) {
-      setMessage('Errore: matricola non trovata tra i soci del Distretto. La registrazione è riservata ai soci.')
-      setLoading(false); return
+    // I soci devono fornire una matricola valida; i Super-Admin @info01.it no.
+    if (!isInfo01) {
+      if (!m) {
+        setMessage('Errore: la matricola è obbligatoria. La registrazione è riservata ai soci del Distretto.')
+        setLoading(false); return
+      }
+      const { data: valida, error: vErr } = await supabase.rpc('fn_matricola_esiste', { p_matricola: m })
+      if (vErr) {
+        setMessage('Errore di verifica matricola: ' + vErr.message)
+        setLoading(false); return
+      }
+      if (!valida) {
+        setMessage('Errore: matricola non trovata tra i soci del Distretto. La registrazione è riservata ai soci.')
+        setLoading(false); return
+      }
     }
 
     const callbackUrl = new URL(`${location.origin}/auth/callback`)
-    callbackUrl.searchParams.set('matricola', m)
+    if (m) callbackUrl.searchParams.set('matricola', m)
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -149,7 +155,9 @@ export default function RegisterPage() {
                 >
                   <label className="text-sm font-medium">
                     Matricola Socio{' '}
-                    <span className="text-primary font-normal text-xs">(obbligatoria)</span>
+                    <span className={`font-normal text-xs ${isInfo01 ? 'text-muted-foreground' : 'text-primary'}`}>
+                      {isInfo01 ? '(non necessaria per 01 Informatica)' : '(obbligatoria)'}
+                    </span>
                   </label>
                   <Input
                     type="text"
@@ -157,11 +165,14 @@ export default function RegisterPage() {
                     onChange={(e) => setMatricola(e.target.value)}
                     placeholder="Es: 12345"
                     autoComplete="off"
-                    required
-                    className="bg-background/50"
+                    required={!isInfo01}
+                    disabled={isInfo01}
+                    className="bg-background/50 disabled:opacity-50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    La registrazione è riservata ai soci: inserisci la tua matricola per collegare l&apos;account.
+                    {isInfo01
+                      ? 'Email 01 Informatica riconosciuta: accesso come Super-Admin, nessuna matricola richiesta.'
+                      : 'La registrazione è riservata ai soci: inserisci la tua matricola per collegare l’account.'}
                   </p>
                 </motion.div>
 
