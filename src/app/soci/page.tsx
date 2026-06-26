@@ -31,6 +31,7 @@ interface Filters {
   distretto: string[]
   categoriaAssociativa: string[]
   tipoAssociazione: string[]
+  classificazione: string[]
   programma: string[]
   professione: string
   citta: string
@@ -44,11 +45,13 @@ interface Filters {
 const FASCE_ETA = ['Under 30', '31-40', '41-50', '51-60', '61-70', 'Over 70']
 const FASCE_ANZIANITA = ['Under 2', '2-5', '5-10', '10-15', '15-20', 'Over 20']
 const DISTRETTI = ['108 LA']
+// Classificazione per categoria associativa (mappata dal tipo associazione — vedi PDF Lions)
+const CLASSIFICAZIONI = ['EFFETTIVO', 'FONDATORE', 'PRIVILEGIATO', 'VITALIZIO', 'ONORARIO', 'AGGREGATO', 'AFFILIATO', 'ASSOCIATO', 'FAMILIARE', 'LEO-LION', 'STUDENTE', 'GIOVANE ADULTO']
 
 const EMPTY_FILTERS: Filters = {
   search: '', sesso: [], fasciaEta: [], fasciaAnzianita: [], etaMin: '', etaMax: '',
   club: [], zona: [], circoscrizione: [], distretto: [],
-  categoriaAssociativa: [], tipoAssociazione: [], programma: [],
+  categoriaAssociativa: [], tipoAssociazione: [], classificazione: [], programma: [],
   professione: '', citta: '', provincia: '',
   anzianitaMin: '', anzianitaMax: '',
   escludiAnte202307: false,
@@ -64,6 +67,7 @@ function countAdvancedFilters(f: Filters) {
   if (f.etaMin || f.etaMax) c++
   if (f.categoriaAssociativa.length) c++
   if (f.tipoAssociazione.length) c++
+  if (f.classificazione.length) c++
   if (f.programma.length) c++
   if (f.professione) c++
   if (f.citta) c++
@@ -147,6 +151,7 @@ export default function SociPage() {
     // distretto: oggi unico ("108 LA"), filtro presente per coerenza UX, no-op a livello query
     if (filters.categoriaAssociativa.length) query = query.in('categoria_associativa', filters.categoriaAssociativa)
     if (filters.tipoAssociazione.length) query = query.in('tipo_associazione_intera', filters.tipoAssociazione)
+    if (filters.classificazione.length) query = query.in('categoria_socio', filters.classificazione)
     if (filters.programma.length) query = query.in('programma', filters.programma)
     if (filters.professione) query = query.ilike('professione', `%${filters.professione}%`)
     if (filters.citta) query = query.ilike('citta', `%${filters.citta}%`)
@@ -267,6 +272,7 @@ export default function SociPage() {
                         <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => updateFilters({ ...filters, distretto: v })} placeholder="Distretto" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <MultiSelect options={CLASSIFICAZIONI} selected={filters.classificazione} onChange={(v) => updateFilters({ ...filters, classificazione: v })} placeholder="Classificazione (Effettivo, Fondatore…)" />
                         <MultiSelect options={categorie} selected={filters.categoriaAssociativa} onChange={(v) => updateFilters({ ...filters, categoriaAssociativa: v })} placeholder="Categoria" />
                         <MultiSelect options={tipiAssoc} selected={filters.tipoAssociazione} onChange={(v) => updateFilters({ ...filters, tipoAssociazione: v })} placeholder="Tipo associazione" />
                         <MultiSelect options={programmi} selected={filters.programma} onChange={(v) => updateFilters({ ...filters, programma: v })} placeholder="Programma" />
@@ -424,8 +430,9 @@ export default function SociPage() {
                         <SortableHead field="fascia_eta" label="Fascia" sort={sort} onSort={handleSort} />
                         <SortableHead field="anzianita_lionistica" label="Anzianità" sort={sort} onSort={handleSort} />
                         <SortableHead field="fascia_anzianita" label="F. Anz." sort={sort} onSort={handleSort} />
+                        <SortableHead field="categoria_socio" label="Classificazione" sort={sort} onSort={handleSort} />
                         <SortableHead field="categoria_associativa" label="Categoria" sort={sort} onSort={handleSort} />
-                        <SortableHead field="tipo_associazione_intera" label="Categoria Associativa" sort={sort} onSort={handleSort} />
+                        <SortableHead field="tipo_associazione_intera" label="Tipo associazione" sort={sort} onSort={handleSort} />
                         <SortableHead field="programma" label="Programma" sort={sort} onSort={handleSort} />
                         <SortableHead field="professione" label="Professione" sort={sort} onSort={handleSort} />
                         <SortableHead field="citta" label="Città" sort={sort} onSort={handleSort} />
@@ -453,6 +460,7 @@ export default function SociPage() {
                           <TableCell className="whitespace-nowrap"><Badge className="text-xs">{socio.fascia_eta}</Badge></TableCell>
                           <TableCell className="text-sm whitespace-nowrap">{socio.anzianita_lionistica != null ? `${socio.anzianita_lionistica} anni` : ''}</TableCell>
                           <TableCell className="whitespace-nowrap">{socio.fascia_anzianita && <Badge variant="outline" className="text-xs">{socio.fascia_anzianita}</Badge>}</TableCell>
+                          <TableCell className="whitespace-nowrap">{socio.categoria_socio && <Badge variant="outline" className="text-[10px]">{socio.categoria_socio}</Badge>}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.categoria_associativa}>{socio.categoria_associativa}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[220px] truncate" title={socio.tipo_associazione_intera}>{socio.tipo_associazione_intera}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.programma}>{socio.programma}</TableCell>
