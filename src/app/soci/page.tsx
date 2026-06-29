@@ -34,8 +34,6 @@ interface Filters {
   professione: string
   citta: string
   provincia: string
-  // Escludi soci con data ingresso < 1/7/2023 (date probabilmente segnaposto Lions)
-  escludiAnte202307: boolean
 }
 
 const FASCE_ETA = ['Under 30', '31-40', '41-50', '51-60', '61-70', 'Over 70']
@@ -49,7 +47,6 @@ const EMPTY_FILTERS: Filters = {
   club: [], zona: [], circoscrizione: [], distretto: [],
   categoriaAssociativa: [], tipoAssociazione: [], classificazione: [], programma: [],
   professione: '', citta: '', provincia: '',
-  escludiAnte202307: false,
 }
 
 function countAdvancedFilters(f: Filters) {
@@ -66,7 +63,6 @@ function countAdvancedFilters(f: Filters) {
   if (f.professione) c++
   if (f.citta) c++
   if (f.provincia) c++
-  if (f.escludiAnte202307) c++
   return c
 }
 
@@ -149,8 +145,8 @@ export default function SociPage() {
     if (filters.professione) query = query.ilike('professione', `%${filters.professione}%`)
     if (filters.citta) query = query.ilike('citta', `%${filters.citta}%`)
     if (filters.provincia) query = query.ilike('stato_provincia', `%${filters.provincia}%`)
-    // Esclude soci con data_ingresso anteriore al 1/7/2023 (date probabilmente "fittizie" Lions)
-    if (filters.escludiAnte202307) query = query.gte('data_ingresso', '2023-07-01')
+    // Esclude SEMPRE i soci con data_ingresso anteriore al 1/7/2023 (date segnaposto Lions, da non considerare)
+    query = query.gte('data_ingresso', '2023-07-01')
 
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
@@ -273,18 +269,6 @@ export default function SociPage() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <Input placeholder="Provincia..." value={filters.provincia} onChange={(e) => updateFilters({ ...filters, provincia: e.target.value })} className="bg-background/50" />
-                      </div>
-                      {/* Esclude soci con data ingresso anteriore al 1/7/2023 (date probabilmente fittizie) */}
-                      <div className="flex items-center gap-2 pt-1">
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={filters.escludiAnte202307}
-                            onChange={(e) => updateFilters({ ...filters, escludiAnte202307: e.target.checked })}
-                            className="h-4 w-4 rounded border-input accent-primary"
-                          />
-                          <span className="text-xs">Escludi soci con data di ingresso anteriore al 1/7/2023</span>
-                        </label>
                       </div>
                     </div>
                   </motion.div>
