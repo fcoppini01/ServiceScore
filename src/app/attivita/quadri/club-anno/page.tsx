@@ -19,6 +19,8 @@ export default function QuadroClubAnnoPage() {
   const [clubs, setClubs] = useState<string[]>([])
   const [zone, setZone] = useState<string[]>([])
   const [filtroZona, setFiltroZona] = useState<string[]>([])
+  const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
+  const [filtroCircoscrizione, setFiltroCircoscrizione] = useState<string[]>([])
   const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -30,16 +32,17 @@ export default function QuadroClubAnnoPage() {
   }, [])
 
   useEffect(() => {
-    if (!isClient || (club.length === 0 && filtroZona.length === 0)) { setActivities([]); return }
+    if (!isClient || (club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0)) { setActivities([]); return }
     loadActivities()
-  }, [isClient, club, filtroZona, annoSociale])
+  }, [isClient, club, filtroZona, filtroCircoscrizione, annoSociale])
 
   async function loadFilterOptions() {
     // Da tabella club (completa) per non dipendere dal volume di attività
-    const { data } = await supabase.from('club').select('nome_club, zona').range(0, 9999)
+    const { data } = await supabase.from('club').select('nome_club, zona, circoscrizione').range(0, 9999)
     if (data) {
       setClubs([...new Set(data.map((c: any) => c.nome_club))].filter(Boolean).sort() as string[])
       setZone([...new Set(data.map((c: any) => c.zona))].filter(Boolean).sort() as string[])
+      setCircoscrizioni([...new Set(data.map((c: any) => c.circoscrizione))].filter(Boolean).sort() as string[])
     }
   }
 
@@ -49,11 +52,12 @@ export default function QuadroClubAnnoPage() {
     const { from, to } = getAnnoSocialeRange(annoSociale)
     let q = supabase
       .from('vista_report_ricerca')
-      .select('id_attivita, data_inizio, stato, titolo, causa, tipo_progetto, persone_servite_limite, totale_volontari, totale_ore_servizio_capped, fondi_donati_usd_capped, organizzazione_beneficiata, fondi_raccolti_usd_capped, sponsor_nome_account, sponsor_zona')
+      .select('id_attivita, data_inizio, stato, titolo, causa, tipo_progetto, persone_servite_limite, totale_volontari, totale_ore_servizio_capped, fondi_donati_usd_capped, organizzazione_beneficiata, fondi_raccolti_usd_capped, sponsor_nome_account, sponsor_zona, sponsor_circoscrizione')
       .gte('data_inizio', from)
       .lte('data_inizio', to)
     if (club.length) q = q.in('sponsor_nome_account', club)
     if (filtroZona.length) q = q.in('sponsor_zona', filtroZona)
+    if (filtroCircoscrizione.length) q = q.in('sponsor_circoscrizione', filtroCircoscrizione)
     const { data, error } = await q
       .order('sponsor_nome_account', { ascending: true })
       .order('data_inizio', { ascending: true })
@@ -92,6 +96,7 @@ export default function QuadroClubAnnoPage() {
               activities,
               [
                 { header: 'Club', accessor: (a: any) => a.sponsor_nome_account },
+                { header: 'Circoscrizione', accessor: (a: any) => a.sponsor_circoscrizione ?? '' },
                 { header: 'Data inizio', accessor: (a: any) => fmtDateIT(a.data_inizio) },
                 { header: 'Stato', accessor: (a: any) => a.stato },
                 { header: 'Titolo', accessor: (a: any) => a.titolo },
@@ -123,18 +128,22 @@ export default function QuadroClubAnnoPage() {
         Classificazione delle Attività comunicate dal club nell&apos;anno sociale
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
-        {club.length > 0 || filtroZona.length > 0 ? (
+        {club.length > 0 || filtroZona.length > 0 || filtroCircoscrizione.length > 0 ? (
           <><strong className="text-foreground print:text-black">
-            {club.length > 0 ? `${club.length} club selezionati` : `Zone: ${filtroZona.join(', ')}`}
+            {club.length > 0
+              ? `${club.length} club selezionati`
+              : filtroZona.length > 0
+                ? `Zone: ${filtroZona.join(', ')}`
+                : `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`}
           </strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {activities.length} attività</>
-        ) : 'Seleziona uno o più club (oppure una o più zone) per visualizzare le attività'}
+        ) : 'Seleziona uno o più club (oppure una o più zone o circoscrizioni) per visualizzare le attività'}
       </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4 space-y-3">
-            {/* Filtri territoriali — ordine fisso Club, Zona (+ Anno sociale a destra) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto (+ Anno sociale) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Club (selezione multipla)</p>
                 <MultiSelect options={clubs} selected={club} onChange={setClub} placeholder="Seleziona club…" />
@@ -142,6 +151,10 @@ export default function QuadroClubAnnoPage() {
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Oppure Zone (in alternativa)</p>
                 <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Tutte le zone" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Oppure Circoscrizioni</p>
+                <MultiSelect options={circoscrizioni} selected={filtroCircoscrizione} onChange={setFiltroCircoscrizione} placeholder="Tutte le circoscrizioni" />
               </div>
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Distretto</p>
@@ -177,10 +190,10 @@ export default function QuadroClubAnnoPage() {
               <div className="flex justify-center items-center h-32">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
               </div>
-            ) : club.length === 0 && filtroZona.length === 0 ? (
+            ) : club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
                 <Activity className="w-8 h-8 opacity-30" />
-                <span className="text-sm">Seleziona uno o più club, oppure una o più zone</span>
+                <span className="text-sm">Seleziona uno o più club, oppure una o più zone o circoscrizioni</span>
               </div>
             ) : activities.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
@@ -205,6 +218,7 @@ export default function QuadroClubAnnoPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Club</TableHead>
+                      <TableHead className="whitespace-nowrap">Circ.</TableHead>
                       <TableHead className="whitespace-nowrap">Data inizio</TableHead>
                       <TableHead className="whitespace-nowrap">Stato</TableHead>
                       <TableHead>Titolo</TableHead>
@@ -222,6 +236,7 @@ export default function QuadroClubAnnoPage() {
                     {activities.map((a: any) => (
                       <TableRow key={a.id_attivita} className="hover:bg-muted/40 print:hover:bg-transparent">
                         <TableCell className="whitespace-nowrap font-medium">{a.sponsor_nome_account}</TableCell>
+                        <TableCell className="whitespace-nowrap">{a.sponsor_circoscrizione}</TableCell>
                         <TableCell className="whitespace-nowrap">{formatDate(a.data_inizio)}</TableCell>
                         <TableCell className="whitespace-nowrap">{a.stato}</TableCell>
                         <TableCell>{a.titolo}</TableCell>
