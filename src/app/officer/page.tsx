@@ -8,12 +8,14 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, ShieldCheck, FileText, Printer } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
+import { getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
 
 const PAGE_SIZE = 20
 
@@ -40,6 +42,17 @@ const EMPTY_FILTERS: Filters = {
   soloAttivi: false,
   dataInizioDa: '', dataInizioA: '',
   dataConclusioneDa: '', dataConclusioneA: '',
+}
+
+// Ricava l'anno sociale selezionato confrontando l'intervallo data inizio incarico
+// con i range degli anni sociali; ritorna 'tutti' se non corrisponde a nessuno.
+function annoSocialeSelezionato(f: Filters): string {
+  if (!f.dataInizioDa || !f.dataInizioA) return 'tutti'
+  const match = getRecentAnniSociali(8).find((a) => {
+    const r = getAnnoSocialeRange(a.value)
+    return r.from === f.dataInizioDa && r.to === f.dataInizioA
+  })
+  return match ? String(match.value) : 'tutti'
 }
 
 function countAdvancedFilters(f: Filters) {
@@ -236,22 +249,24 @@ export default function OfficerPage() {
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <p className="text-xs font-medium mb-1">Incarichi iniziati nel periodo</p>
-                          <p className="text-[10px] text-muted-foreground mb-1.5">Data di inizio incarico compresa tra le due date</p>
-                          <div className="flex items-center gap-1.5">
-                            <Input type="date" value={filters.dataInizioDa} onChange={(e) => updateFilters({ ...filters, dataInizioDa: e.target.value })} className="text-sm bg-background/50" title="Inizio incarico dal" />
-                            <span className="text-xs text-muted-foreground shrink-0">→</span>
-                            <Input type="date" value={filters.dataInizioA} onChange={(e) => updateFilters({ ...filters, dataInizioA: e.target.value })} className="text-sm bg-background/50" title="Inizio incarico al" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium mb-1">Incarichi conclusi nel periodo</p>
-                          <p className="text-[10px] text-muted-foreground mb-1.5">Data di conclusione compresa tra le due date</p>
-                          <div className="flex items-center gap-1.5">
-                            <Input type="date" value={filters.dataConclusioneDa} onChange={(e) => updateFilters({ ...filters, dataConclusioneDa: e.target.value })} className="text-sm bg-background/50" title="Fine incarico dal" />
-                            <span className="text-xs text-muted-foreground shrink-0">→</span>
-                            <Input type="date" value={filters.dataConclusioneA} onChange={(e) => updateFilters({ ...filters, dataConclusioneA: e.target.value })} className="text-sm bg-background/50" title="Fine incarico al" />
-                          </div>
+                          <p className="text-xs font-medium mb-1">Anno sociale</p>
+                          <p className="text-[10px] text-muted-foreground mb-1.5">Incarichi iniziati nell&apos;anno sociale (1 lug → 30 giu)</p>
+                          <Select
+                            value={annoSocialeSelezionato(filters)}
+                            onValueChange={(v) => {
+                              if (!v || v === 'tutti') { updateFilters({ ...filters, dataInizioDa: '', dataInizioA: '' }); return }
+                              const r = getAnnoSocialeRange(parseInt(v, 10))
+                              updateFilters({ ...filters, dataInizioDa: r.from, dataInizioA: r.to })
+                            }}
+                          >
+                            <SelectTrigger className="text-sm bg-background/50"><SelectValue placeholder="Tutti gli anni" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="tutti">Tutti gli anni</SelectItem>
+                              {getRecentAnniSociali(8).map((a) => (
+                                <SelectItem key={a.value} value={String(a.value)}>{a.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>

@@ -15,6 +15,7 @@ import { containerVariants, itemVariants } from '@/lib/animations'
 import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity, FileText, Printer } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
+import { getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
 
 const PAGE_SIZE = 20
 
@@ -68,6 +69,17 @@ const EMPTY_FILTERS: Filters = {
   minDonazioneLcif: '', maxDonazioneLcif: '', minFondiRaccolti: '', maxFondiRaccolti: '',
   minFondiRaccoltiCapped: '', maxFondiRaccoltiCapped: '',
   minAlberi: '', maxAlberi: '',
+}
+
+// Ricava l'anno sociale attualmente selezionato confrontando l'intervallo data inizio
+// con i range degli anni sociali; ritorna 'tutti' se non corrisponde a nessuno.
+function annoSocialeSelezionato(f: Filters): string {
+  if (!f.dataInizioDa || !f.dataInizioA) return 'tutti'
+  const match = getRecentAnniSociali(8).find((a) => {
+    const r = getAnnoSocialeRange(a.value)
+    return r.from === f.dataInizioDa && r.to === f.dataInizioA
+  })
+  return match ? String(match.value) : 'tutti'
 }
 
 function countAdvancedFilters(f: Filters) {
@@ -388,11 +400,29 @@ export default function AttivitaPage() {
                         </div>
                       </div>
 
-                      {/* Date */}
-                      <SectionLabel>Date</SectionLabel>
+                      {/* Anno sociale (1 luglio → 30 giugno): imposta l'intervallo data inizio */}
+                      <SectionLabel>Anno sociale</SectionLabel>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <RangeRow label="Data inizio" minVal={filters.dataInizioDa} maxVal={filters.dataInizioA} onMin={(v) => upd({ dataInizioDa: v })} onMax={(v) => upd({ dataInizioA: v })} type="date" />
-                        <RangeRow label="Data conclusione" minVal={filters.dataConclusioneDa} maxVal={filters.dataConclusioneA} onMin={(v) => upd({ dataConclusioneDa: v })} onMax={(v) => upd({ dataConclusioneA: v })} type="date" />
+                        <div>
+                          <p className="text-xs font-medium mb-1">Anno sociale</p>
+                          <p className="text-[10px] text-muted-foreground mb-1.5">Attività con data inizio nell&apos;anno sociale (1 lug → 30 giu)</p>
+                          <Select
+                            value={annoSocialeSelezionato(filters)}
+                            onValueChange={(v) => {
+                              if (!v || v === 'tutti') { upd({ dataInizioDa: '', dataInizioA: '' }); return }
+                              const r = getAnnoSocialeRange(parseInt(v, 10))
+                              upd({ dataInizioDa: r.from, dataInizioA: r.to })
+                            }}
+                          >
+                            <SelectTrigger className="text-sm bg-background/50"><SelectValue placeholder="Tutti gli anni" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="tutti">Tutti gli anni</SelectItem>
+                              {getRecentAnniSociali(8).map((a) => (
+                                <SelectItem key={a.value} value={String(a.value)}>{a.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       {/* Impatto */}
