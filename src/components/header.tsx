@@ -129,6 +129,15 @@ export function Header() {
 
   useEffect(() => {
     checkUser()
+
+    // Aggiorna l'header in tempo reale su login/logout/conferma email,
+    // senza dover ricaricare la pagina (l'header sta nel layout e non si rimonta).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   async function checkUser() {
