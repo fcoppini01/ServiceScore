@@ -24,10 +24,6 @@ const LABELS: Record<string, string> = {
   professione: 'Professione',
   citta: 'Città',
   provincia: 'Provincia',
-  etaMin: 'Età min',
-  etaMax: 'Età max',
-  anzianitaMin: 'Anzianità min',
-  anzianitaMax: 'Anzianità max',
 }
 
 function StampaSociInner() {
@@ -53,10 +49,6 @@ function StampaSociInner() {
     professione: getString(sp, 'professione'),
     citta: getString(sp, 'citta'),
     provincia: getString(sp, 'provincia'),
-    etaMin: getString(sp, 'etaMin'),
-    etaMax: getString(sp, 'etaMax'),
-    anzianitaMin: getString(sp, 'anzianitaMin'),
-    anzianitaMax: getString(sp, 'anzianitaMax'),
     sortField: getString(sp, 'sortField') || 'cognome',
     sortDir: getString(sp, 'sortDir') || 'asc',
   }
@@ -78,10 +70,6 @@ function StampaSociInner() {
     if (filters.professione) q = q.ilike('professione', `%${filters.professione}%`)
     if (filters.citta) q = q.ilike('citta', `%${filters.citta}%`)
     if (filters.provincia) q = q.ilike('stato_provincia', `%${filters.provincia}%`)
-    if (filters.etaMin) q = q.gte('eta', parseInt(filters.etaMin))
-    if (filters.etaMax) q = q.lte('eta', parseInt(filters.etaMax))
-    if (filters.anzianitaMin) q = q.gte('anzianita_lionistica', parseInt(filters.anzianitaMin))
-    if (filters.anzianitaMax) q = q.lte('anzianita_lionistica', parseInt(filters.anzianitaMax))
 
     q.order(filters.sortField, { ascending: filters.sortDir === 'asc', nullsFirst: false }).range(0, 9999).then(({ data, error }) => {
       if (error) setError('Errore nel caricamento. Riprova.')

@@ -22,8 +22,6 @@ interface Filters {
   sesso: string[]
   fasciaEta: string[]
   fasciaAnzianita: string[]
-  etaMin: string
-  etaMax: string
   // Filtri territoriali (ordine fisso: Club, Zona, Circoscrizione, Distretto)
   club: string[]
   zona: string[]
@@ -36,8 +34,6 @@ interface Filters {
   professione: string
   citta: string
   provincia: string
-  anzianitaMin: string
-  anzianitaMax: string
   // Escludi soci con data ingresso < 1/7/2023 (date probabilmente segnaposto Lions)
   escludiAnte202307: boolean
 }
@@ -49,11 +45,10 @@ const DISTRETTI = ['108 LA']
 const CLASSIFICAZIONI = ['EFFETTIVO', 'FONDATORE', 'PRIVILEGIATO', 'VITALIZIO', 'ONORARIO', 'AGGREGATO', 'AFFILIATO', 'ASSOCIATO', 'FAMILIARE', 'LEO-LION', 'STUDENTE', 'GIOVANE ADULTO']
 
 const EMPTY_FILTERS: Filters = {
-  search: '', sesso: [], fasciaEta: [], fasciaAnzianita: [], etaMin: '', etaMax: '',
+  search: '', sesso: [], fasciaEta: [], fasciaAnzianita: [],
   club: [], zona: [], circoscrizione: [], distretto: [],
   categoriaAssociativa: [], tipoAssociazione: [], classificazione: [], programma: [],
   professione: '', citta: '', provincia: '',
-  anzianitaMin: '', anzianitaMax: '',
   escludiAnte202307: false,
 }
 
@@ -64,7 +59,6 @@ function countAdvancedFilters(f: Filters) {
   if (f.circoscrizione.length) c++
   if (f.distretto.length) c++
   if (f.fasciaAnzianita.length) c++
-  if (f.etaMin || f.etaMax) c++
   if (f.categoriaAssociativa.length) c++
   if (f.tipoAssociazione.length) c++
   if (f.classificazione.length) c++
@@ -72,7 +66,6 @@ function countAdvancedFilters(f: Filters) {
   if (f.professione) c++
   if (f.citta) c++
   if (f.provincia) c++
-  if (f.anzianitaMin || f.anzianitaMax) c++
   if (f.escludiAnte202307) c++
   return c
 }
@@ -156,10 +149,6 @@ export default function SociPage() {
     if (filters.professione) query = query.ilike('professione', `%${filters.professione}%`)
     if (filters.citta) query = query.ilike('citta', `%${filters.citta}%`)
     if (filters.provincia) query = query.ilike('stato_provincia', `%${filters.provincia}%`)
-    if (filters.anzianitaMin) query = query.gte('anzianita_lionistica', parseInt(filters.anzianitaMin))
-    if (filters.anzianitaMax) query = query.lte('anzianita_lionistica', parseInt(filters.anzianitaMax))
-    if (filters.etaMin) query = query.gte('eta', parseInt(filters.etaMin))
-    if (filters.etaMax) query = query.lte('eta', parseInt(filters.etaMax))
     // Esclude soci con data_ingresso anteriore al 1/7/2023 (date probabilmente "fittizie" Lions)
     if (filters.escludiAnte202307) query = query.gte('data_ingresso', '2023-07-01')
 
@@ -284,22 +273,6 @@ export default function SociPage() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <Input placeholder="Provincia..." value={filters.provincia} onChange={(e) => updateFilters({ ...filters, provincia: e.target.value })} className="bg-background/50" />
-                        <div>
-                          <p className="text-[10px] text-muted-foreground mb-1">Età (anni)</p>
-                          <div className="flex items-center gap-1.5">
-                            <Input type="number" placeholder="Da" min="0" max="120" value={filters.etaMin} onChange={(e) => updateFilters({ ...filters, etaMin: e.target.value })} className="text-sm bg-background/50" />
-                            <span className="text-xs text-muted-foreground shrink-0">—</span>
-                            <Input type="number" placeholder="A" min="0" max="120" value={filters.etaMax} onChange={(e) => updateFilters({ ...filters, etaMax: e.target.value })} className="text-sm bg-background/50" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground mb-1">Anzianità lionistica (anni)</p>
-                          <div className="flex items-center gap-1.5">
-                            <Input type="number" placeholder="Da" min="0" value={filters.anzianitaMin} onChange={(e) => updateFilters({ ...filters, anzianitaMin: e.target.value })} className="text-sm bg-background/50" />
-                            <span className="text-xs text-muted-foreground shrink-0">—</span>
-                            <Input type="number" placeholder="A" min="0" value={filters.anzianitaMax} onChange={(e) => updateFilters({ ...filters, anzianitaMax: e.target.value })} className="text-sm bg-background/50" />
-                          </div>
-                        </div>
                       </div>
                       {/* Esclude soci con data ingresso anteriore al 1/7/2023 (date probabilmente fittizie) */}
                       <div className="flex items-center gap-2 pt-1">
