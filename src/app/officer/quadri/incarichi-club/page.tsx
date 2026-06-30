@@ -11,6 +11,7 @@ import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ArrowLeft, Printer, ShieldCheck, FileSpreadsheet } from 'lucide-react'
 import { exportToExcel, todayStamp } from '@/lib/excel-export'
+import { getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
 
 export default function QuadroIncarichiClubPage() {
   const [officer, setOfficer] = useState<any[]>([])
@@ -26,6 +27,8 @@ export default function QuadroIncarichiClubPage() {
   const [filtroZona, setFiltroZona] = useState<string[]>([])
   const [filtroCirc, setFiltroCirc] = useState<string[]>([])
   const [filtroDistretto, setFiltroDistretto] = useState<string[]>([])
+  const anniOpzioni = useMemo(() => getRecentAnniSociali(8), [])
+  const [anniSociali, setAnniSociali] = useState<number[]>([])
   const [soloAttivi, setSoloAttivi] = useState(false)
   const [groupByTitolo, setGroupByTitolo] = useState(true)
   const DISTRETTI = ['108 LA']
@@ -38,7 +41,7 @@ export default function QuadroIncarichiClubPage() {
   useEffect(() => {
     if (!isClient) return
     loadOfficer()
-  }, [isClient, filtroTitolo, filtroClub, filtroZona, filtroCirc, filtroDistretto, soloAttivi])
+  }, [isClient, filtroTitolo, filtroClub, filtroZona, filtroCirc, filtroDistretto, anniSociali, soloAttivi])
 
   async function loadFilterOptions() {
     // Club/Zona/Circ dalla tabella club (completa), titoli dalla view officer.
@@ -65,6 +68,11 @@ export default function QuadroIncarichiClubPage() {
     if (filtroZona.length) query = query.in('club_zona', filtroZona)
     if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
     // distretto: oggi unico, no-op a livello query
+    // Anno sociale multi-selezione: unione (OR) degli intervalli 1 lug → 30 giu sulla data inizio incarico
+    if (anniSociali.length) {
+      const orExpr = anniSociali.map((y) => { const { from, to } = getAnnoSocialeRange(y); return `and(data_inizio.gte.${from},data_inizio.lte.${to})` }).join(',')
+      query = query.or(orExpr)
+    }
     if (soloAttivi) {
       const d = new Date()
       const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -146,11 +154,17 @@ export default function QuadroIncarichiClubPage() {
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Club" />
               <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Zona" />
               <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Circoscrizione" />
               <MultiSelect options={DISTRETTI} selected={filtroDistretto} onChange={setFiltroDistretto} placeholder="Distretto" />
+              <MultiSelect
+                options={anniOpzioni.map((a) => a.label)}
+                selected={[...anniSociali].sort((a, b) => b - a).map((y) => getAnnoSocialeRange(y).label)}
+                onChange={(labels) => setAnniSociali(labels.map((l) => anniOpzioni.find((a) => a.label === l)!.value))}
+                placeholder="Anno sociale"
+              />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <MultiSelect options={titoli} selected={filtroTitolo} onChange={setFiltroTitolo} placeholder="Titolo ufficiale" />
@@ -174,8 +188,8 @@ export default function QuadroIncarichiClubPage() {
                 />
                 <span className="text-sm">Raggruppa per titolo</span>
               </label>
-              {(filtroTitolo.length + filtroClub.length + filtroZona.length + filtroCirc.length + filtroDistretto.length) > 0 && (
-                <Button variant="outline" size="sm" onClick={() => { setFiltroTitolo([]); setFiltroClub([]); setFiltroZona([]); setFiltroCirc([]); setFiltroDistretto([]) }} className="text-xs">Cancella filtri</Button>
+              {(filtroTitolo.length + filtroClub.length + filtroZona.length + filtroCirc.length + filtroDistretto.length + anniSociali.length) > 0 && (
+                <Button variant="outline" size="sm" onClick={() => { setFiltroTitolo([]); setFiltroClub([]); setFiltroZona([]); setFiltroCirc([]); setFiltroDistretto([]); setAnniSociali([]) }} className="text-xs">Cancella filtri</Button>
               )}
             </div>
           </CardContent>

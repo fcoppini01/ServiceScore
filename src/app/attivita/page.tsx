@@ -12,10 +12,11 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity, FileText, Printer } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity, FileText, Printer, FileSpreadsheet } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
 import { getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
+import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 
 const PAGE_SIZE = 20
 
@@ -279,6 +280,41 @@ export default function AttivitaPage() {
     setLoading(false)
   }
 
+  // Esporta in Excel TUTTI i risultati attualmente filtrati (non solo la pagina).
+  const [exporting, setExporting] = useState(false)
+  async function exportExcel() {
+    setExporting(true)
+    let q = applyFilters(supabase.from('vista_report_ricerca').select('*'))
+    if (sort) q = q.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
+    const { data, error } = await q.range(0, 49999)
+    setExporting(false)
+    if (error || !data) return
+    exportToExcel(
+      data,
+      [
+        { header: 'ID attività', accessor: (a: any) => a.id_attivita },
+        { header: 'Data inizio', accessor: (a: any) => fmtDateIT(a.data_inizio) },
+        { header: 'Data fine', accessor: (a: any) => fmtDateIT(a.data_conclusione) },
+        { header: 'Stato', accessor: (a: any) => a.stato },
+        { header: 'Titolo', accessor: (a: any) => a.titolo },
+        { header: 'Club', accessor: (a: any) => a.sponsor_nome_account },
+        { header: 'Zona', accessor: (a: any) => a.sponsor_zona },
+        { header: 'Circoscrizione', accessor: (a: any) => a.sponsor_circoscrizione },
+        { header: 'Causa', accessor: (a: any) => a.causa },
+        { header: 'Tipo progetto', accessor: (a: any) => a.tipo_progetto },
+        { header: 'Livello attività', accessor: (a: any) => a.livello_attivita },
+        { header: 'Persone servite (cap)', accessor: (a: any) => Number(a.persone_servite_limite) || 0 },
+        { header: 'Volontari', accessor: (a: any) => Number(a.totale_volontari) || 0 },
+        { header: 'Ore (cap)', accessor: (a: any) => Number(a.totale_ore_servizio_capped) || 0 },
+        { header: 'Fondi donati USD (cap)', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
+        { header: 'Fondi raccolti USD (cap)', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
+        { header: 'Org. beneficiata', accessor: (a: any) => a.organizzazione_beneficiata },
+      ],
+      `attivita_${todayStamp()}`,
+      'Attività'
+    )
+  }
+
   function updateFilters(newFilters: Filters) {
     setPage(0)
     setFilters(newFilters)
@@ -303,12 +339,20 @@ export default function AttivitaPage() {
         Reportistica attività del Distretto 108 LA
       </motion.p>
 
-      <motion.div variants={itemVariants} className="mb-6">
+      <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap">
         <Link href="/attivita/rapporti">
           <Button variant="outline" size="sm" className="text-xs gap-1.5">
             <FileText className="h-3.5 w-3.5" /> Rapporti
           </Button>
         </Link>
+        <Link href={`/attivita/stampa${filtersToQueryString({ ...filters, sortField: sort?.field, sortDir: sort?.dir })}`}>
+          <Button variant="outline" size="sm" className="text-xs gap-1.5" title="Stampa esattamente i risultati attualmente filtrati">
+            <Printer className="h-3.5 w-3.5" /> Stampa PDF
+          </Button>
+        </Link>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={exportExcel} disabled={exporting || totalCount === 0} title="Esporta in Excel i risultati attualmente filtrati">
+          <FileSpreadsheet className="h-3.5 w-3.5" /> {exporting ? 'Esporto…' : 'Excel'}
+        </Button>
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -479,11 +523,6 @@ export default function AttivitaPage() {
                 {!loading && totalCount > 0 && (
                   <span className="text-xs text-muted-foreground">{start}–{end} di {totalCount}</span>
                 )}
-                <Link href={`/attivita/stampa${filtersToQueryString({ ...filters, sortField: sort?.field, sortDir: sort?.dir })}`}>
-                  <Button size="sm" variant="outline" className="text-xs gap-1.5" disabled={loading || totalCount === 0} title="Stampa esattamente i risultati attualmente filtrati">
-                    <Printer className="h-3.5 w-3.5" /> Stampa risultati
-                  </Button>
-                </Link>
               </div>
             </div>
             {!loading && totalCount > 0 && (
