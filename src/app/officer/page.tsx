@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, ShieldCheck, FileText, Printer } from 'lucide-react'
+import { ChevronLeft, ChevronRight, SlidersHorizontal, ShieldCheck, FileText, Printer } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
 import { getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
@@ -80,7 +80,6 @@ export default function OfficerPage() {
   const [clubs, setClubs] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [advancedOpen, setAdvancedOpen] = useState(false)
   const [sort, setSort] = useState<SortState>({ field: 'cognome', dir: 'asc' })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -211,71 +210,42 @@ export default function OfficerPage() {
                 />
               </div>
 
-              <button
-                onClick={() => setAdvancedOpen(!advancedOpen)}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${advancedOpen ? 'rotate-180' : ''}`} />
-                Filtri avanzati
-                {advancedCount > 0 && <Badge className="h-4 min-w-4 px-1 text-[9px]">{advancedCount}</Badge>}
-              </button>
-
-              <AnimatePresence initial={false}>
-                {advancedOpen && (
-                  <motion.div
-                    key="advanced"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: 'easeInOut' }}
-                    className="overflow-hidden"
-                  >
-                    <div className="space-y-3 pt-1">
-                      {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
-                        <MultiSelect options={zone} selected={filters.zona} onChange={(v) => updateFilters({ ...filters, zona: v })} placeholder="Zona" />
-                        <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
-                        <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => updateFilters({ ...filters, distretto: v })} placeholder="Distretto" />
-                      </div>
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={filters.soloAttivi}
-                          onChange={(e) => updateFilters({ ...filters, soloAttivi: e.target.checked })}
-                          className="h-4 w-4 rounded border-input accent-primary"
-                        />
-                        <span className="text-sm">Solo incarichi attivi (mandato in corso oggi)</span>
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <p className="text-xs font-medium mb-1">Anno sociale</p>
-                          <p className="text-[10px] text-muted-foreground mb-1.5">Incarichi iniziati nell&apos;anno sociale (1 lug → 30 giu)</p>
-                          <Select
-                            value={annoSocialeSelezionato(filters)}
-                            onValueChange={(v) => {
-                              if (!v || v === 'tutti') { updateFilters({ ...filters, dataInizioDa: '', dataInizioA: '' }); return }
-                              const r = getAnnoSocialeRange(parseInt(v, 10))
-                              updateFilters({ ...filters, dataInizioDa: r.from, dataInizioA: r.to })
-                            }}
-                          >
-                            <SelectTrigger className="text-sm bg-background/50"><SelectValue placeholder="Tutti gli anni" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="tutti">Tutti gli anni</SelectItem>
-                              {getRecentAnniSociali(8).map((a) => (
-                                <SelectItem key={a.value} value={String(a.value)}>{a.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Filtri territoriali (ordine fisso Club, Zona, Circoscrizione, Distretto)
+                  + Anno sociale accanto a Distretto. Tutti in vista, niente sezione avanzata. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
+                <MultiSelect options={zone} selected={filters.zona} onChange={(v) => updateFilters({ ...filters, zona: v })} placeholder="Zona" />
+                <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
+                <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => updateFilters({ ...filters, distretto: v })} placeholder="Distretto" />
+                <Select
+                  value={annoSocialeSelezionato(filters)}
+                  onValueChange={(v) => {
+                    if (!v || v === 'tutti') { updateFilters({ ...filters, dataInizioDa: '', dataInizioA: '' }); return }
+                    const r = getAnnoSocialeRange(parseInt(v, 10))
+                    updateFilters({ ...filters, dataInizioDa: r.from, dataInizioA: r.to })
+                  }}
+                >
+                  <SelectTrigger className="text-sm bg-background/50"><SelectValue placeholder="Anno sociale" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tutti">Tutti gli anni</SelectItem>
+                    {getRecentAnniSociali(8).map((a) => (
+                      <SelectItem key={a.value} value={String(a.value)}>{a.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={filters.soloAttivi}
+                  onChange={(e) => updateFilters({ ...filters, soloAttivi: e.target.checked })}
+                  className="h-4 w-4 rounded border-input accent-primary"
+                />
+                <span className="text-sm">Solo incarichi attivi (mandato in corso oggi)</span>
+              </label>
 
               <div className="flex items-center gap-2 pt-1">
-                <Button variant="outline" size="sm" onClick={() => { updateFilters(EMPTY_FILTERS); setAdvancedOpen(false) }} className="text-xs">
+                <Button variant="outline" size="sm" onClick={() => updateFilters(EMPTY_FILTERS)} className="text-xs">
                   Cancella filtri
                 </Button>
                 {(advancedCount + basicCount) > 0 && (
