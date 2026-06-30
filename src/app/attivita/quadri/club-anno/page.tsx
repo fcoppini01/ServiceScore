@@ -15,7 +15,8 @@ import { getCurrentAnnoSocialeStart, getAnnoSocialeRange, getRecentAnniSociali }
 
 export default function QuadroClubAnnoPage() {
   const [club, setClub] = useState<string[]>([])
-  const [annoSociale, setAnnoSociale] = useState<number>(getCurrentAnnoSocialeStart())
+  const anniOpzioni = useMemo(() => getRecentAnniSociali(8), [])
+  const [anniSociali, setAnniSociali] = useState<number[]>([getCurrentAnnoSocialeStart()])
   const [clubs, setClubs] = useState<string[]>([])
   const [zone, setZone] = useState<string[]>([])
   const [filtroZona, setFiltroZona] = useState<string[]>([])
@@ -34,7 +35,7 @@ export default function QuadroClubAnnoPage() {
   useEffect(() => {
     if (!isClient || (club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0)) { setActivities([]); return }
     loadActivities()
-  }, [isClient, club, filtroZona, filtroCircoscrizione, annoSociale])
+  }, [isClient, club, filtroZona, filtroCircoscrizione, anniSociali])
 
   async function loadFilterOptions() {
     // Da tabella club (completa) per non dipendere dal volume di attività
@@ -49,12 +50,14 @@ export default function QuadroClubAnnoPage() {
   async function loadActivities() {
     setLoading(true)
     setError(null)
-    const { from, to } = getAnnoSocialeRange(annoSociale)
     let q = supabase
       .from('vista_report_ricerca')
       .select('id_attivita, data_inizio, stato, titolo, causa, tipo_progetto, persone_servite_limite, totale_volontari, totale_ore_servizio_capped, fondi_donati_usd_capped, organizzazione_beneficiata, fondi_raccolti_usd_capped, sponsor_nome_account, sponsor_zona, sponsor_circoscrizione')
-      .gte('data_inizio', from)
-      .lte('data_inizio', to)
+    // Anno sociale multi-selezione: unione (OR) degli intervalli 1 lug → 30 giu
+    if (anniSociali.length) {
+      const orExpr = anniSociali.map((y) => { const { from, to } = getAnnoSocialeRange(y); return `and(data_inizio.gte.${from},data_inizio.lte.${to})` }).join(',')
+      q = q.or(orExpr)
+    }
     if (club.length) q = q.in('sponsor_nome_account', club)
     if (filtroZona.length) q = q.in('sponsor_zona', filtroZona)
     if (filtroCircoscrizione.length) q = q.in('sponsor_circoscrizione', filtroCircoscrizione)
@@ -77,7 +80,9 @@ export default function QuadroClubAnnoPage() {
 
   const formatDate = (d: string | null) => d ? new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' }) : ''
   const fmt = (n: number, digits = 0) => n.toLocaleString('it-IT', { maximumFractionDigits: digits })
-  const annoLabel = getAnnoSocialeRange(annoSociale).label
+  const annoLabel = anniSociali.length
+    ? [...anniSociali].sort((a, b) => a - b).map((y) => getAnnoSocialeRange(y).label).join(', ')
+    : 'tutti gli anni'
 
   if (!isClient) return null
 
@@ -161,14 +166,13 @@ export default function QuadroClubAnnoPage() {
                 <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="108 LA" />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Anno sociale</p>
-                <select
-                  value={annoSociale}
-                  onChange={(e) => setAnnoSociale(parseInt(e.target.value))}
-                  className="w-full h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring"
-                >
-                  {getRecentAnniSociali(8).map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                </select>
+                <p className="text-[10px] text-muted-foreground mb-1">Anno sociale (uno o più)</p>
+                <MultiSelect
+                  options={anniOpzioni.map((a) => a.label)}
+                  selected={[...anniSociali].sort((a, b) => b - a).map((y) => getAnnoSocialeRange(y).label)}
+                  onChange={(labels) => setAnniSociali(labels.map((l) => anniOpzioni.find((a) => a.label === l)!.value))}
+                  placeholder="Anno sociale"
+                />
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground italic">

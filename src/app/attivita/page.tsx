@@ -207,7 +207,9 @@ export default function AttivitaPage() {
     if (filters.livelloAttivita.length) q = q.in('livello_attivita', filters.livelloAttivita)
     if (filters.circoscrizione.length) q = q.in('sponsor_circoscrizione', filters.circoscrizione)
     if (filters.club.length) q = q.in('sponsor_nome_account', filters.club)
-    if (filters.organizzazioneBeneficiata) q = q.ilike('organizzazione_beneficiata', `%${filters.organizzazioneBeneficiata}%`)
+    // Organizzazione beneficiata: LCIF (qualsiasi grafia) oppure Altro (qualunque altra org. valorizzata)
+    if (filters.organizzazioneBeneficiata === 'LCIF') q = q.ilike('organizzazione_beneficiata', '%lcif%')
+    else if (filters.organizzazioneBeneficiata === 'ALTRO') q = q.not('organizzazione_beneficiata', 'is', null).not('organizzazione_beneficiata', 'ilike', '%lcif%')
     if (filters.attivitaDistintiva) q = q.eq('attivita_distintiva', filters.attivitaDistintiva === 'true')
     if (filters.finanziateLcif) q = q.eq('finanziata_lcif', filters.finanziateLcif === 'true')
     if (filters.dataInizioDa) q = q.gte('data_inizio', filters.dataInizioDa)
@@ -338,12 +340,29 @@ export default function AttivitaPage() {
                   className="bg-background/50"
                 />
               </div>
-              {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Filtri territoriali (ordine fisso Club, Zona, Circoscrizione, Distretto)
+                  + Anno sociale affiancato a Distretto. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <MultiSelect options={clubs} selected={filters.club} onChange={(v) => upd({ club: v })} placeholder="Club" />
                 <MultiSelect options={zone} selected={filters.zona} onChange={(v) => upd({ zona: v })} placeholder="Zona" />
                 <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => upd({ circoscrizione: v })} placeholder="Circoscrizione" />
                 <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => upd({ distretto: v })} placeholder="Distretto" />
+                <Select
+                  value={annoSocialeSelezionato(filters)}
+                  onValueChange={(v) => {
+                    if (!v || v === 'tutti') { upd({ dataInizioDa: '', dataInizioA: '' }); return }
+                    const r = getAnnoSocialeRange(parseInt(v, 10))
+                    upd({ dataInizioDa: r.from, dataInizioA: r.to })
+                  }}
+                >
+                  <SelectTrigger className="text-sm bg-background/50"><SelectValue placeholder="Anno sociale" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tutti">Tutti gli anni</SelectItem>
+                    {getRecentAnniSociali(8).map((a) => (
+                      <SelectItem key={a.value} value={String(a.value)}>{a.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Advanced toggle */}
@@ -375,7 +394,17 @@ export default function AttivitaPage() {
                         <MultiSelect options={cause} selected={filters.causa} onChange={(v) => upd({ causa: v })} placeholder="Causa" />
                         <MultiSelect options={tipiProgetto} selected={filters.tipoProgetto} onChange={(v) => upd({ tipoProgetto: v })} placeholder="Tipo progetto" />
                         <MultiSelect options={livelliAttivita} selected={filters.livelloAttivita} onChange={(v) => upd({ livelloAttivita: v })} placeholder="Livello attività" />
-                        <Input placeholder="Organizzazione beneficiata..." value={filters.organizzazioneBeneficiata} onChange={(e) => upd({ organizzazioneBeneficiata: e.target.value })} className="bg-background/50" />
+                        <div>
+                          <p className="text-[10px] text-muted-foreground mb-1">Organizzazione beneficiata</p>
+                          <Select value={filters.organizzazioneBeneficiata} onValueChange={(v) => upd({ organizzazioneBeneficiata: v ?? '' })}>
+                            <SelectTrigger className="bg-background/50"><SelectValue placeholder="Tutte" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Tutte</SelectItem>
+                              <SelectItem value="LCIF">LCIF</SelectItem>
+                              <SelectItem value="ALTRO">Altro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <div>
                           <p className="text-[10px] text-muted-foreground mb-1">Attività distintiva</p>
                           <Select value={filters.attivitaDistintiva} onValueChange={(v) => upd({ attivitaDistintiva: v ?? '' })}>
@@ -395,31 +424,6 @@ export default function AttivitaPage() {
                               <SelectItem value="">Tutti</SelectItem>
                               <SelectItem value="true">Sì</SelectItem>
                               <SelectItem value="false">No</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Anno sociale (1 luglio → 30 giugno): imposta l'intervallo data inizio */}
-                      <SectionLabel>Anno sociale</SectionLabel>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <p className="text-xs font-medium mb-1">Anno sociale</p>
-                          <p className="text-[10px] text-muted-foreground mb-1.5">Attività con data inizio nell&apos;anno sociale (1 lug → 30 giu)</p>
-                          <Select
-                            value={annoSocialeSelezionato(filters)}
-                            onValueChange={(v) => {
-                              if (!v || v === 'tutti') { upd({ dataInizioDa: '', dataInizioA: '' }); return }
-                              const r = getAnnoSocialeRange(parseInt(v, 10))
-                              upd({ dataInizioDa: r.from, dataInizioA: r.to })
-                            }}
-                          >
-                            <SelectTrigger className="text-sm bg-background/50"><SelectValue placeholder="Tutti gli anni" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="tutti">Tutti gli anni</SelectItem>
-                              {getRecentAnniSociali(8).map((a) => (
-                                <SelectItem key={a.value} value={String(a.value)}>{a.label}</SelectItem>
-                              ))}
                             </SelectContent>
                           </Select>
                         </div>

@@ -30,6 +30,22 @@ function sumTotali(rows: any[]): Totali {
 const fmt = (n: number, digits = 0) => n.toLocaleString('it-IT', { maximumFractionDigits: digits })
 const formatDate = (d: string | null) => d ? new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' }) : ''
 
+// Box dei totali (complessivo o parziale). accent=true per il totale complessivo.
+function TotaliBox({ label, t, accent = false }: { label: string; t: Totali; accent?: boolean }) {
+  return (
+    <div className={`rounded-lg px-4 py-3 print:border-black print:bg-transparent ${accent ? 'border-2 border-primary/30 bg-primary/5' : 'border border-border/60 bg-muted/30'}`}>
+      <p className={`text-xs font-bold uppercase tracking-wide mb-2 print:text-black ${accent ? 'text-primary' : 'text-foreground'}`}>{label}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+        <div><span className="text-muted-foreground print:text-black">Persone (limite max)</span><br /><span className="font-bold tabular-nums">{fmt(t.persone)}</span></div>
+        <div><span className="text-muted-foreground print:text-black">Volontari</span><br /><span className="font-bold tabular-nums">{fmt(t.volontari)}</span></div>
+        <div><span className="text-muted-foreground print:text-black">Ore capped</span><br /><span className="font-bold tabular-nums">{fmt(t.ore)}</span></div>
+        <div><span className="text-muted-foreground print:text-black">Donati USD capped</span><br /><span className="font-bold tabular-nums">{fmt(t.donati)}</span></div>
+        <div><span className="text-muted-foreground print:text-black">Raccolti USD capped</span><br /><span className="font-bold tabular-nums">{fmt(t.raccolti)}</span></div>
+      </div>
+    </div>
+  )
+}
+
 function AttivitaTable({ rows, label, color }: { rows: any[]; label: string; color: string }) {
   const totali = sumTotali(rows)
   if (rows.length === 0) {
@@ -47,6 +63,10 @@ function AttivitaTable({ rows, label, color }: { rows: any[]; label: string; col
       <h2 className={`text-sm font-bold mb-2 pb-1 border-b-2 ${color} print:text-black print:border-black`}>
         {label} <span className="text-muted-foreground font-normal print:text-black">· {rows.length} attività</span>
       </h2>
+      {/* Totale parziale SOPRA i risultati del gruppo */}
+      <div className="mb-3">
+        <TotaliBox label={`Subtotale ${label}`} t={totali} />
+      </div>
       <table className="w-full text-xs">
         <TableHeader>
           <TableRow>
@@ -83,15 +103,6 @@ function AttivitaTable({ rows, label, color }: { rows: any[]; label: string; col
               <TableCell className="tabular-nums text-right">{fmt(Number(a.fondi_raccolti_usd_capped) || 0)}</TableCell>
             </TableRow>
           ))}
-          <TableRow className="font-bold bg-muted/40 print:bg-transparent print:border-t-2 print:border-black">
-            <TableCell colSpan={7} className="text-right">SUBTOTALE {label}</TableCell>
-            <TableCell className="tabular-nums text-right">{fmt(totali.persone)}</TableCell>
-            <TableCell className="tabular-nums text-right">{fmt(totali.volontari)}</TableCell>
-            <TableCell className="tabular-nums text-right">{fmt(totali.ore)}</TableCell>
-            <TableCell className="tabular-nums text-right">{fmt(totali.donati)}</TableCell>
-            <TableCell></TableCell>
-            <TableCell className="tabular-nums text-right">{fmt(totali.raccolti)}</TableCell>
-          </TableRow>
         </TableBody>
       </table>
     </div>
@@ -100,7 +111,8 @@ function AttivitaTable({ rows, label, color }: { rows: any[]; label: string; col
 
 export default function QuadroClubAnnoAmmServicePage() {
   const [club, setClub] = useState<string[]>([])
-  const [annoSociale, setAnnoSociale] = useState<number>(getCurrentAnnoSocialeStart())
+  const anniOpzioni = useMemo(() => getRecentAnniSociali(8), [])
+  const [anniSociali, setAnniSociali] = useState<number[]>([getCurrentAnnoSocialeStart()])
   const [clubs, setClubs] = useState<string[]>([])
   const [zone, setZone] = useState<string[]>([])
   const [filtroZona, setFiltroZona] = useState<string[]>([])
@@ -119,7 +131,7 @@ export default function QuadroClubAnnoAmmServicePage() {
   useEffect(() => {
     if (!isClient || (club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0)) { setActivities([]); return }
     loadActivities()
-  }, [isClient, club, filtroZona, filtroCircoscrizione, annoSociale])
+  }, [isClient, club, filtroZona, filtroCircoscrizione, anniSociali])
 
   async function loadFilterOptions() {
     const { data } = await supabase.from('club').select('nome_club, zona, circoscrizione').range(0, 9999)
@@ -133,12 +145,14 @@ export default function QuadroClubAnnoAmmServicePage() {
   async function loadActivities() {
     setLoading(true)
     setError(null)
-    const { from, to } = getAnnoSocialeRange(annoSociale)
     let q = supabase
       .from('vista_report_ricerca')
       .select('id_attivita, data_inizio, stato, titolo, causa, tipo_progetto, persone_servite_limite, totale_volontari, totale_ore_servizio_capped, fondi_donati_usd_capped, organizzazione_beneficiata, fondi_raccolti_usd_capped, sponsor_nome_account, sponsor_zona, sponsor_circoscrizione')
-      .gte('data_inizio', from)
-      .lte('data_inizio', to)
+    // Anno sociale multi-selezione: unione (OR) degli intervalli 1 lug → 30 giu
+    if (anniSociali.length) {
+      const orExpr = anniSociali.map((y) => { const { from, to } = getAnnoSocialeRange(y); return `and(data_inizio.gte.${from},data_inizio.lte.${to})` }).join(',')
+      q = q.or(orExpr)
+    }
     if (club.length) q = q.in('sponsor_nome_account', club)
     if (filtroZona.length) q = q.in('sponsor_zona', filtroZona)
     if (filtroCircoscrizione.length) q = q.in('sponsor_circoscrizione', filtroCircoscrizione)
@@ -152,7 +166,9 @@ export default function QuadroClubAnnoAmmServicePage() {
   const service = useMemo(() => activities.filter(a => a.causa !== AMMINISTRAZIONE_CAUSA), [activities])
   const totaliComplessivi = useMemo(() => sumTotali(activities), [activities])
 
-  const annoLabel = getAnnoSocialeRange(annoSociale).label
+  const annoLabel = anniSociali.length
+    ? [...anniSociali].sort((a, b) => a - b).map((y) => getAnnoSocialeRange(y).label).join(', ')
+    : 'tutti gli anni'
 
   if (!isClient) return null
 
@@ -237,14 +253,13 @@ export default function QuadroClubAnnoAmmServicePage() {
                 <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="108 LA" />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Anno sociale</p>
-                <select
-                  value={annoSociale}
-                  onChange={(e) => setAnnoSociale(parseInt(e.target.value))}
-                  className="w-full h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring"
-                >
-                  {getRecentAnniSociali(8).map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                </select>
+                <p className="text-[10px] text-muted-foreground mb-1">Anno sociale (uno o più)</p>
+                <MultiSelect
+                  options={anniOpzioni.map((a) => a.label)}
+                  selected={[...anniSociali].sort((a, b) => b - a).map((y) => getAnnoSocialeRange(y).label)}
+                  onChange={(labels) => setAnniSociali(labels.map((l) => anniOpzioni.find((a) => a.label === l)!.value))}
+                  placeholder="Anno sociale"
+                />
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground italic">
@@ -275,20 +290,10 @@ export default function QuadroClubAnnoAmmServicePage() {
               </div>
             ) : (
               <>
+                {/* Totale complessivo IN ALTO, poi i due gruppi con subtotale sopra ciascuno */}
+                <TotaliBox label="Totali complessivi (Service + Amministrazione)" t={totaliComplessivi} accent />
                 <AttivitaTable rows={service} label="SERVICE" color="text-blue-700 border-blue-600/40" />
                 <AttivitaTable rows={amministrazione} label="AMMINISTRAZIONE" color="text-amber-700 border-amber-600/40" />
-
-                {/* Totali complessivi */}
-                <div className="rounded-lg border-2 border-primary/30 bg-primary/5 px-4 py-3 print:border-black print:bg-transparent">
-                  <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2 print:text-black">Totali complessivi (Service + Amministrazione)</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-                    <div><span className="text-muted-foreground print:text-black">Persone (limite max)</span><br /><span className="font-bold tabular-nums">{fmt(totaliComplessivi.persone)}</span></div>
-                    <div><span className="text-muted-foreground print:text-black">Volontari</span><br /><span className="font-bold tabular-nums">{fmt(totaliComplessivi.volontari)}</span></div>
-                    <div><span className="text-muted-foreground print:text-black">Ore capped</span><br /><span className="font-bold tabular-nums">{fmt(totaliComplessivi.ore)}</span></div>
-                    <div><span className="text-muted-foreground print:text-black">Donati USD capped</span><br /><span className="font-bold tabular-nums">{fmt(totaliComplessivi.donati)}</span></div>
-                    <div><span className="text-muted-foreground print:text-black">Raccolti USD capped</span><br /><span className="font-bold tabular-nums">{fmt(totaliComplessivi.raccolti)}</span></div>
-                  </div>
-                </div>
               </>
             )}
           </CardContent>
