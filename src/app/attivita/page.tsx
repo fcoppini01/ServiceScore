@@ -375,16 +375,7 @@ export default function AttivitaPage() {
           </CardHeader>
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
             <CardContent className="pt-0 space-y-3">
-              {/* Basic */}
-              <div>
-                <Input
-                  placeholder="Cerca titolo, descrizione..."
-                  value={filters.search}
-                  onChange={(e) => upd({ search: e.target.value })}
-                  className="bg-background/50"
-                />
-              </div>
-              {/* Filtri territoriali (ordine fisso Club, Zona, Circoscrizione, Distretto)
+              {/* Prima riga in vista: filtri territoriali (Club, Zona, Circoscrizione, Distretto)
                   + Anno sociale affiancato a Distretto. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <MultiSelect options={clubs} selected={filters.club} onChange={(v) => upd({ club: v })} placeholder="Club" />
@@ -407,6 +398,15 @@ export default function AttivitaPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Input
+                  placeholder="Cerca titolo, descrizione..."
+                  value={filters.search}
+                  onChange={(e) => upd({ search: e.target.value })}
+                  className="bg-background/50"
+                />
               </div>
 
               {/* Advanced toggle */}

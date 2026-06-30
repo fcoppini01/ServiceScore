@@ -11,9 +11,10 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion, AnimatePresence } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Users, Printer, FileText } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Users, Printer, FileText, FileSpreadsheet } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
+import { exportToExcel, todayStamp } from '@/lib/excel-export'
 
 const PAGE_SIZE = 20
 
@@ -27,8 +28,6 @@ interface Filters {
   zona: string[]
   circoscrizione: string[]
   distretto: string[]
-  categoriaAssociativa: string[]
-  tipoAssociazione: string[]
   classificazione: string[]
   programma: string[]
   professione: string
@@ -45,7 +44,7 @@ const CLASSIFICAZIONI = ['EFFETTIVO', 'FONDATORE', 'PRIVILEGIATO', 'VITALIZIO', 
 const EMPTY_FILTERS: Filters = {
   search: '', sesso: [], fasciaEta: [], fasciaAnzianita: [],
   club: [], zona: [], circoscrizione: [], distretto: [],
-  categoriaAssociativa: [], tipoAssociazione: [], classificazione: [], programma: [],
+  classificazione: [], programma: [],
   professione: '', citta: '', provincia: '',
 }
 
@@ -56,8 +55,6 @@ function countAdvancedFilters(f: Filters) {
   if (f.circoscrizione.length) c++
   if (f.distretto.length) c++
   if (f.fasciaAnzianita.length) c++
-  if (f.categoriaAssociativa.length) c++
-  if (f.tipoAssociazione.length) c++
   if (f.classificazione.length) c++
   if (f.programma.length) c++
   if (f.professione) c++
@@ -75,8 +72,6 @@ export default function SociPage() {
   const [totalCount, setTotalCount] = useState(0)
   const [zone, setZone] = useState<string[]>([])
   const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
-  const [categorie, setCategorie] = useState<string[]>([])
-  const [tipiAssoc, setTipiAssoc] = useState<string[]>([])
   const [programmi, setProgrammi] = useState<string[]>([])
   const [clubs, setClubs] = useState<string[]>([])
   const [sessiDisponibili, setSessiDisponibili] = useState<string[]>([])
@@ -108,7 +103,7 @@ export default function SociPage() {
     // e le opzioni anagrafiche dalla tabella soci. Range esteso per evitare il default 1000 di PostgREST.
     const [clubTab, sociTab] = await Promise.all([
       supabase.from('club').select('nome_club, zona, circoscrizione').range(0, 9999),
-      supabase.from('soci').select('sesso, categoria_associativa, tipo_associazione_intera, programma').range(0, 9999),
+      supabase.from('soci').select('sesso, programma').range(0, 9999),
     ])
     if (clubTab.data) {
       setClubs([...new Set(clubTab.data.map((c: any) => c.nome_club))].filter(Boolean).sort() as string[])
@@ -117,8 +112,6 @@ export default function SociPage() {
     }
     if (sociTab.data) {
       setSessiDisponibili([...new Set(sociTab.data.map((s: any) => s.sesso))].filter(Boolean).sort() as string[])
-      setCategorie([...new Set(sociTab.data.map((s: any) => s.categoria_associativa))].filter(Boolean).sort() as string[])
-      setTipiAssoc([...new Set(sociTab.data.map((s: any) => s.tipo_associazione_intera))].filter(Boolean).sort() as string[])
       setProgrammi([...new Set(sociTab.data.map((s: any) => s.programma))].filter(Boolean).sort() as string[])
     }
   }
@@ -138,8 +131,6 @@ export default function SociPage() {
     if (filters.zona.length) query = query.in('club_zona', filters.zona)
     if (filters.circoscrizione.length) query = query.in('club_circoscrizione', filters.circoscrizione)
     // distretto: oggi unico ("108 LA"), filtro presente per coerenza UX, no-op a livello query
-    if (filters.categoriaAssociativa.length) query = query.in('categoria_associativa', filters.categoriaAssociativa)
-    if (filters.tipoAssociazione.length) query = query.in('tipo_associazione_intera', filters.tipoAssociazione)
     if (filters.classificazione.length) query = query.in('categoria_socio', filters.classificazione)
     if (filters.programma.length) query = query.in('programma', filters.programma)
     if (filters.professione) query = query.ilike('professione', `%${filters.professione}%`)
@@ -162,6 +153,60 @@ export default function SociPage() {
     setFilters(newFilters)
   }
 
+  // Applica i filtri correnti a una query Supabase (riusato per export Excel).
+  function applyFilters<T>(query: T): T {
+    let q: any = query
+    if (filters.search) q = q.or(`nome.ilike.%${filters.search}%,cognome.ilike.%${filters.search}%,matricola_socio.ilike.%${filters.search}%`)
+    if (filters.sesso.length) q = q.in('sesso', filters.sesso)
+    if (filters.fasciaEta.length) q = q.in('fascia_eta', filters.fasciaEta)
+    if (filters.fasciaAnzianita.length) q = q.in('fascia_anzianita', filters.fasciaAnzianita)
+    if (filters.club.length) q = q.in('nome_club', filters.club)
+    if (filters.zona.length) q = q.in('club_zona', filters.zona)
+    if (filters.circoscrizione.length) q = q.in('club_circoscrizione', filters.circoscrizione)
+    if (filters.classificazione.length) q = q.in('categoria_socio', filters.classificazione)
+    if (filters.programma.length) q = q.in('programma', filters.programma)
+    if (filters.professione) q = q.ilike('professione', `%${filters.professione}%`)
+    if (filters.citta) q = q.ilike('citta', `%${filters.citta}%`)
+    if (filters.provincia) q = q.ilike('stato_provincia', `%${filters.provincia}%`)
+    q = q.gte('data_ingresso', '2023-07-01')
+    return q as T
+  }
+
+  // Esporta in Excel TUTTI i soci attualmente filtrati (non solo la pagina).
+  const [exporting, setExporting] = useState(false)
+  async function exportExcel() {
+    setExporting(true)
+    let q = applyFilters(supabase.from('vista_soci_ricerca').select('*'))
+    if (sort) q = q.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
+    const { data, error } = await q.range(0, 49999)
+    setExporting(false)
+    if (error || !data) return
+    exportToExcel(
+      data,
+      [
+        { header: 'Matricola', accessor: (s: any) => s.matricola_socio },
+        { header: 'Nome', accessor: (s: any) => s.nome },
+        { header: 'Cognome', accessor: (s: any) => s.cognome },
+        { header: 'Club', accessor: (s: any) => s.nome_club },
+        { header: 'Zona', accessor: (s: any) => s.club_zona },
+        { header: 'Circoscrizione', accessor: (s: any) => s.club_circoscrizione },
+        { header: 'Genere', accessor: (s: any) => s.sesso },
+        { header: 'Fascia età', accessor: (s: any) => s.fascia_eta },
+        { header: 'Anzianità', accessor: (s: any) => s.anzianita_lionistica != null ? `${s.anzianita_lionistica} anni` : '' },
+        { header: 'Fascia anzianità', accessor: (s: any) => s.fascia_anzianita },
+        { header: 'Classificazione', accessor: (s: any) => s.categoria_socio },
+        { header: 'Programma', accessor: (s: any) => s.programma },
+        { header: 'Professione', accessor: (s: any) => s.professione },
+        { header: 'Città', accessor: (s: any) => s.citta },
+        { header: 'Provincia', accessor: (s: any) => s.stato_provincia },
+        { header: 'Cellulare', accessor: (s: any) => s.telefono_cellulare },
+        { header: 'Email', accessor: (s: any) => s.email_effettiva || s.email_preferita },
+      ],
+      `soci_${todayStamp()}`,
+      'Soci'
+    )
+  }
+
   const advancedCount = useMemo(() => countAdvancedFilters(filters), [filters])
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
   const start = totalCount === 0 ? 0 : page * PAGE_SIZE + 1
@@ -178,12 +223,20 @@ export default function SociPage() {
         Elenco soci del Distretto 108 LA
       </motion.p>
 
-      <motion.div variants={itemVariants} className="mb-6">
+      <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap">
         <Link href="/soci/rapporti">
           <Button variant="outline" size="sm" className="text-xs gap-1.5">
             <FileText className="h-3.5 w-3.5" /> Rapporti
           </Button>
         </Link>
+        <Link href={`/soci/stampa${filtersToQueryString({ ...filters, sortField: sort?.field, sortDir: sort?.dir })}`}>
+          <Button variant="outline" size="sm" className="text-xs gap-1.5" title="Stampa esattamente i risultati attualmente filtrati">
+            <Printer className="h-3.5 w-3.5" /> Stampa PDF
+          </Button>
+        </Link>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={exportExcel} disabled={exporting || totalCount === 0} title="Esporta in Excel i risultati attualmente filtrati">
+          <FileSpreadsheet className="h-3.5 w-3.5" /> {exporting ? 'Esporto…' : 'Excel'}
+        </Button>
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -208,6 +261,15 @@ export default function SociPage() {
           </CardHeader>
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
             <CardContent className="pt-0 space-y-3">
+              {/* Prima riga in vista: filtri territoriali Club, Zona, Circoscrizione, Distretto
+                  (sui Soci non c'è l'anno sociale, quindi 4 colonne). */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
+                <MultiSelect options={zone} selected={filters.zona} onChange={(v) => updateFilters({ ...filters, zona: v })} placeholder="Zona" />
+                <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
+                <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => updateFilters({ ...filters, distretto: v })} placeholder="Distretto" />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <Input
                   placeholder="Cerca nome, cognome, matricola..."
@@ -249,25 +311,14 @@ export default function SociPage() {
                     className="overflow-hidden"
                   >
                     <div className="space-y-3 pt-1">
-                      {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
-                        <MultiSelect options={zone} selected={filters.zona} onChange={(v) => updateFilters({ ...filters, zona: v })} placeholder="Zona" />
-                        <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
-                        <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => updateFilters({ ...filters, distretto: v })} placeholder="Distretto" />
-                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <MultiSelect options={CLASSIFICAZIONI} selected={filters.classificazione} onChange={(v) => updateFilters({ ...filters, classificazione: v })} placeholder="Classificazione (Effettivo, Fondatore…)" />
-                        <MultiSelect options={categorie} selected={filters.categoriaAssociativa} onChange={(v) => updateFilters({ ...filters, categoriaAssociativa: v })} placeholder="Categoria" />
-                        <MultiSelect options={tipiAssoc} selected={filters.tipoAssociazione} onChange={(v) => updateFilters({ ...filters, tipoAssociazione: v })} placeholder="Tipo associazione" />
                         <MultiSelect options={programmi} selected={filters.programma} onChange={(v) => updateFilters({ ...filters, programma: v })} placeholder="Programma" />
+                        <MultiSelect options={FASCE_ANZIANITA} selected={filters.fasciaAnzianita} onChange={(v) => updateFilters({ ...filters, fasciaAnzianita: v })} placeholder="Fascia anzianità" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <MultiSelect options={FASCE_ANZIANITA} selected={filters.fasciaAnzianita} onChange={(v) => updateFilters({ ...filters, fasciaAnzianita: v })} placeholder="Fascia anzianità" />
                         <Input placeholder="Professione..." value={filters.professione} onChange={(e) => updateFilters({ ...filters, professione: e.target.value })} className="bg-background/50" />
                         <Input placeholder="Città..." value={filters.citta} onChange={(e) => updateFilters({ ...filters, citta: e.target.value })} className="bg-background/50" />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <Input placeholder="Provincia..." value={filters.provincia} onChange={(e) => updateFilters({ ...filters, provincia: e.target.value })} className="bg-background/50" />
                       </div>
                     </div>
@@ -302,11 +353,6 @@ export default function SociPage() {
                 {!loading && totalCount > 0 && (
                   <span className="text-xs text-muted-foreground">{start}–{end} di {totalCount}</span>
                 )}
-                <Link href={`/soci/stampa${filtersToQueryString({ ...filters, sortField: sort?.field, sortDir: sort?.dir })}`}>
-                  <Button size="sm" variant="outline" className="text-xs gap-1.5" disabled={loading || totalCount === 0} title="Stampa esattamente i risultati attualmente filtrati">
-                    <Printer className="h-3.5 w-3.5" /> Stampa risultati
-                  </Button>
-                </Link>
               </div>
             </div>
           </CardHeader>
@@ -355,7 +401,7 @@ export default function SociPage() {
                       <div className="flex items-center flex-wrap gap-1.5">
                         <Badge variant="outline" className="text-[10px] h-5">{socio.club_zona}</Badge>
                         {socio.club_circoscrizione && <Badge variant="outline" className="text-[10px] h-5">{socio.club_circoscrizione}</Badge>}
-                        {socio.categoria_associativa && <Badge variant="outline" className="text-[10px] h-5 max-w-[140px] truncate">{socio.categoria_associativa}</Badge>}
+                        {socio.categoria_socio && <Badge variant="outline" className="text-[10px] h-5 max-w-[140px] truncate">{socio.categoria_socio}</Badge>}
                         {socio.programma && <Badge variant="outline" className="text-[10px] h-5 max-w-[140px] truncate">{socio.programma}</Badge>}
                         {socio.anzianita_lionistica != null && <span className="text-[10px] text-muted-foreground">{socio.anzianita_lionistica} anni Lions</span>}
                       </div>
@@ -388,8 +434,6 @@ export default function SociPage() {
                         <SortableHead field="anzianita_lionistica" label="Anzianità" sort={sort} onSort={handleSort} />
                         <SortableHead field="fascia_anzianita" label="F. Anz." sort={sort} onSort={handleSort} />
                         <SortableHead field="categoria_socio" label="Classificazione" sort={sort} onSort={handleSort} />
-                        <SortableHead field="categoria_associativa" label="Categoria" sort={sort} onSort={handleSort} />
-                        <SortableHead field="tipo_associazione_intera" label="Tipo associazione" sort={sort} onSort={handleSort} />
                         <SortableHead field="programma" label="Programma" sort={sort} onSort={handleSort} />
                         <SortableHead field="professione" label="Professione" sort={sort} onSort={handleSort} />
                         <SortableHead field="citta" label="Città" sort={sort} onSort={handleSort} />
@@ -418,14 +462,12 @@ export default function SociPage() {
                           <TableCell className="text-sm whitespace-nowrap">{socio.anzianita_lionistica != null ? `${socio.anzianita_lionistica} anni` : ''}</TableCell>
                           <TableCell className="whitespace-nowrap">{socio.fascia_anzianita && <Badge variant="outline" className="text-xs">{socio.fascia_anzianita}</Badge>}</TableCell>
                           <TableCell className="whitespace-nowrap">{socio.categoria_socio && <Badge variant="outline" className="text-[10px]">{socio.categoria_socio}</Badge>}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.categoria_associativa}>{socio.categoria_associativa}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[220px] truncate" title={socio.tipo_associazione_intera}>{socio.tipo_associazione_intera}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.programma}>{socio.programma}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[150px] truncate" title={socio.professione}>{socio.professione}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.citta}>{socio.citta}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{socio.stato_provincia}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{socio.telefono_cellulare}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[200px] truncate" title={socio.email_preferita}>{socio.email_preferita}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[200px] truncate" title={socio.email_effettiva || socio.email_preferita}>{socio.email_effettiva || socio.email_preferita}</TableCell>
                         </motion.tr>
                       ))}
                     </TableBody>

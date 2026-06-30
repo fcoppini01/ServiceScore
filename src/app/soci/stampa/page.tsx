@@ -121,7 +121,7 @@ function StampaSociInner() {
                 { header: 'Città', accessor: (s: any) => s.citta },
                 { header: 'Provincia', accessor: (s: any) => s.stato_provincia },
                 { header: 'Cellulare', accessor: (s: any) => s.telefono_cellulare },
-                { header: 'Email', accessor: (s: any) => s.email_preferita },
+                { header: 'Email', accessor: (s: any) => s.email_effettiva || s.email_preferita },
               ],
               `soci_${todayStamp()}`,
               'Soci'

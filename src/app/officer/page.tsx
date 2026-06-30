@@ -12,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ChevronLeft, ChevronRight, SlidersHorizontal, ShieldCheck, FileText, Printer } from 'lucide-react'
+import { ChevronLeft, ChevronRight, SlidersHorizontal, ShieldCheck, FileText, Printer, FileSpreadsheet } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
 import { getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
+import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 
 const PAGE_SIZE = 20
 
@@ -150,6 +151,46 @@ export default function OfficerPage() {
     setFilters(newFilters)
   }
 
+  // Esporta in Excel TUTTI gli incarichi attualmente filtrati (non solo la pagina).
+  const [exporting, setExporting] = useState(false)
+  async function exportExcel() {
+    setExporting(true)
+    let q = supabase.from('vista_officer_ricerca').select('*')
+    if (filters.search) q = q.or(`nome.ilike.%${filters.search}%,cognome.ilike.%${filters.search}%,matricola_socio.ilike.%${filters.search}%`)
+    if (filters.titolo.length) q = q.in('titolo_ufficiale', filters.titolo)
+    if (filters.zona.length) q = q.in('club_zona', filters.zona)
+    if (filters.circoscrizione.length) q = q.in('club_circoscrizione', filters.circoscrizione)
+    if (filters.club.length) q = q.in('nome_club', filters.club)
+    if (filters.dataInizioDa) q = q.gte('data_inizio', filters.dataInizioDa)
+    if (filters.dataInizioA) q = q.lte('data_inizio', filters.dataInizioA)
+    if (filters.dataConclusioneDa) q = q.gte('data_conclusione', filters.dataConclusioneDa)
+    if (filters.dataConclusioneA) q = q.lte('data_conclusione', filters.dataConclusioneA)
+    if (filters.soloAttivi) {
+      const d = new Date()
+      const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      q = q.or(`data_inizio.is.null,data_inizio.lte.${oggi}`).or(`data_conclusione.is.null,data_conclusione.gte.${oggi}`)
+    }
+    if (sort) q = q.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
+    const { data, error } = await q.range(0, 49999)
+    setExporting(false)
+    if (error || !data) return
+    exportToExcel(
+      data,
+      [
+        { header: 'Titolo', accessor: (o: any) => o.titolo_ufficiale },
+        { header: 'Club', accessor: (o: any) => o.nome_club },
+        { header: 'Zona', accessor: (o: any) => o.club_zona },
+        { header: 'Circoscrizione', accessor: (o: any) => o.club_circoscrizione },
+        { header: 'Cognome', accessor: (o: any) => o.cognome },
+        { header: 'Nome', accessor: (o: any) => o.nome },
+        { header: 'Data inizio', accessor: (o: any) => fmtDateIT(o.data_inizio) },
+        { header: 'Data conclusione', accessor: (o: any) => fmtDateIT(o.data_conclusione) },
+      ],
+      `officer_${todayStamp()}`,
+      'Officer'
+    )
+  }
+
   const advancedCount = useMemo(() => countAdvancedFilters(filters), [filters])
   const basicCount = (filters.search ? 1 : 0) + (filters.titolo.length ? 1 : 0) + (filters.zona.length ? 1 : 0)
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
@@ -167,12 +208,20 @@ export default function OfficerPage() {
         Incarichi ufficiali del Distretto 108 LA
       </motion.p>
 
-      <motion.div variants={itemVariants} className="mb-6">
+      <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap">
         <Link href="/officer/rapporti">
           <Button variant="outline" size="sm" className="text-xs gap-1.5">
             <FileText className="h-3.5 w-3.5" /> Rapporti
           </Button>
         </Link>
+        <Link href={`/officer/stampa${filtersToQueryString({ ...filters, sortField: sort?.field, sortDir: sort?.dir })}`}>
+          <Button variant="outline" size="sm" className="text-xs gap-1.5" title="Stampa esattamente i risultati attualmente filtrati">
+            <Printer className="h-3.5 w-3.5" /> Stampa PDF
+          </Button>
+        </Link>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={exportExcel} disabled={exporting || totalCount === 0} title="Esporta in Excel i risultati attualmente filtrati">
+          <FileSpreadsheet className="h-3.5 w-3.5" /> {exporting ? 'Esporto…' : 'Excel'}
+        </Button>
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -195,23 +244,8 @@ export default function OfficerPage() {
           </CardHeader>
           <div className={`${filtersOpen ? 'block' : 'hidden'} sm:block`}>
             <CardContent className="pt-0 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input
-                  placeholder="Cerca nome, cognome..."
-                  value={filters.search}
-                  onChange={(e) => updateFilters({ ...filters, search: e.target.value })}
-                  className="bg-background/50"
-                />
-                <MultiSelect
-                  options={titoli}
-                  selected={filters.titolo}
-                  onChange={(v) => updateFilters({ ...filters, titolo: v })}
-                  placeholder="Incarico / Titolo"
-                />
-              </div>
-
-              {/* Filtri territoriali (ordine fisso Club, Zona, Circoscrizione, Distretto)
-                  + Anno sociale accanto a Distretto. Tutti in vista, niente sezione avanzata. */}
+              {/* Prima riga in vista: filtri territoriali Club, Zona, Circoscrizione, Distretto
+                  + Anno sociale accanto a Distretto. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <MultiSelect options={clubs} selected={filters.club} onChange={(v) => updateFilters({ ...filters, club: v })} placeholder="Club" />
                 <MultiSelect options={zone} selected={filters.zona} onChange={(v) => updateFilters({ ...filters, zona: v })} placeholder="Zona" />
@@ -234,6 +268,21 @@ export default function OfficerPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  placeholder="Cerca nome, cognome..."
+                  value={filters.search}
+                  onChange={(e) => updateFilters({ ...filters, search: e.target.value })}
+                  className="bg-background/50"
+                />
+                <MultiSelect
+                  options={titoli}
+                  selected={filters.titolo}
+                  onChange={(v) => updateFilters({ ...filters, titolo: v })}
+                  placeholder="Incarico / Titolo"
+                />
+              </div>
+
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -269,11 +318,6 @@ export default function OfficerPage() {
                 {!loading && totalCount > 0 && (
                   <span className="text-xs text-muted-foreground">{start}–{end} di {totalCount}</span>
                 )}
-                <Link href={`/officer/stampa${filtersToQueryString({ ...filters, sortField: sort?.field, sortDir: sort?.dir })}`}>
-                  <Button size="sm" variant="outline" className="text-xs gap-1.5" disabled={loading || totalCount === 0} title="Stampa esattamente i risultati attualmente filtrati">
-                    <Printer className="h-3.5 w-3.5" /> Stampa risultati
-                  </Button>
-                </Link>
               </div>
             </div>
           </CardHeader>
