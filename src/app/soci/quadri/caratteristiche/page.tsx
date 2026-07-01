@@ -164,7 +164,7 @@ export default function QuadroCaratteristichePage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm cv-table">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Tipo Associazione</TableHead>

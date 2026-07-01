@@ -185,7 +185,7 @@ export default function QuadroEtaPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm cv-table">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Matricola</TableHead>

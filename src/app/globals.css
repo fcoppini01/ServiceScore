@@ -251,4 +251,17 @@ body:has(.print-landscape) {
     content-visibility: auto;
     contain-intrinsic-size: auto 41px;
   }
+  /* table-layout fisso SOLO a schermo: le larghezze colonna non dipendono più
+     dal contenuto di tutte le righe, così lo scroll non forza un reflow globale
+     e content-visibility può davvero saltare le righe fuori vista.
+     In stampa (PDF) la regola non si applica → resta l'impaginazione automatica. */
+  table.cv-table {
+    table-layout: fixed;
+    width: 100%;
+  }
+  table.cv-table td,
+  table.cv-table th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }

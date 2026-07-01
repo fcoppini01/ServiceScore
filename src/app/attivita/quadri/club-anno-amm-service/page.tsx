@@ -67,7 +67,7 @@ function AttivitaTable({ rows, label, color }: { rows: any[]; label: string; col
       <div className="mb-3">
         <TotaliBox label={`Subtotale ${label}`} t={totali} />
       </div>
-      <table className="w-full text-xs">
+      <table className="w-full text-xs cv-table">
         <TableHeader>
           <TableRow>
             <TableHead className="whitespace-nowrap">Club</TableHead>

@@ -220,7 +220,7 @@ export default function QuadroIncarichiClubPage() {
                     <h2 className="text-sm font-bold mb-2 pb-1 border-b border-border/50 print:text-black print:border-black">
                       {titolo} <span className="text-muted-foreground font-normal print:text-black">· {list.length} nomine</span>
                     </h2>
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm cv-table">
                       <TableHeader>
                         <TableRow>
                           <TableHead>Nome Club</TableHead>
@@ -247,7 +247,7 @@ export default function QuadroIncarichiClubPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm cv-table">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Titolo Ufficiale</TableHead>

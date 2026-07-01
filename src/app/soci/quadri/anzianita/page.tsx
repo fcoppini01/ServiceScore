@@ -181,7 +181,7 @@ export default function QuadroAnzianitaPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm cv-table">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>

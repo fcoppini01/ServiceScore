@@ -163,7 +163,7 @@ function StampaOfficerInner() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full text-xs cv-table">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
