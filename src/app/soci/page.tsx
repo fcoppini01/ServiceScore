@@ -443,13 +443,10 @@ export default function SociPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {soci.map((socio: any, index: number) => (
-                        <motion.tr
+                      {soci.map((socio: any) => (
+                        <tr
                           key={socio.matricola_socio}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.02 }}
-                          className="hover:bg-muted/40"
+                          className="hover:bg-muted/40 border-b border-border/30"
                         >
                           <TableCell className="font-mono text-xs whitespace-nowrap">{socio.matricola_socio}</TableCell>
                           <TableCell className="font-medium whitespace-nowrap">{socio.nome}</TableCell>
@@ -468,7 +465,7 @@ export default function SociPage() {
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{socio.stato_provincia}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{socio.telefono_cellulare}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[200px] truncate" title={socio.email_effettiva || socio.email_preferita}>{socio.email_effettiva || socio.email_preferita}</TableCell>
-                        </motion.tr>
+                        </tr>
                       ))}
                     </TableBody>
                   </table>

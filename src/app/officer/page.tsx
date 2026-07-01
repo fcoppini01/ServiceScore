@@ -389,13 +389,10 @@ export default function OfficerPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {officer.map((off: any, index: number) => (
-                        <motion.tr
+                      {officer.map((off: any) => (
+                        <tr
                           key={off.id_incarico}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.02 }}
-                          className="hover:bg-muted/40"
+                          className="hover:bg-muted/40 border-b border-border/30"
                         >
                           <TableCell className="font-medium whitespace-nowrap">{off.nome}</TableCell>
                           <TableCell className="whitespace-nowrap">{off.cognome}</TableCell>
@@ -410,7 +407,7 @@ export default function OfficerPage() {
                               : <span className="text-green-500">In corso</span>
                             }
                           </TableCell>
-                        </motion.tr>
+                        </tr>
                       ))}
                     </TableBody>
                   </table>

@@ -653,13 +653,10 @@ export default function AttivitaPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {attivita.map((att: any, index: number) => (
-                        <motion.tr
+                      {attivita.map((att: any) => (
+                        <tr
                           key={att.id_attivita}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.02 }}
-                          className="hover:bg-muted/40"
+                          className="hover:bg-muted/40 border-b border-border/30"
                         >
                           <TableCell className="font-medium max-w-[220px] truncate" title={att.titolo}>{att.titolo}</TableCell>
                           <TableCell className="text-sm text-muted-foreground max-w-[180px] truncate" title={att.sponsor_nome_account}>{att.sponsor_nome_account}</TableCell>
@@ -679,7 +676,7 @@ export default function AttivitaPage() {
                           <TableCell className="text-sm tabular-nums text-right">€{att.totale_fondi_donati ?? 0}</TableCell>
                           <TableCell className="text-sm tabular-nums text-right">€{att.totale_fondi_raccolti ?? 0}</TableCell>
                           <TableCell className="text-sm tabular-nums text-right">{att.alberi_piantati ?? 0}</TableCell>
-                        </motion.tr>
+                        </tr>
                       ))}
                     </TableBody>
                   </table>
