@@ -177,7 +177,7 @@ export default function QuadroCaratteristichePage() {
                   </TableHeader>
                   <TableBody>
                     {soci.map((s: any) => (
-                      <TableRow key={s.matricola_socio} className="hover:bg-muted/40 print:hover:bg-transparent">
+                      <TableRow key={s.matricola_socio} className="cv-row hover:bg-muted/40 print:hover:bg-transparent">
                         <TableCell className="text-xs">{s.tipo_associazione_intera ?? ''}</TableCell>
                         <TableCell className="text-xs">{s.categoria_associativa ?? ''}</TableCell>
                         <TableCell className="text-xs">{s.programma ?? ''}</TableCell>

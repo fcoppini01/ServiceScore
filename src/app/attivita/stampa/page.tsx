@@ -271,7 +271,7 @@ function StampaAttivitaInner() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((a: any) => (
-                    <TableRow key={a.id_attivita}>
+                    <TableRow key={a.id_attivita} className="cv-row">
                       <TableCell className="font-medium">{a.titolo}</TableCell>
                       <TableCell>{a.sponsor_nome_account}</TableCell>
                       <TableCell>{a.sponsor_zona}</TableCell>

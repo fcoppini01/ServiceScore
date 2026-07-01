@@ -238,7 +238,7 @@ export default function QuadroClubAnnoPage() {
                   </TableHeader>
                   <TableBody>
                     {activities.map((a: any) => (
-                      <TableRow key={a.id_attivita} className="hover:bg-muted/40 print:hover:bg-transparent">
+                      <TableRow key={a.id_attivita} className="cv-row hover:bg-muted/40 print:hover:bg-transparent">
                         <TableCell className="whitespace-nowrap font-medium">{a.sponsor_nome_account}</TableCell>
                         <TableCell className="whitespace-nowrap">{a.sponsor_circoscrizione}</TableCell>
                         <TableCell className="whitespace-nowrap">{formatDate(a.data_inizio)}</TableCell>

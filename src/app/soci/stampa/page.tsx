@@ -194,7 +194,7 @@ function StampaSociInner() {
                 </TableHeader>
                 <TableBody>
                   {soci.map((s: any) => (
-                    <TableRow key={s.matricola_socio}>
+                    <TableRow key={s.matricola_socio} className="cv-row">
                       <TableCell className="font-mono">{s.matricola_socio}</TableCell>
                       <TableCell>{s.nome}</TableCell>
                       <TableCell className="font-medium">{s.cognome}</TableCell>

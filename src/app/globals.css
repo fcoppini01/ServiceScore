@@ -240,3 +240,15 @@ body:has(.print-landscape) {
     text-overflow: clip !important;
   }
 }
+
+/* Performance rapporti/stampe con migliaia di righe: a SCHERMO il browser
+   salta il layout/paint delle righe fuori vista (content-visibility), così
+   la pagina non blocca il main thread. Le righe restano comunque tutte nel
+   DOM: la stampa PDF (che forza il layout) e l'export Excel prendono tutto.
+   Regola limitata a @media screen: in stampa non si applica. */
+@media screen {
+  tr.cv-row {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 41px;
+  }
+}

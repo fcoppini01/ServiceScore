@@ -194,7 +194,7 @@ export default function QuadroAnzianitaPage() {
                   </TableHeader>
                   <TableBody>
                     {soci.map((s: any) => (
-                      <TableRow key={s.matricola_socio} className="hover:bg-muted/40 print:hover:bg-transparent">
+                      <TableRow key={s.matricola_socio} className="cv-row hover:bg-muted/40 print:hover:bg-transparent">
                         <TableCell className="whitespace-nowrap">{s.nome}</TableCell>
                         <TableCell className="font-medium whitespace-nowrap">{s.cognome}</TableCell>
                         <TableCell className="text-xs">{s.nome_club}</TableCell>

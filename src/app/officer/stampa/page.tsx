@@ -178,7 +178,7 @@ function StampaOfficerInner() {
                 </TableHeader>
                 <TableBody>
                   {officer.map((o: any) => (
-                    <TableRow key={o.id_incarico}>
+                    <TableRow key={o.id_incarico} className="cv-row">
                       <TableCell>{o.nome}</TableCell>
                       <TableCell className="font-medium">{o.cognome}</TableCell>
                       <TableCell>{o.nome_club}</TableCell>

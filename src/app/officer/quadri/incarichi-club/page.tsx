@@ -232,7 +232,7 @@ export default function QuadroIncarichiClubPage() {
                       </TableHeader>
                       <TableBody>
                         {list.map((o: any) => (
-                          <TableRow key={o.id_incarico} className="hover:bg-muted/40 print:hover:bg-transparent">
+                          <TableRow key={o.id_incarico} className="cv-row hover:bg-muted/40 print:hover:bg-transparent">
                             <TableCell className="whitespace-nowrap">{o.nome_club}</TableCell>
                             <TableCell className="text-xs whitespace-nowrap">{o.club_zona}</TableCell>
                             <TableCell className="text-xs whitespace-nowrap">{o.club_circoscrizione}</TableCell>
@@ -260,7 +260,7 @@ export default function QuadroIncarichiClubPage() {
                   </TableHeader>
                   <TableBody>
                     {officer.map((o: any) => (
-                      <TableRow key={o.id_incarico} className="hover:bg-muted/40 print:hover:bg-transparent">
+                      <TableRow key={o.id_incarico} className="cv-row hover:bg-muted/40 print:hover:bg-transparent">
                         <TableCell className="font-medium">{o.titolo_ufficiale}</TableCell>
                         <TableCell className="whitespace-nowrap">{o.nome_club}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{o.club_zona}</TableCell>

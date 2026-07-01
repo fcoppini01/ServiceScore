@@ -200,7 +200,7 @@ export default function QuadroEtaPage() {
                   </TableHeader>
                   <TableBody>
                     {soci.map((s: any) => (
-                      <TableRow key={s.matricola_socio} className="hover:bg-muted/40 print:hover:bg-transparent">
+                      <TableRow key={s.matricola_socio} className="cv-row hover:bg-muted/40 print:hover:bg-transparent">
                         <TableCell className="font-mono text-xs whitespace-nowrap">{s.matricola_socio}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{s.titolo ?? ''}</TableCell>
                         <TableCell className="whitespace-nowrap">{s.nome}</TableCell>
