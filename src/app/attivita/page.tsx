@@ -306,8 +306,8 @@ export default function AttivitaPage() {
         { header: 'Persone servite (cap)', accessor: (a: any) => Number(a.persone_servite_limite) || 0 },
         { header: 'Volontari', accessor: (a: any) => Number(a.totale_volontari) || 0 },
         { header: 'Ore (cap)', accessor: (a: any) => Number(a.totale_ore_servizio_capped) || 0 },
-        { header: 'Fondi donati USD (cap)', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
-        { header: 'Fondi raccolti USD (cap)', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
+        { header: 'Fondi donati (dollari)', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
+        { header: 'Fondi raccolti (dollari)', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
         { header: 'Org. beneficiata', accessor: (a: any) => a.organizzazione_beneficiata },
       ],
       `attivita_${todayStamp()}`,
@@ -488,10 +488,10 @@ export default function AttivitaPage() {
                       <SectionLabel>Finanziario</SectionLabel>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <RangeRow label="Fondi donati" minVal={filters.minFondiDonati} maxVal={filters.maxFondiDonati} onMin={(v) => upd({ minFondiDonati: v })} onMax={(v) => upd({ maxFondiDonati: v })} unit="€" />
-                        <RangeRow label="Fondi donati (USD capped)" minVal={filters.minFondiDonatiCapped} maxVal={filters.maxFondiDonatiCapped} onMin={(v) => upd({ minFondiDonatiCapped: v })} onMax={(v) => upd({ maxFondiDonatiCapped: v })} unit="$" />
+                        <RangeRow label="Fondi donati (dollari)" minVal={filters.minFondiDonatiCapped} maxVal={filters.maxFondiDonatiCapped} onMin={(v) => upd({ minFondiDonatiCapped: v })} onMax={(v) => upd({ maxFondiDonatiCapped: v })} unit="$" />
                         <RangeRow label="Donazione LCIF" minVal={filters.minDonazioneLcif} maxVal={filters.maxDonazioneLcif} onMin={(v) => upd({ minDonazioneLcif: v })} onMax={(v) => upd({ maxDonazioneLcif: v })} unit="€" />
                         <RangeRow label="Fondi raccolti" minVal={filters.minFondiRaccolti} maxVal={filters.maxFondiRaccolti} onMin={(v) => upd({ minFondiRaccolti: v })} onMax={(v) => upd({ maxFondiRaccolti: v })} unit="€" />
-                        <RangeRow label="Fondi raccolti (USD capped)" minVal={filters.minFondiRaccoltiCapped} maxVal={filters.maxFondiRaccoltiCapped} onMin={(v) => upd({ minFondiRaccoltiCapped: v })} onMax={(v) => upd({ maxFondiRaccoltiCapped: v })} unit="$" />
+                        <RangeRow label="Fondi raccolti (dollari)" minVal={filters.minFondiRaccoltiCapped} maxVal={filters.maxFondiRaccoltiCapped} onMin={(v) => upd({ minFondiRaccoltiCapped: v })} onMax={(v) => upd({ maxFondiRaccoltiCapped: v })} unit="$" />
                       </div>
                     </div>
                   </motion.div>
@@ -529,7 +529,7 @@ export default function AttivitaPage() {
               <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-primary mb-1.5">
                   Indicazioni totali
-                  <span className="ml-1 text-muted-foreground font-normal normal-case">(valori capped/limite LCI sui risultati filtrati)</span>
+                  <span className="ml-1 text-muted-foreground font-normal normal-case">(valori ufficiali LCI · importi in dollari · sui risultati filtrati)</span>
                 </p>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
                   <span className="whitespace-nowrap">
