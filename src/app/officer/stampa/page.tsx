@@ -17,7 +17,6 @@ const LABELS: Record<string, string> = {
   zona: 'Zona',
   circoscrizione: 'Circoscrizione',
   club: 'Club',
-  soloAttivi: 'Solo incarichi attivi (in corso oggi)',
   dataInizioDa: 'Inizio dal',
   dataInizioA: 'Inizio al',
   dataConclusioneDa: 'Fine dal',
@@ -39,7 +38,6 @@ function StampaOfficerInner() {
     zona: getArray(sp, 'zona'),
     circoscrizione: getArray(sp, 'circoscrizione'),
     club: getArray(sp, 'club'),
-    soloAttivi: getString(sp, 'soloAttivi') === 'true',
     dataInizioDa: getString(sp, 'dataInizioDa'),
     dataInizioA: getString(sp, 'dataInizioA'),
     dataConclusioneDa: getString(sp, 'dataConclusioneDa'),
@@ -58,13 +56,6 @@ function StampaOfficerInner() {
     if (filters.zona.length) q = q.in('club_zona', filters.zona)
     if (filters.circoscrizione.length) q = q.in('club_circoscrizione', filters.circoscrizione)
     if (filters.club.length) q = q.in('nome_club', filters.club)
-    if (filters.soloAttivi) {
-      const d = new Date()
-      const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-      q = q
-        .or(`data_inizio.is.null,data_inizio.lte.${oggi}`)
-        .or(`data_conclusione.is.null,data_conclusione.gte.${oggi}`)
-    }
     if (filters.dataInizioDa) q = q.gte('data_inizio', filters.dataInizioDa)
     if (filters.dataInizioA) q = q.lte('data_inizio', filters.dataInizioA)
     if (filters.dataConclusioneDa) q = q.gte('data_conclusione', filters.dataConclusioneDa)

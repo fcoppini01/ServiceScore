@@ -29,7 +29,6 @@ export default function QuadroIncarichiClubPage() {
   const [filtroDistretto, setFiltroDistretto] = useState<string[]>([])
   const anniOpzioni = useMemo(() => getRecentAnniSociali(8), [])
   const [anniSociali, setAnniSociali] = useState<number[]>([])
-  const [soloAttivi, setSoloAttivi] = useState(false)
   const [groupByTitolo, setGroupByTitolo] = useState(true)
   const DISTRETTI = ['108 LA']
 
@@ -41,7 +40,7 @@ export default function QuadroIncarichiClubPage() {
   useEffect(() => {
     if (!isClient) return
     loadOfficer()
-  }, [isClient, filtroTitolo, filtroClub, filtroZona, filtroCirc, filtroDistretto, anniSociali, soloAttivi])
+  }, [isClient, filtroTitolo, filtroClub, filtroZona, filtroCirc, filtroDistretto, anniSociali])
 
   async function loadFilterOptions() {
     // Club/Zona/Circ dalla tabella club (completa), titoli dalla view officer.
@@ -72,13 +71,6 @@ export default function QuadroIncarichiClubPage() {
     if (anniSociali.length) {
       const orExpr = anniSociali.map((y) => { const { from, to } = getAnnoSocialeRange(y); return `and(data_inizio.gte.${from},data_inizio.lte.${to})` }).join(',')
       query = query.or(orExpr)
-    }
-    if (soloAttivi) {
-      const d = new Date()
-      const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-      query = query
-        .or(`data_inizio.is.null,data_inizio.lte.${oggi}`)
-        .or(`data_conclusione.is.null,data_conclusione.gte.${oggi}`)
     }
     const { data, error } = await query
       .order('titolo_ufficiale', { ascending: true, nullsFirst: false })
@@ -145,7 +137,6 @@ export default function QuadroIncarichiClubPage() {
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
         Distretto Lions 108 LA · {officer.length} incarichi
-        {soloAttivi && ' attivi (in corso oggi)'}
         {filtroZona.length > 0 && ` · Zone: ${filtroZona.join(', ')}`}
         {filtroCirc.length > 0 && ` · Circoscrizioni: ${filtroCirc.join(', ')}`}
         · Ordinati per titolo ufficiale e club
@@ -170,15 +161,6 @@ export default function QuadroIncarichiClubPage() {
               <MultiSelect options={titoli} selected={filtroTitolo} onChange={setFiltroTitolo} placeholder="Titolo ufficiale" />
             </div>
             <div className="flex items-center gap-6 flex-wrap">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={soloAttivi}
-                  onChange={(e) => setSoloAttivi(e.target.checked)}
-                  className="h-4 w-4 rounded border-input accent-primary"
-                />
-                <span className="text-sm">Solo incarichi attivi (in corso oggi)</span>
-              </label>
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"

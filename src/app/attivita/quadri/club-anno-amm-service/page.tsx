@@ -118,6 +118,7 @@ export default function QuadroClubAnnoAmmServicePage() {
   const [filtroZona, setFiltroZona] = useState<string[]>([])
   const [circoscrizioni, setCircoscrizioni] = useState<string[]>([])
   const [filtroCircoscrizione, setFiltroCircoscrizione] = useState<string[]>([])
+  const [filtroDistretto, setFiltroDistretto] = useState<string[]>([])
   const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -129,9 +130,9 @@ export default function QuadroClubAnnoAmmServicePage() {
   }, [])
 
   useEffect(() => {
-    if (!isClient || (club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0)) { setActivities([]); return }
+    if (!isClient || (club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0 && filtroDistretto.length === 0)) { setActivities([]); return }
     loadActivities()
-  }, [isClient, club, filtroZona, filtroCircoscrizione, anniSociali])
+  }, [isClient, club, filtroZona, filtroCircoscrizione, filtroDistretto, anniSociali])
 
   async function loadFilterOptions() {
     const { data } = await supabase.from('club').select('nome_club, zona, circoscrizione').range(0, 9999)
@@ -153,9 +154,12 @@ export default function QuadroClubAnnoAmmServicePage() {
       const orExpr = anniSociali.map((y) => { const { from, to } = getAnnoSocialeRange(y); return `and(data_inizio.gte.${from},data_inizio.lte.${to})` }).join(',')
       q = q.or(orExpr)
     }
-    if (club.length) q = q.in('sponsor_nome_account', club)
-    if (filtroZona.length) q = q.in('sponsor_zona', filtroZona)
-    if (filtroCircoscrizione.length) q = q.in('sponsor_circoscrizione', filtroCircoscrizione)
+    // Distretto selezionato = tutte le attività del Distretto (nessun filtro territoriale)
+    if (filtroDistretto.length === 0) {
+      if (club.length) q = q.in('sponsor_nome_account', club)
+      if (filtroZona.length) q = q.in('sponsor_zona', filtroZona)
+      if (filtroCircoscrizione.length) q = q.in('sponsor_circoscrizione', filtroCircoscrizione)
+    }
     const { data, error } = await q.order('data_inizio', { ascending: true }).range(0, 49999)
     if (error) setError('Errore nel caricamento. Riprova.')
     else setActivities(data || [])
@@ -220,15 +224,17 @@ export default function QuadroClubAnnoAmmServicePage() {
         Classificazione delle Attività del Club con Evidenza di Amministrazione e Service
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
-        {club.length > 0 || filtroZona.length > 0 || filtroCircoscrizione.length > 0 ? (
+        {club.length > 0 || filtroZona.length > 0 || filtroCircoscrizione.length > 0 || filtroDistretto.length > 0 ? (
           <><strong className="text-foreground print:text-black">
-            {club.length > 0
-              ? `${club.length} club selezionati`
-              : filtroZona.length > 0
-                ? `Zone: ${filtroZona.join(', ')}`
-                : `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`}
+            {filtroDistretto.length > 0
+              ? 'Tutto il Distretto 108 LA'
+              : club.length > 0
+                ? `${club.length} club selezionati`
+                : filtroZona.length > 0
+                  ? `Zone: ${filtroZona.join(', ')}`
+                  : `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`}
           </strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {activities.length} attività ({amministrazione.length} Amministrazione, {service.length} Service)</>
-        ) : 'Seleziona uno o più club (oppure una o più zone o circoscrizioni) per visualizzare le attività'}
+        ) : 'Seleziona uno o più club (oppure zone, circoscrizioni o l’intero Distretto) per visualizzare le attività'}
       </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">
@@ -249,8 +255,8 @@ export default function QuadroClubAnnoAmmServicePage() {
                 <MultiSelect options={circoscrizioni} selected={filtroCircoscrizione} onChange={setFiltroCircoscrizione} placeholder="Tutte le circoscrizioni" />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Distretto</p>
-                <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="108 LA" />
+                <p className="text-[10px] text-muted-foreground mb-1">Oppure tutto il Distretto</p>
+                <MultiSelect options={['108 LA']} selected={filtroDistretto} onChange={setFiltroDistretto} placeholder="108 LA" />
               </div>
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Anno sociale (uno o più)</p>
@@ -278,10 +284,10 @@ export default function QuadroClubAnnoAmmServicePage() {
               <div className="flex justify-center items-center h-32">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
               </div>
-            ) : club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0 ? (
+            ) : club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0 && filtroDistretto.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
                 <Activity className="w-8 h-8 opacity-30" />
-                <span className="text-sm">Seleziona uno o più club, oppure una o più zone o circoscrizioni</span>
+                <span className="text-sm">Seleziona uno o più club, oppure zone, circoscrizioni o l&apos;intero Distretto</span>
               </div>
             ) : activities.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">

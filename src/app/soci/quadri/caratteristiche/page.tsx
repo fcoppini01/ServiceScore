@@ -112,7 +112,7 @@ export default function QuadroCaratteristichePage() {
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Classificazione dei Soci con Indicazione delle Caratteristiche Associative
+        Classificazione dei Soci per Categoria Associativa
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
         Distretto Lions 108 LA · {soci.length} soci · Ordinati per cognome

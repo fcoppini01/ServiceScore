@@ -28,7 +28,6 @@ interface Filters {
   zona: string[]
   circoscrizione: string[]
   distretto: string[]
-  soloAttivi: boolean
   dataInizioDa: string
   dataInizioA: string
   dataConclusioneDa: string
@@ -40,7 +39,6 @@ const DISTRETTI = ['108 LA']
 const EMPTY_FILTERS: Filters = {
   search: '', titolo: [],
   club: [], zona: [], circoscrizione: [], distretto: [],
-  soloAttivi: false,
   dataInizioDa: '', dataInizioA: '',
   dataConclusioneDa: '', dataConclusioneA: '',
 }
@@ -62,7 +60,6 @@ function countAdvancedFilters(f: Filters) {
   if (f.zona.length) c++
   if (f.circoscrizione.length) c++
   if (f.distretto.length) c++
-  if (f.soloAttivi) c++
   if (f.dataInizioDa || f.dataInizioA) c++
   if (f.dataConclusioneDa || f.dataConclusioneA) c++
   return c
@@ -129,13 +126,6 @@ export default function OfficerPage() {
     if (filters.dataInizioA) query = query.lte('data_inizio', filters.dataInizioA)
     if (filters.dataConclusioneDa) query = query.gte('data_conclusione', filters.dataConclusioneDa)
     if (filters.dataConclusioneA) query = query.lte('data_conclusione', filters.dataConclusioneA)
-    if (filters.soloAttivi) {
-      const d = new Date()
-      const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-      query = query
-        .or(`data_inizio.is.null,data_inizio.lte.${oggi}`)
-        .or(`data_conclusione.is.null,data_conclusione.gte.${oggi}`)
-    }
 
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
@@ -165,11 +155,6 @@ export default function OfficerPage() {
     if (filters.dataInizioA) q = q.lte('data_inizio', filters.dataInizioA)
     if (filters.dataConclusioneDa) q = q.gte('data_conclusione', filters.dataConclusioneDa)
     if (filters.dataConclusioneA) q = q.lte('data_conclusione', filters.dataConclusioneA)
-    if (filters.soloAttivi) {
-      const d = new Date()
-      const oggi = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-      q = q.or(`data_inizio.is.null,data_inizio.lte.${oggi}`).or(`data_conclusione.is.null,data_conclusione.gte.${oggi}`)
-    }
     if (sort) q = q.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
     const { data, error } = await q.range(0, 49999)
     setExporting(false)
@@ -282,16 +267,6 @@ export default function OfficerPage() {
                   placeholder="Incarico / Titolo"
                 />
               </div>
-
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={filters.soloAttivi}
-                  onChange={(e) => updateFilters({ ...filters, soloAttivi: e.target.checked })}
-                  className="h-4 w-4 rounded border-input accent-primary"
-                />
-                <span className="text-sm">Solo incarichi attivi (mandato in corso oggi)</span>
-              </label>
 
               <div className="flex items-center gap-2 pt-1">
                 <Button variant="outline" size="sm" onClick={() => updateFilters(EMPTY_FILTERS)} className="text-xs">
