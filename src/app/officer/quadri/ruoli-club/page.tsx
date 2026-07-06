@@ -1,0 +1,329 @@
+'use client'
+
+import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { MultiSelect } from '@/components/ui/multi-select'
+import { motion } from 'framer-motion'
+import { containerVariants, itemVariants } from '@/lib/animations'
+import { ArrowLeft, Printer, ShieldCheck, FileSpreadsheet } from 'lucide-react'
+import { exportToExcel, todayStamp } from '@/lib/excel-export'
+import { getCurrentAnnoSocialeStart, getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
+
+// Prospetto "Ruoli di leadership del club" (da Statuto LCI).
+// Template a righe fisse: per il club selezionato mostra chi ricopre ogni
+// ruolo statutario; le posizioni scoperte restano vuote (come sul cartaceo).
+// La colonna `match` contiene i titolo_ufficiale reali presenti nel DB
+// (normalizzati) che corrispondono a quel ruolo.
+
+type RoleDef = { label: string; match: string[] }
+
+const GRUPPO_STATUTO: RoleDef[] = [
+  { label: 'Presidente di Club (Presidente GAT di Club)', match: ['presidente di club'] },
+  { label: 'Immediato Past Presidente', match: [] },
+  { label: 'Primo Vice Presidente di Club (GLT di Club)', match: ['club first vice president'] },
+  { label: 'Secondo Vice Presidente di Club', match: ['secondo vice presidente di club'] },
+  { label: 'Segretario di Club', match: ['segretario di club'] },
+  { label: 'Tesoriere di Club', match: ['tesoriere di club'] },
+  { label: 'Presidente di club addetto ai soci - Presidente di Comitato Soci (GMT di Club)', match: ['presidente di club addetto ai soci'] },
+  { label: 'Presidente addetto al Service di Club - Presidente Comitato Service (GST di Club)', match: ['presidente addetto ai service di club'] },
+  { label: 'Presidente di Comitato Marketing - Presidente addetto al marketing e alla comunicazione', match: ['presidente di comitato marketing'] },
+]
+
+const GRUPPO_ALTRE: RoleDef[] = [
+  { label: 'Amministratore di Club', match: ['amministratore del club'] },
+  { label: 'Presidente di comitato di club addetto al protocollo - Cerimoniere (facoltativo)', match: ['presidente di comitato di club addetto al protocollo'] },
+  { label: 'Coordinatore LCIF di Club', match: ['coordinatore lcif di club'] },
+  { label: 'Censore (facoltativo)', match: [] },
+  { label: 'Coordinatore dei Programmi', match: [] },
+  { label: 'Officer Addetto alla Sicurezza (facoltativo)', match: [] },
+  { label: 'Presidente del Satellite (se nominato)', match: [] },
+  { label: 'Advisor Leo (se nominato)', match: [] },
+  { label: 'Presidente di comitato di club addetto alle Tecnologie Informatiche (posizione sul Portal, non più su statuto)', match: ['presidente di comitato di club addetto alle tecnologie informatiche'] },
+  { label: 'Direttore di Club (consiglieri in numero a discrezione del Club)', match: ['direttore di club'] },
+  { label: 'Presidenti di Comitati (se eletti e a discrezione del Club)', match: [] },
+]
+
+const ALL_ROLES = [...GRUPPO_STATUTO, ...GRUPPO_ALTRE]
+
+function norm(s: string | null | undefined): string {
+  // I titolo_ufficiale nel DB non contengono accenti, basta lowercase + spazi normalizzati.
+  return (s ?? '').toLowerCase().replace(/\s+/g, ' ').trim()
+}
+
+type Off = {
+  id_incarico: any
+  matricola_socio: string | null
+  titolo_ufficiale: string | null
+  nome: string | null
+  cognome: string | null
+  email: string | null
+  telefono: string | null
+}
+
+// Riga renderizzata: label ruolo + eventuale persona (null = riga vuota)
+type RenderRow = { label: string; off: Off | null }
+
+export default function QuadroRuoliClubPage() {
+  const [clubs, setClubs] = useState<string[]>([])
+  const [clubSel, setClubSel] = useState<string[]>([])
+  const [anno, setAnno] = useState<number>(getCurrentAnnoSocialeStart())
+  const [officers, setOfficers] = useState<Off[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isClient, setIsClient] = useState(false)
+
+  const club = clubSel[0] ?? ''
+
+  useEffect(() => {
+    setIsClient(true)
+    loadClubs()
+  }, [])
+
+  useEffect(() => {
+    if (!isClient) return
+    if (!club) { setOfficers([]); return }
+    loadOfficers()
+  }, [isClient, club, anno])
+
+  async function loadClubs() {
+    const { data } = await supabase.from('club').select('nome_club').range(0, 9999)
+    if (data) setClubs([...new Set(data.map((c: any) => c.nome_club))].filter(Boolean).sort() as string[])
+  }
+
+  async function loadOfficers() {
+    setLoading(true)
+    setError(null)
+    const { from, to } = getAnnoSocialeRange(anno)
+    // Incarichi del club attivi durante l'anno sociale (sovrapposizione mandato ↔ anno)
+    const offRes = await supabase
+      .from('vista_officer_ricerca')
+      .select('id_incarico, matricola_socio, titolo_ufficiale, nome, cognome, data_inizio, data_conclusione')
+      .eq('nome_club', club)
+      .or(`data_inizio.is.null,data_inizio.lte.${to}`)
+      .or(`data_conclusione.is.null,data_conclusione.gte.${from}`)
+      .range(0, 9999)
+
+    if (offRes.error) { setError('Errore nel caricamento. Riprova.'); setLoading(false); return }
+    const rows = offRes.data ?? []
+
+    // Email + telefono dai soci (la vista officer non li contiene)
+    const matricole = [...new Set(rows.map((o: any) => o.matricola_socio).filter(Boolean))] as string[]
+    const contatti = new Map<string, { email: string | null; tel: string | null }>()
+    if (matricole.length) {
+      const sociRes = await supabase
+        .from('vista_soci_ricerca')
+        .select('matricola_socio, email_preferita, telefono_cellulare')
+        .in('matricola_socio', matricole)
+      for (const s of sociRes.data ?? []) {
+        contatti.set(String((s as any).matricola_socio), {
+          email: (s as any).email_preferita ?? null,
+          tel: (s as any).telefono_cellulare ?? null,
+        })
+      }
+    }
+
+    setOfficers(rows.map((o: any) => ({
+      id_incarico: o.id_incarico,
+      matricola_socio: o.matricola_socio,
+      titolo_ufficiale: o.titolo_ufficiale,
+      nome: o.nome,
+      cognome: o.cognome,
+      email: contatti.get(String(o.matricola_socio))?.email ?? null,
+      telefono: contatti.get(String(o.matricola_socio))?.tel ?? null,
+    })))
+    setLoading(false)
+  }
+
+  // Costruisce le righe per un gruppo di ruoli + traccia gli incarichi abbinati
+  function buildGroup(roles: RoleDef[], usedIds: Set<any>): RenderRow[] {
+    const out: RenderRow[] = []
+    for (const role of roles) {
+      const matches = role.match.length
+        ? officers.filter((o) => role.match.includes(norm(o.titolo_ufficiale)))
+        : []
+      matches.forEach((m) => usedIds.add(m.id_incarico))
+      if (matches.length === 0) out.push({ label: role.label, off: null })
+      else matches.forEach((m) => out.push({ label: role.label, off: m }))
+    }
+    return out
+  }
+
+  const { rowsStatuto, rowsAltre, rowsAltri } = useMemo(() => {
+    const used = new Set<any>()
+    const rowsStatuto = buildGroup(GRUPPO_STATUTO, used)
+    const rowsAltre = buildGroup(GRUPPO_ALTRE, used)
+    // Incarichi presenti nel club ma non riconducibili ai ruoli dello schema
+    const rowsAltri: RenderRow[] = officers
+      .filter((o) => !used.has(o.id_incarico))
+      .map((o) => ({ label: o.titolo_ufficiale ?? '—', off: o }))
+    return { rowsStatuto, rowsAltre, rowsAltri }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [officers])
+
+  const annoLabel = getAnnoSocialeRange(anno).label
+
+  function esportaExcel() {
+    const allRows = [
+      ...rowsStatuto.map((r) => ({ ...r, gruppo: 'Officer di Club da Statuto LCI' })),
+      ...rowsAltre.map((r) => ({ ...r, gruppo: 'Altre posizioni nominabili nel Consiglio Direttivo' })),
+      ...rowsAltri.map((r) => ({ ...r, gruppo: 'Altri incarichi' })),
+    ]
+    exportToExcel(
+      allRows,
+      [
+        { header: 'Sezione', accessor: (r: any) => r.gruppo },
+        { header: 'Incarico', accessor: (r: any) => r.label },
+        { header: 'Codice socio', accessor: (r: any) => r.off?.matricola_socio ?? '' },
+        { header: 'Nome', accessor: (r: any) => r.off?.nome ?? '' },
+        { header: 'Cognome', accessor: (r: any) => r.off?.cognome ?? '' },
+        { header: 'email', accessor: (r: any) => r.off?.email ?? '' },
+        { header: 'Telefono', accessor: (r: any) => r.off?.telefono ?? '' },
+      ],
+      `ruoli_leadership_${(club || 'club').replace(/\s+/g, '_')}_${todayStamp()}`,
+      'Ruoli leadership'
+    )
+  }
+
+  if (!isClient) return null
+
+  const PersonCells = ({ off }: { off: Off | null }) => (
+    <>
+      <TableCell className="whitespace-nowrap font-mono text-xs">{off?.matricola_socio ?? ''}</TableCell>
+      <TableCell className="whitespace-nowrap">{off?.nome ?? ''}</TableCell>
+      <TableCell className="whitespace-nowrap font-medium">{off?.cognome ?? ''}</TableCell>
+      <TableCell className="text-xs">{off?.email ?? ''}</TableCell>
+      <TableCell className="whitespace-nowrap font-mono text-xs">{off?.telefono ?? ''}</TableCell>
+    </>
+  )
+
+  const GroupHeader = ({ children }: { children: React.ReactNode }) => (
+    <TableRow className="bg-muted/60 print:bg-transparent">
+      <TableCell colSpan={6} className="font-bold text-sm py-2 border-y border-border print:border-black">{children}</TableCell>
+    </TableRow>
+  )
+
+  return (
+    <motion.main initial="hidden" animate="visible" variants={containerVariants} className="container mx-auto p-4 sm:p-8 print-area">
+      <motion.div variants={itemVariants} className="flex items-center justify-between mb-4 print-hide gap-2 flex-wrap">
+        <Link href="/officer/rapporti">
+          <Button variant="ghost" size="sm" className="text-xs">
+            <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Rapporti Officer
+          </Button>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={!club}>
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={!club}>
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
+      </motion.div>
+
+      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
+        Ruoli di Leadership del Club
+      </motion.h1>
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
+        {club
+          ? <>Club <strong className="text-foreground print:text-black">{club}</strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong></>
+          : 'Seleziona un club per generare il prospetto dei ruoli statutari (Officer di club da Statuto LCI)'}
+      </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6 print-hide">
+        <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardContent className="pt-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Club</p>
+                <MultiSelect
+                  options={clubs}
+                  selected={clubSel}
+                  onChange={(v) => setClubSel(v.slice(-1))}
+                  placeholder="Seleziona un club…"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Anno sociale</p>
+                <select
+                  value={anno}
+                  onChange={(e) => setAnno(parseInt(e.target.value))}
+                  className="w-full h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {getRecentAnniSociali(8).map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <Card className="border border-border/50 bg-card/50 backdrop-blur-sm print:border-none print:bg-transparent">
+          <CardHeader className="pb-3 print-hide">
+            <CardTitle className="text-base font-semibold">Prospetto ruoli {club && `· ${club}`}</CardTitle>
+          </CardHeader>
+          <CardContent className="print:p-0">
+            {error ? (
+              <div className="flex justify-center items-center h-32 text-destructive text-sm">{error}</div>
+            ) : !club ? (
+              <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
+                <ShieldCheck className="w-8 h-8 opacity-30" />
+                <span className="text-sm">Nessun club selezionato</span>
+              </div>
+            ) : loading ? (
+              <div className="flex justify-center items-center h-32">
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm cv-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[36%]">Incarico</TableHead>
+                      <TableHead className="whitespace-nowrap">Codice socio</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Cognome</TableHead>
+                      <TableHead>email</TableHead>
+                      <TableHead className="whitespace-nowrap">Telefono</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <GroupHeader>Officer di Club da Statuto LCI</GroupHeader>
+                    {rowsStatuto.map((r, i) => (
+                      <TableRow key={`s${i}`} className="cv-row print:hover:bg-transparent">
+                        <TableCell className="align-top leading-snug">{r.label}</TableCell>
+                        <PersonCells off={r.off} />
+                      </TableRow>
+                    ))}
+                    <GroupHeader>Altre posizioni nominabili nel Consiglio Direttivo del Club</GroupHeader>
+                    {rowsAltre.map((r, i) => (
+                      <TableRow key={`a${i}`} className="cv-row print:hover:bg-transparent">
+                        <TableCell className="align-top leading-snug">{r.label}</TableCell>
+                        <PersonCells off={r.off} />
+                      </TableRow>
+                    ))}
+                    {rowsAltri.length > 0 && (
+                      <>
+                        <GroupHeader>Altri incarichi (fuori dallo schema statutario)</GroupHeader>
+                        {rowsAltri.map((r, i) => (
+                          <TableRow key={`x${i}`} className="cv-row print:hover:bg-transparent">
+                            <TableCell className="align-top leading-snug">{r.label}</TableCell>
+                            <PersonCells off={r.off} />
+                          </TableRow>
+                        ))}
+                      </>
+                    )}
+                  </TableBody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.main>
+  )
+}

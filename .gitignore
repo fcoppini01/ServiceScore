@@ -50,3 +50,6 @@ Dati_Lions/upsert_batches/
 presentazione/*.docx
 presentazione/*.pptx
 presentazione/node_modules/
+
+# token Management API (mai committare)
+Dati_Lions/.mgmt_token

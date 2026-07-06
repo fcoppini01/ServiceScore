@@ -32,10 +32,10 @@ const LABELS: Record<string, string> = {
   minOre: 'Min ore', maxOre: 'Max ore',
   minOreCapped: 'Min ore capped', maxOreCapped: 'Max ore capped',
   minFondiDonati: 'Min € donati', maxFondiDonati: 'Max € donati',
-  minFondiDonatiCapped: 'Min donati capped', maxFondiDonatiCapped: 'Max donati capped',
+  minFondiDonatiCapped: 'Min donati (dollari)', maxFondiDonatiCapped: 'Max donati (dollari)',
   minDonazioneLcif: 'Min LCIF', maxDonazioneLcif: 'Max LCIF',
   minFondiRaccolti: 'Min € raccolti', maxFondiRaccolti: 'Max € raccolti',
-  minFondiRaccoltiCapped: 'Min raccolti capped', maxFondiRaccoltiCapped: 'Max raccolti capped',
+  minFondiRaccoltiCapped: 'Min raccolti (dollari)', maxFondiRaccoltiCapped: 'Max raccolti (dollari)',
   minAlberi: 'Min alberi', maxAlberi: 'Max alberi',
 }
 
@@ -184,8 +184,8 @@ function StampaAttivitaInner() {
                 { header: 'Persone servite (cap)', accessor: (a: any) => Number(a.persone_servite_limite) || 0 },
                 { header: 'Volontari', accessor: (a: any) => Number(a.totale_volontari) || 0 },
                 { header: 'Ore (cap)', accessor: (a: any) => Number(a.totale_ore_servizio_capped) || 0 },
-                { header: 'Fondi donati USD (cap)', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
-                { header: 'Fondi raccolti USD (cap)', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
+                { header: 'Fondi donati (dollari)', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
+                { header: 'Fondi raccolti (dollari)', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
                 { header: 'Org. beneficiata', accessor: (a: any) => a.organizzazione_beneficiata },
               ],
               `attivita_${todayStamp()}`,

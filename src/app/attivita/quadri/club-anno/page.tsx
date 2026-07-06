@@ -114,9 +114,9 @@ export default function QuadroClubAnnoPage() {
                 { header: 'Persone servite (cap)', accessor: (a: any) => Number(a.persone_servite_limite) || 0 },
                 { header: 'Volontari', accessor: (a: any) => Number(a.totale_volontari) || 0 },
                 { header: 'Ore (cap)', accessor: (a: any) => Number(a.totale_ore_servizio_capped) || 0 },
-                { header: 'Donati USD (cap)', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
+                { header: 'Donati (dollari)', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
                 { header: 'Org. beneficiata', accessor: (a: any) => a.organizzazione_beneficiata ?? '' },
-                { header: 'Raccolti USD (cap)', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
+                { header: 'Raccolti (dollari)', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
               ],
               `attivita_club_anno_${todayStamp()}`,
               'Attività club'
@@ -219,8 +219,8 @@ export default function QuadroClubAnnoPage() {
                   <div><span className="text-muted-foreground print:text-black">Persone (limite max)</span><br /><span className="font-bold tabular-nums">{fmt(totali.persone)}</span></div>
                   <div><span className="text-muted-foreground print:text-black">Volontari</span><br /><span className="font-bold tabular-nums">{fmt(totali.volontari)}</span></div>
                   <div><span className="text-muted-foreground print:text-black">Ore capped</span><br /><span className="font-bold tabular-nums">{fmt(totali.ore)}</span></div>
-                  <div><span className="text-muted-foreground print:text-black">Donati USD capped</span><br /><span className="font-bold tabular-nums">{fmt(totali.donati)}</span></div>
-                  <div><span className="text-muted-foreground print:text-black">Raccolti USD capped</span><br /><span className="font-bold tabular-nums">{fmt(totali.raccolti)}</span></div>
+                  <div><span className="text-muted-foreground print:text-black">Donati (dollari)</span><br /><span className="font-bold tabular-nums">{fmt(totali.donati)}</span></div>
+                  <div><span className="text-muted-foreground print:text-black">Raccolti (dollari)</span><br /><span className="font-bold tabular-nums">{fmt(totali.raccolti)}</span></div>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -237,9 +237,9 @@ export default function QuadroClubAnnoPage() {
                       <TableHead className="whitespace-nowrap text-right">Persone servite</TableHead>
                       <TableHead className="whitespace-nowrap text-right">Volontari</TableHead>
                       <TableHead className="whitespace-nowrap text-right">Ore capped</TableHead>
-                      <TableHead className="whitespace-nowrap text-right">Donati USD capped</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Donati (dollari)</TableHead>
                       <TableHead>Org. beneficiata</TableHead>
-                      <TableHead className="whitespace-nowrap text-right">Raccolti USD capped</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Raccolti (dollari)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

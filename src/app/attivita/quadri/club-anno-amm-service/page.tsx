@@ -39,8 +39,8 @@ function TotaliBox({ label, t, accent = false }: { label: string; t: Totali; acc
         <div><span className="text-muted-foreground print:text-black">Persone (limite max)</span><br /><span className="font-bold tabular-nums">{fmt(t.persone)}</span></div>
         <div><span className="text-muted-foreground print:text-black">Volontari</span><br /><span className="font-bold tabular-nums">{fmt(t.volontari)}</span></div>
         <div><span className="text-muted-foreground print:text-black">Ore capped</span><br /><span className="font-bold tabular-nums">{fmt(t.ore)}</span></div>
-        <div><span className="text-muted-foreground print:text-black">Donati USD capped</span><br /><span className="font-bold tabular-nums">{fmt(t.donati)}</span></div>
-        <div><span className="text-muted-foreground print:text-black">Raccolti USD capped</span><br /><span className="font-bold tabular-nums">{fmt(t.raccolti)}</span></div>
+        <div><span className="text-muted-foreground print:text-black">Donati (dollari)</span><br /><span className="font-bold tabular-nums">{fmt(t.donati)}</span></div>
+        <div><span className="text-muted-foreground print:text-black">Raccolti (dollari)</span><br /><span className="font-bold tabular-nums">{fmt(t.raccolti)}</span></div>
       </div>
     </div>
   )
@@ -80,9 +80,9 @@ function AttivitaTable({ rows, label, color }: { rows: any[]; label: string; col
             <TableHead className="whitespace-nowrap text-right">Persone (limite max)</TableHead>
             <TableHead className="whitespace-nowrap text-right">Volontari</TableHead>
             <TableHead className="whitespace-nowrap text-right">Ore capped</TableHead>
-            <TableHead className="whitespace-nowrap text-right">Donati USD capped</TableHead>
+            <TableHead className="whitespace-nowrap text-right">Donati (dollari)</TableHead>
             <TableHead>Org. beneficiata</TableHead>
-            <TableHead className="whitespace-nowrap text-right">Raccolti USD capped</TableHead>
+            <TableHead className="whitespace-nowrap text-right">Raccolti (dollari)</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -201,9 +201,9 @@ export default function QuadroClubAnnoAmmServicePage() {
                 { header: 'Persone (limite max)', accessor: (a: any) => Number(a.persone_servite_limite) || 0 },
                 { header: 'Volontari', accessor: (a: any) => Number(a.totale_volontari) || 0 },
                 { header: 'Ore capped', accessor: (a: any) => Number(a.totale_ore_servizio_capped) || 0 },
-                { header: 'Donati USD capped', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
+                { header: 'Donati (dollari)', accessor: (a: any) => Number(a.fondi_donati_usd_capped) || 0 },
                 { header: 'Org. beneficiata', accessor: (a: any) => a.organizzazione_beneficiata ?? '' },
-                { header: 'Raccolti USD capped', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
+                { header: 'Raccolti (dollari)', accessor: (a: any) => Number(a.fondi_raccolti_usd_capped) || 0 },
               ],
               `attivita_amm_service_${todayStamp()}`,
               'Amm vs Service'

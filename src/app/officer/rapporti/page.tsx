@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ArrowLeft, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Users } from 'lucide-react'
 
 // Pagina indice dei Rapporti Officer: raggruppa le classificazioni stampabili
 // per la sezione Officer.
@@ -13,9 +13,16 @@ const RAPPORTI = [
   {
     href: '/officer/quadri/incarichi-club',
     title: 'Classificazione incarichi con le nomine dai Club',
-    desc: 'Elenco di tutti gli incarichi raggruppati per titolo ufficiale (Presidente, Segretario, Tesoriere, Direttore...), con possibilità di filtro per club, zona, circoscrizione e di limitare ai soli mandati attualmente in corso.',
+    desc: 'Elenco di tutti gli incarichi raggruppati per titolo ufficiale (Presidente, Segretario, Tesoriere, Direttore...), con possibilità di filtro per club, zona, circoscrizione.',
     icon: ShieldCheck,
     color: 'text-blue-600',
+  },
+  {
+    href: '/officer/quadri/ruoli-club',
+    title: 'Ruoli di leadership del club (Officer da Statuto LCI)',
+    desc: 'Prospetto per singolo club: per ogni ruolo statutario (Presidente, Vice, Segretario, Tesoriere, GMT/GST, Amministratore, Direttori...) mostra chi lo ricopre con codice socio, nome, cognome, email e telefono. Le posizioni scoperte restano vuote: utile per capire se un club ha nominato tutte le cariche.',
+    icon: Users,
+    color: 'text-emerald-600',
   },
 ]
 
