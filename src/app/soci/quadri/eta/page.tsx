@@ -54,7 +54,7 @@ export default function QuadroEtaPage() {
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, titolo, nome, cognome, data_nascita, eta, fascia_eta, club_zona, club_circoscrizione, nome_club, email_preferita, telefono_cellulare')
+      .select('matricola_socio, titolo, nome, cognome, data_nascita, eta, fascia_eta, club_zona, club_circoscrizione, nome_club, email_effettiva, telefono_cellulare')
       .not('eta', 'is', null)
     if (etaMin) query = query.gte('eta', parseInt(etaMin))
     if (etaMax) query = query.lte('eta', parseInt(etaMax))
@@ -110,7 +110,7 @@ export default function QuadroEtaPage() {
                 { header: 'Data nascita', accessor: (s: any) => fmtDateIT(s.data_nascita) },
                 { header: 'Età', accessor: (s: any) => s.eta },
                 { header: "Fascia d'età", accessor: (s: any) => s.fascia_eta },
-                { header: 'Email', accessor: (s: any) => s.email_preferita ?? '' },
+                { header: 'Email', accessor: (s: any) => s.email_effettiva ?? '' },
                 { header: 'Telefono', accessor: (s: any) => s.telefono_cellulare ?? '' },
               ],
               `soci_fasce_eta_${todayStamp()}`,
@@ -216,7 +216,7 @@ export default function QuadroEtaPage() {
                         <TableCell className="text-xs whitespace-nowrap">{formatDate(s.data_nascita)}</TableCell>
                         <TableCell className="tabular-nums text-right whitespace-nowrap">{s.eta}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{s.fascia_eta}</TableCell>
-                        <TableCell className="text-xs">{s.email_preferita ?? ''}</TableCell>
+                        <TableCell className="text-xs">{s.email_effettiva ?? ''}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap font-mono">{s.telefono_cellulare ?? ''}</TableCell>
                       </TableRow>
                     ))}

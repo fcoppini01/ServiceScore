@@ -197,7 +197,7 @@ export default function SociPage() {
         { header: 'Città', accessor: (s: any) => s.citta },
         { header: 'Provincia', accessor: (s: any) => s.stato_provincia },
         { header: 'Cellulare', accessor: (s: any) => s.telefono_cellulare },
-        { header: 'Email', accessor: (s: any) => s.email_effettiva || s.email_preferita },
+        { header: 'Email', accessor: (s: any) => s.email_effettiva ?? '' },
       ],
       `soci_${todayStamp()}`,
       'Soci'
@@ -436,7 +436,7 @@ export default function SociPage() {
                         <SortableHead field="citta" label="Città" sort={sort} onSort={handleSort} />
                         <SortableHead field="stato_provincia" label="Prov." sort={sort} onSort={handleSort} />
                         <SortableHead field="telefono_cellulare" label="Cellulare" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
-                        <SortableHead field="email_preferita" label="Email" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="email_effettiva" label="Email" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -461,7 +461,7 @@ export default function SociPage() {
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[140px] truncate" title={socio.citta}>{socio.citta}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{socio.stato_provincia}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{socio.telefono_cellulare}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[200px] truncate" title={socio.email_effettiva || socio.email_preferita}>{socio.email_effettiva || socio.email_preferita}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap max-w-[200px] truncate" title={socio.email_effettiva ?? ''}>{socio.email_effettiva ?? ''}</TableCell>
                         </tr>
                       ))}
                     </TableBody>

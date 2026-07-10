@@ -129,7 +129,7 @@ function StampaSociInner() {
                 { header: 'Città', accessor: (s: any) => s.citta },
                 { header: 'Provincia', accessor: (s: any) => s.stato_provincia },
                 { header: 'Cellulare', accessor: (s: any) => s.telefono_cellulare },
-                { header: 'Email', accessor: (s: any) => s.email_effettiva || s.email_preferita },
+                { header: 'Email', accessor: (s: any) => s.email_effettiva ?? '' },
               ],
               `soci_${todayStamp()}`,
               'Soci'
@@ -212,7 +212,7 @@ function StampaSociInner() {
                       <TableCell>{s.citta}</TableCell>
                       <TableCell>{s.stato_provincia}</TableCell>
                       <TableCell className="font-mono whitespace-nowrap">{s.telefono_cellulare}</TableCell>
-                      <TableCell>{s.email_preferita}</TableCell>
+                      <TableCell>{s.email_effettiva}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

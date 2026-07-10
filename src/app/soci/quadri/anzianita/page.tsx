@@ -53,7 +53,7 @@ export default function QuadroAnzianitaPage() {
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, nome, cognome, data_ingresso, anzianita_lionistica, fascia_anzianita, club_zona, club_circoscrizione, nome_club, email_preferita, telefono_cellulare')
+      .select('matricola_socio, nome, cognome, data_ingresso, anzianita_lionistica, fascia_anzianita, club_zona, club_circoscrizione, nome_club, email_effettiva, telefono_cellulare')
       .not('anzianita_lionistica', 'is', null)
     if (anzMin) query = query.gte('anzianita_lionistica', parseInt(anzMin))
     if (anzMax) query = query.lte('anzianita_lionistica', parseInt(anzMax))
@@ -106,7 +106,7 @@ export default function QuadroAnzianitaPage() {
                 { header: 'Data ingresso', accessor: (s: any) => fmtDateIT(s.data_ingresso) },
                 { header: 'Anni anzianità', accessor: (s: any) => s.anzianita_lionistica },
                 { header: 'Fascia anzianità', accessor: (s: any) => s.fascia_anzianita },
-                { header: 'Email', accessor: (s: any) => s.email_preferita ?? '' },
+                { header: 'Email', accessor: (s: any) => s.email_effettiva ?? '' },
                 { header: 'Telefono', accessor: (s: any) => s.telefono_cellulare ?? '' },
               ],
               `soci_anzianita_${todayStamp()}`,
@@ -208,7 +208,7 @@ export default function QuadroAnzianitaPage() {
                         <TableCell className="text-xs whitespace-nowrap">{formatDate(s.data_ingresso)}</TableCell>
                         <TableCell className="tabular-nums text-right whitespace-nowrap">{s.anzianita_lionistica}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{s.fascia_anzianita}</TableCell>
-                        <TableCell className="text-xs">{s.email_preferita ?? ''}</TableCell>
+                        <TableCell className="text-xs">{s.email_effettiva ?? ''}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap font-mono">{s.telefono_cellulare ?? ''}</TableCell>
                       </TableRow>
                     ))}

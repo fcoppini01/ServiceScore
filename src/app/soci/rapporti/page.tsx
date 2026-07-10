@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ArrowLeft, Calendar, Award, FileText } from 'lucide-react'
+import { ArrowLeft, Calendar, Award, FileText, Users } from 'lucide-react'
 
 // Pagina indice dei Rapporti Soci: raggruppa le classificazioni stampabili
 // per la sezione Soci. Sostituisce i vecchi "Quadri di Riordino" che erano
@@ -31,6 +31,13 @@ const RAPPORTI = [
     desc: 'Soci con dettaglio di tipo associazione, categoria associativa e programma.',
     icon: FileText,
     color: 'text-emerald-600',
+  },
+  {
+    href: '/soci/quadri/composizione',
+    title: 'Composizione del Club per Età e Anzianità',
+    desc: 'Sintesi anagrafica: composizione dei soci per fasce d’età e per anzianità lionistica, con quantità e percentuali. Filtri per club, zona, circoscrizione o intero Distretto.',
+    icon: Users,
+    color: 'text-blue-600',
   },
 ]
 

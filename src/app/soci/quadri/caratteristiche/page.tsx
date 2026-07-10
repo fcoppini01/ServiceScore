@@ -60,7 +60,7 @@ export default function QuadroCaratteristichePage() {
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, cognome, nome, categoria_socio, programma, nome_club, club_zona, club_circoscrizione, email_preferita, telefono_cellulare')
+      .select('matricola_socio, cognome, nome, categoria_socio, programma, nome_club, club_zona, club_circoscrizione, email_effettiva, telefono_cellulare')
     if (filtroClassif.length) query = query.in('categoria_socio', filtroClassif)
     if (filtroProg.length) query = query.in('programma', filtroProg)
     if (filtroZona.length) query = query.in('club_zona', filtroZona)
@@ -105,7 +105,7 @@ export default function QuadroCaratteristichePage() {
                 { header: 'Circoscrizione', accessor: (s: any) => s.club_circoscrizione ?? '' },
                 { header: 'Cognome', accessor: (s: any) => s.cognome },
                 { header: 'Nome', accessor: (s: any) => s.nome },
-                { header: 'Email', accessor: (s: any) => s.email_preferita ?? '' },
+                { header: 'Email', accessor: (s: any) => s.email_effettiva ?? '' },
                 { header: 'Telefono', accessor: (s: any) => s.telefono_cellulare ?? '' },
               ],
               `soci_caratteristiche_${todayStamp()}`,
@@ -183,7 +183,7 @@ export default function QuadroCaratteristichePage() {
                         <TableCell className="text-xs">{s.nome_club ?? ''}</TableCell>
                         <TableCell className="font-medium whitespace-nowrap">{s.cognome}</TableCell>
                         <TableCell className="whitespace-nowrap">{s.nome}</TableCell>
-                        <TableCell className="text-xs">{s.email_preferita ?? ''}</TableCell>
+                        <TableCell className="text-xs">{s.email_effettiva ?? ''}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap font-mono">{s.telefono_cellulare ?? ''}</TableCell>
                       </TableRow>
                     ))}

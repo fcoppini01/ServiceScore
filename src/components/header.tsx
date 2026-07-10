@@ -19,8 +19,6 @@ const NAV_ITEMS: NavItem[] = [
     label: "Dashboard",
     sublinks: [
       { href: "/dashboard", label: "Panoramica generale" },
-      { href: "/dashboard#dashboard-soci", label: "Dashboard Soci per Club" },
-      { href: "/dashboard#dashboard-attivita", label: "Dashboard Attività per Club" },
     ],
   },
   {
@@ -29,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
     sublinks: [
       { href: "/soci", label: "Elenco Generale Soci" },
       { href: "/soci/rapporti", label: "Rapporti Soci" },
+      { href: "/soci/quadri/composizione", label: "Composizione per Club" },
     ],
   },
   {
@@ -37,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
     sublinks: [
       { href: "/attivita", label: "Storico Attività" },
       { href: "/attivita/rapporti", label: "Rapporti Attività" },
+      { href: "/attivita/quadri/sintesi-club", label: "Sintesi Attività per Club" },
     ],
   },
   {
@@ -46,6 +46,10 @@ const NAV_ITEMS: NavItem[] = [
       { href: "/officer", label: "Elenco Officer" },
       { href: "/officer/rapporti", label: "Rapporti Officer" },
     ],
+  },
+  {
+    href: "/sfida-leoni",
+    label: "Sfida dei Leoni",
   },
 ]
 

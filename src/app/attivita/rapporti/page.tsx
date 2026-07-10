@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ArrowLeft, FileText, Briefcase } from 'lucide-react'
+import { ArrowLeft, FileText, Briefcase, Activity } from 'lucide-react'
 
 // Pagina indice dei Rapporti Attività: raggruppa le classificazioni stampabili
 // per la sezione Attività. Sostituisce la lista "Quadri di Stampa" che era
@@ -31,6 +31,13 @@ const RAPPORTI = [
     desc: 'Solo i numeri: totale complessivo e subtotali Service / Amministrazione, senza l’elenco delle attività. Utile per una sintesi rapida da stampare.',
     icon: Briefcase,
     color: 'text-amber-600',
+  },
+  {
+    href: '/attivita/quadri/sintesi-club',
+    title: 'Sintesi Attività per Club — Amministrazione vs Service',
+    desc: 'Prospetto a incrocio: per la selezione mostra Totale / Amministrazione / Service con attività, persone servite, volontari e ore (numeri e percentuali). Filtri per club, zona, circoscrizione, Distretto e anno sociale.',
+    icon: Activity,
+    color: 'text-orange-600',
   },
 ]
 

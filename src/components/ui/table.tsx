@@ -65,16 +65,59 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   )
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+function TableHead({ className, children, ...props }: React.ComponentProps<"th">) {
+  const thRef = React.useRef<HTMLTableCellElement>(null)
+
+  // Ridimensionamento colonna: si trascina la maniglia sul bordo destro.
+  // Sulle tabelle .cv-table (table-layout: fixed) il resize è affidabile in
+  // entrambe le direzioni; altrove permette almeno di allargare la colonna.
+  const handlePointerDown = (e: React.PointerEvent<HTMLSpanElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const th = thRef.current
+    if (!th) return
+    const startX = e.clientX
+    const startW = th.getBoundingClientRect().width
+    const prevCursor = document.body.style.cursor
+    const prevSelect = document.body.style.userSelect
+    document.body.style.cursor = "col-resize"
+    document.body.style.userSelect = "none"
+
+    const onMove = (ev: PointerEvent) => {
+      const w = Math.max(48, Math.round(startW + (ev.clientX - startX)))
+      th.style.width = `${w}px`
+      th.style.minWidth = `${w}px`
+    }
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove)
+      document.removeEventListener("pointerup", onUp)
+      document.body.style.cursor = prevCursor
+      document.body.style.userSelect = prevSelect
+    }
+    document.addEventListener("pointermove", onMove)
+    document.addEventListener("pointerup", onUp)
+  }
+
   return (
     <th
+      ref={thRef}
       data-slot="table-head"
       className={cn(
-        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
+        "relative h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
-    />
+    >
+      {children}
+      <span
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Ridimensiona colonna"
+        onPointerDown={handlePointerDown}
+        onClick={(e) => e.stopPropagation()}
+        className="absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize touch-none select-none hover:bg-primary/40 print:hidden"
+      />
+    </th>
   )
 }
 

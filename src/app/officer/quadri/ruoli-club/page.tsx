@@ -73,6 +73,10 @@ export default function QuadroRuoliClubPage() {
   const anniOpzioni = useMemo(() => getAnniSociali(), [])
   const [anniSociali, setAnniSociali] = useState<number[]>([getCurrentAnnoSocialeStart()])
   const [officers, setOfficers] = useState<Off[]>([])
+  // Presidente dell'anno sociale precedente = Immediato Past Presidente (regola LCI).
+  // Ricavato automaticamente perché nei dati officer non esiste questo titolo.
+  const [pastPresidente, setPastPresidente] = useState<Off | null>(null)
+  const [pastAnnoLabel, setPastAnnoLabel] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
@@ -125,7 +129,35 @@ export default function QuadroRuoliClubPage() {
       email: o.email ?? null,
       telefono: o.telefono ?? null,
     })))
+
+    // Immediato Past Presidente = Presidente del club dell'anno sociale precedente
+    // (rispetto al più recente anno selezionato). Ricavato con una query dedicata.
+    await loadPastPresidente()
     setLoading(false)
+  }
+
+  async function loadPastPresidente() {
+    if (!anniSociali.length) { setPastPresidente(null); setPastAnnoLabel(''); return }
+    const pastYear = Math.max(...anniSociali) - 1
+    const { from, to, label } = getAnnoSocialeRange(pastYear)
+    setPastAnnoLabel(label)
+    const { data } = await supabase
+      .from('vista_officer_ricerca')
+      .select('id_incarico, matricola_socio, titolo_ufficiale, nome, cognome, email, telefono, data_inizio, data_conclusione')
+      .eq('nome_club', club)
+      .or(`data_inizio.is.null,data_inizio.lte.${to}`)
+      .or(`data_conclusione.is.null,data_conclusione.gte.${from}`)
+      .range(0, 999)
+    const pres = (data ?? []).find((o: any) => norm(o.titolo_ufficiale) === 'presidente di club')
+    setPastPresidente(pres ? {
+      id_incarico: `past-${pres.id_incarico}`,
+      matricola_socio: pres.matricola_socio,
+      titolo_ufficiale: pres.titolo_ufficiale,
+      nome: pres.nome,
+      cognome: pres.cognome,
+      email: pres.email ?? null,
+      telefono: pres.telefono ?? null,
+    } : null)
   }
 
   // Costruisce le righe per un gruppo di ruoli + traccia gli incarichi abbinati
@@ -144,7 +176,12 @@ export default function QuadroRuoliClubPage() {
 
   const { rowsStatuto, rowsAltre, rowsAltri } = useMemo(() => {
     const used = new Set<any>()
-    const rowsStatuto = buildGroup(GRUPPO_STATUTO, used)
+    const rowsStatuto = buildGroup(GRUPPO_STATUTO, used).map((r) =>
+      // Compila in automatico l'Immediato Past Presidente col presidente dell'anno precedente
+      r.label === 'Immediato Past Presidente' && !r.off && pastPresidente
+        ? { ...r, off: pastPresidente }
+        : r
+    )
     const rowsAltre = buildGroup(GRUPPO_ALTRE, used)
     // Incarichi presenti nel club ma non riconducibili ai ruoli dello schema
     const rowsAltri: RenderRow[] = officers
@@ -152,7 +189,7 @@ export default function QuadroRuoliClubPage() {
       .map((o) => ({ label: o.titolo_ufficiale ?? '—', off: o }))
     return { rowsStatuto, rowsAltre, rowsAltri }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [officers])
+  }, [officers, pastPresidente])
 
   const annoLabel = anniSociali.length
     ? [...anniSociali].sort((a, b) => a - b).map((y) => getAnnoSocialeRange(y).label).join(', ')
@@ -313,6 +350,12 @@ export default function QuadroRuoliClubPage() {
                     )}
                   </TableBody>
                 </table>
+                {pastPresidente && (
+                  <p className="text-[10px] text-muted-foreground italic mt-3 print:text-black">
+                    L&apos;<strong>Immediato Past Presidente</strong> è compilato in automatico con il Presidente del club
+                    dell&apos;anno sociale {pastAnnoLabel} (regola statutaria LCI: il past president è il presidente dell&apos;annata precedente).
+                  </p>
+                )}
               </div>
             )}
           </CardContent>
