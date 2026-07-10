@@ -27,6 +27,18 @@ Branch `main`, allineato a `origin/main`. Ultimi commit **già online**:
 - `65c0bb3` Officer: rimossa spunta "Solo incarichi attivi"; Attività: Distretto = tutte; rinomina titolo caratteristiche
 - `9e913ce` Rapporto caratteristiche soci: colonna Classificazione al posto di Tipo/Categoria
 
+## ✅ Sessione 2026-07-10 (parte 7) — rapporti "no filtro = tutto", Distretto selezionabile (committato)
+Build OK. Modifiche:
+- **Rapporti: senza filtri si carica TUTTO il DB.** Rimossa la guardia "seleziona un club" da `attivita/quadri/club-anno`, `club-anno-amm-service`, `amm-service-totali`, `attivita/quadri/sintesi-club`, `soci/quadri/composizione`. Al caricamento (o dopo "cancella filtri") mostrano tutto il Distretto; il sottotitolo di default dice "Tutto il Distretto 108 LA". Nota: l'anno sociale di default è quello corrente (2026/27) che al momento ha 0 attività → per vedere dati selezionare 2025/26.
+- **Distretto 108 LA selezionabile** (prima dummy no-op) su `soci/quadri/eta`, `anzianita`, `caratteristiche`: selezionandolo ignora i filtri Club/Zona/Circoscrizione (= tutti i soci). Filtri **territoriali spostati in alto** (Zona, Circoscrizione, Club, Distretto) come "privilegiati" su eta e anzianita (caratteristiche li aveva già sopra).
+
+### Audit checklist utente (verifiche DB fatte via REST anon)
+- **soci = 2951** ✓ (Content-Range 0-2950/2951).
+- **Officer email**: ora indirizzi reali (es. rombiolchini@virgilio.it), non più "Personal" ✓ — la vista espone `email` corretto e il codice lo usa.
+- **stato attività**: UNICO valore `Comunicato` su tutte le 6861 righe ✓ (nessun altro stato).
+- **Ultracentenari**: il 101 (Vasco Zecchi, PONTEDERA, nato 15/02/1925) è REALE. I sei "109" sono tutti nati **1917-01-01** = data placeholder/errata alla fonte (Viareggio Giacomo Puccini). Da decidere con l'utente se azzerare quelle date di nascita (così non risultano 109enni) — è una modifica DATI, non fatta.
+- **Automatismo Past President**: implementato come **Immediato Past Presidente** (scelta utente in parte 6), NON come vicepresidente.
+
 ## ✅ Sessione 2026-07-10 (parte 6) — resize colonne, auth obbligatoria, Sfida dei Leoni, Past President (committato)
 Build OK. Modifiche:
 - **Colonne ridimensionabili in tutte le tabelle:** aggiunta una maniglia di resize sul bordo destro di ogni intestazione nel componente condiviso `src/components/ui/table.tsx` (`TableHead`). Trascinando si imposta `width/minWidth` sul `<th>`. Sulle tabelle `.cv-table` (`table-layout: fixed` a schermo) il resize è affidabile in entrambe le direzioni; la maniglia è `print:hidden` e `stopPropagation` così non attiva l'ordinamento (`SortableHead`). Le piccole tabelle aggregate a `<th>` raw (composizione, sintesi, cross-tab dashboard) non hanno la maniglia.

@@ -31,6 +31,7 @@ export default function QuadroCaratteristichePage() {
   const [filtroZona, setFiltroZona] = useState<string[]>([])
   const [filtroCirc, setFiltroCirc] = useState<string[]>([])
   const [filtroClub, setFiltroClub] = useState<string[]>([])
+  const [filtroDistretto, setFiltroDistretto] = useState<string[]>([])
 
   useEffect(() => {
     setIsClient(true)
@@ -40,7 +41,7 @@ export default function QuadroCaratteristichePage() {
   useEffect(() => {
     if (!isClient) return
     loadSoci()
-  }, [isClient, filtroClassif, filtroProg, filtroZona, filtroCirc, filtroClub])
+  }, [isClient, filtroClassif, filtroProg, filtroZona, filtroCirc, filtroClub, filtroDistretto])
 
   async function loadFilterOptions() {
     const [progRes, zoneRes, circRes, clubRes] = await Promise.all([
@@ -63,9 +64,12 @@ export default function QuadroCaratteristichePage() {
       .select('matricola_socio, cognome, nome, categoria_socio, programma, nome_club, club_zona, club_circoscrizione, email_effettiva, telefono_cellulare')
     if (filtroClassif.length) query = query.in('categoria_socio', filtroClassif)
     if (filtroProg.length) query = query.in('programma', filtroProg)
-    if (filtroZona.length) query = query.in('club_zona', filtroZona)
-    if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
-    if (filtroClub.length) query = query.in('nome_club', filtroClub)
+    // Distretto (108 LA) selezionato = tutti i club (ignora i filtri territoriali)
+    if (filtroDistretto.length === 0) {
+      if (filtroZona.length) query = query.in('club_zona', filtroZona)
+      if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
+      if (filtroClub.length) query = query.in('nome_club', filtroClub)
+    }
     const { data, error } = await query.order('cognome', { ascending: true, nullsFirst: false }).range(0, 9999)
     if (error) setError('Errore nel caricamento. Riprova.')
     else setSoci(data || [])
@@ -126,19 +130,19 @@ export default function QuadroCaratteristichePage() {
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4 space-y-3">
-            {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto (sopra) */}
+            {/* Filtri territoriali in alto (privilegiati) — Zona, Circoscrizione, Club, Distretto */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Club" />
               <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Zona" />
               <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Circoscrizione" />
-              <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="Distretto: 108 LA" />
+              <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Club" />
+              <MultiSelect options={['108 LA']} selected={filtroDistretto} onChange={setFiltroDistretto} placeholder="Distretto: 108 LA" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <MultiSelect options={CLASSIFICAZIONI} selected={filtroClassif} onChange={setFiltroClassif} placeholder="Classificazione (Effettivo, Fondatore…)" />
               <MultiSelect options={programmi} selected={filtroProg} onChange={setFiltroProg} placeholder="Programma" />
             </div>
-            {(filtroClassif.length + filtroProg.length + filtroZona.length + filtroCirc.length + filtroClub.length) > 0 && (
-              <Button variant="outline" size="sm" onClick={() => { setFiltroClassif([]); setFiltroProg([]); setFiltroZona([]); setFiltroCirc([]); setFiltroClub([]) }} className="text-xs">Cancella filtri</Button>
+            {(filtroClassif.length + filtroProg.length + filtroZona.length + filtroCirc.length + filtroClub.length + filtroDistretto.length) > 0 && (
+              <Button variant="outline" size="sm" onClick={() => { setFiltroClassif([]); setFiltroProg([]); setFiltroZona([]); setFiltroCirc([]); setFiltroClub([]); setFiltroDistretto([]) }} className="text-xs">Cancella filtri</Button>
             )}
           </CardContent>
         </Card>

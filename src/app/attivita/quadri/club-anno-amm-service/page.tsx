@@ -130,7 +130,8 @@ export default function QuadroClubAnnoAmmServicePage() {
   }, [])
 
   useEffect(() => {
-    if (!isClient || (club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0 && filtroDistretto.length === 0)) { setActivities([]); return }
+    if (!isClient) return
+    // Senza filtri territoriali si caricano TUTTE le attività del Distretto.
     loadActivities()
   }, [isClient, club, filtroZona, filtroCircoscrizione, filtroDistretto, anniSociali])
 
@@ -190,17 +191,15 @@ export default function QuadroClubAnnoAmmServicePage() {
         Classificazione Amministrazione vs Service — Dettagliato
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
-        {club.length > 0 || filtroZona.length > 0 || filtroCircoscrizione.length > 0 || filtroDistretto.length > 0 ? (
-          <><strong className="text-foreground print:text-black">
-            {filtroDistretto.length > 0
-              ? 'Tutto il Distretto 108 LA'
-              : club.length > 0
-                ? `${club.length} club selezionati`
-                : filtroZona.length > 0
-                  ? `Zone: ${filtroZona.join(', ')}`
-                  : `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`}
-          </strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {activities.length} attività ({amministrazione.length} Amministrazione, {service.length} Service)</>
-        ) : 'Seleziona uno o più club (oppure zone, circoscrizioni o l’intero Distretto) per visualizzare le attività'}
+        <><strong className="text-foreground print:text-black">
+          {club.length > 0
+            ? `${club.length} club selezionati`
+            : filtroZona.length > 0
+              ? `Zone: ${filtroZona.join(', ')}`
+              : filtroCircoscrizione.length > 0
+                ? `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`
+                : 'Tutto il Distretto 108 LA'}
+        </strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {activities.length} attività ({amministrazione.length} Amministrazione, {service.length} Service)</>
       </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
@@ -286,11 +285,6 @@ export default function QuadroClubAnnoAmmServicePage() {
             ) : loading ? (
               <div className="flex justify-center items-center h-32">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-              </div>
-            ) : club.length === 0 && filtroZona.length === 0 && filtroCircoscrizione.length === 0 && filtroDistretto.length === 0 ? (
-              <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
-                <Activity className="w-8 h-8 opacity-30" />
-                <span className="text-sm">Seleziona uno o più club, oppure zone, circoscrizioni o l&apos;intero Distretto</span>
               </div>
             ) : activities.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">

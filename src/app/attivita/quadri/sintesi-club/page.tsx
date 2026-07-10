@@ -53,8 +53,6 @@ export default function QuadroSintesiClubPage() {
   const [error, setError] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
 
-  const hasSelection = filtroClub.length > 0 || filtroZona.length > 0 || filtroCirc.length > 0 || filtroDistretto.length > 0
-
   useEffect(() => {
     setIsClient(true)
     loadFilterOptions()
@@ -62,7 +60,7 @@ export default function QuadroSintesiClubPage() {
 
   useEffect(() => {
     if (!isClient) return
-    if (!hasSelection) { setRows([]); return }
+    // Senza filtri territoriali si caricano TUTTE le attività del Distretto.
     loadActivities()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isClient, filtroClub, filtroZona, filtroCirc, filtroDistretto, anniSociali])
@@ -110,15 +108,13 @@ export default function QuadroSintesiClubPage() {
     ? [...anniSociali].sort((a, b) => a - b).map((y) => getAnnoSocialeRange(y).label).join(', ')
     : 'tutti gli anni'
 
-  const ambitoLabel = filtroDistretto.length > 0
-    ? 'Tutto il Distretto 108 LA'
-    : filtroClub.length > 0
-      ? (filtroClub.length === 1 ? filtroClub[0] : `${filtroClub.length} club selezionati`)
-      : filtroZona.length > 0
-        ? `Zone: ${filtroZona.join(', ')}`
-        : filtroCirc.length > 0
-          ? `Circoscrizioni: ${filtroCirc.join(', ')}`
-          : ''
+  const ambitoLabel = filtroClub.length > 0
+    ? (filtroClub.length === 1 ? filtroClub[0] : `${filtroClub.length} club selezionati`)
+    : filtroZona.length > 0
+      ? `Zone: ${filtroZona.join(', ')}`
+      : filtroCirc.length > 0
+        ? `Circoscrizioni: ${filtroCirc.join(', ')}`
+        : 'Tutto il Distretto 108 LA'
 
   function esportaExcel() {
     const riga = (categoria: string, a: ReturnType<typeof aggregate>) => ({
@@ -167,16 +163,14 @@ export default function QuadroSintesiClubPage() {
         Sintesi Attività per Club — Amministrazione vs Service
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
-        {hasSelection
-          ? <><strong className="text-foreground print:text-black">{ambitoLabel}</strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {totals.tot.n} attività</>
-          : 'Seleziona un Club (o zona, circoscrizione, o l’intero Distretto) per vederne le attività dell’anno sociale, divise in Amministrazione e Service.'}
+        <><strong className="text-foreground print:text-black">{ambitoLabel}</strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {totals.tot.n} attività</>
       </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
-        <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={!hasSelection || totals.tot.n === 0}>
+        <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={totals.tot.n === 0}>
           <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
         </Button>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={!hasSelection || totals.tot.n === 0}>
+        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={totals.tot.n === 0}>
           <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
         </Button>
       </motion.div>
@@ -227,11 +221,6 @@ export default function QuadroSintesiClubPage() {
           <CardContent className="print:p-0 space-y-4">
             {error ? (
               <div className="flex justify-center items-center h-32 text-destructive text-sm">{error}</div>
-            ) : !hasSelection ? (
-              <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
-                <Activity className="w-8 h-8 opacity-30" />
-                <span className="text-sm">Seleziona uno o più club, oppure zone, circoscrizioni o l&apos;intero Distretto</span>
-              </div>
             ) : loading ? (
               <div className="flex justify-center items-center h-32">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />

@@ -29,6 +29,7 @@ export default function QuadroAnzianitaPage() {
   const [filtroZona, setFiltroZona] = useState<string[]>([])
   const [filtroCirc, setFiltroCirc] = useState<string[]>([])
   const [filtroClub, setFiltroClub] = useState<string[]>([])
+  const [filtroDistretto, setFiltroDistretto] = useState<string[]>([])
 
   useEffect(() => {
     setIsClient(true)
@@ -46,7 +47,7 @@ export default function QuadroAnzianitaPage() {
   useEffect(() => {
     if (!isClient) return
     loadSoci()
-  }, [isClient, anzMin, anzMax, fasce, filtroZona, filtroCirc, filtroClub])
+  }, [isClient, anzMin, anzMax, fasce, filtroZona, filtroCirc, filtroClub, filtroDistretto])
 
   async function loadSoci() {
     setLoading(true)
@@ -58,9 +59,12 @@ export default function QuadroAnzianitaPage() {
     if (anzMin) query = query.gte('anzianita_lionistica', parseInt(anzMin))
     if (anzMax) query = query.lte('anzianita_lionistica', parseInt(anzMax))
     if (fasce.length) query = query.in('fascia_anzianita', fasce)
-    if (filtroZona.length) query = query.in('club_zona', filtroZona)
-    if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
-    if (filtroClub.length) query = query.in('nome_club', filtroClub)
+    // Distretto (108 LA) selezionato = tutti i club (ignora i filtri territoriali)
+    if (filtroDistretto.length === 0) {
+      if (filtroZona.length) query = query.in('club_zona', filtroZona)
+      if (filtroCirc.length) query = query.in('club_circoscrizione', filtroCirc)
+      if (filtroClub.length) query = query.in('nome_club', filtroClub)
+    }
     const { data, error } = await query.order('anzianita_lionistica', { ascending: false, nullsFirst: false }).range(0, 9999)
     if (error) setError('Errore nel caricamento. Riprova.')
     else setSoci(data || [])
@@ -127,6 +131,25 @@ export default function QuadroAnzianitaPage() {
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4">
+            {/* Filtri territoriali in alto (privilegiati) — Zona, Circoscrizione, Club, Distretto */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Zona</p>
+                <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Tutte le zone" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Circoscrizione</p>
+                <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Tutte le circoscrizioni" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Club</p>
+                <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Tutti i club" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Distretto</p>
+                <MultiSelect options={['108 LA']} selected={filtroDistretto} onChange={setFiltroDistretto} placeholder="108 LA" />
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end mb-3">
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Fasce di anzianità</p>
@@ -141,27 +164,8 @@ export default function QuadroAnzianitaPage() {
                 </div>
               </div>
             </div>
-            {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-              <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Club</p>
-                <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Tutti i club" />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Zona</p>
-                <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Tutte le zone" />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Circoscrizione</p>
-                <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Tutte le circoscrizioni" />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Distretto</p>
-                <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="108 LA" />
-              </div>
-            </div>
-            {(anzMin || anzMax || fasce.length > 0 || filtroZona.length > 0 || filtroCirc.length > 0 || filtroClub.length > 0) && (
-              <Button variant="outline" size="sm" onClick={() => { setAnzMin(''); setAnzMax(''); setFasce([]); setFiltroZona([]); setFiltroCirc([]); setFiltroClub([]) }} className="text-xs">Cancella filtri</Button>
+            {(anzMin || anzMax || fasce.length > 0 || filtroZona.length > 0 || filtroCirc.length > 0 || filtroClub.length > 0 || filtroDistretto.length > 0) && (
+              <Button variant="outline" size="sm" onClick={() => { setAnzMin(''); setAnzMax(''); setFasce([]); setFiltroZona([]); setFiltroCirc([]); setFiltroClub([]); setFiltroDistretto([]) }} className="text-xs">Cancella filtri</Button>
             )}
           </CardContent>
         </Card>

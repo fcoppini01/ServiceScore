@@ -48,8 +48,6 @@ export default function QuadroComposizionePage() {
   const [error, setError] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
 
-  const hasSelection = filtroClub.length > 0 || filtroZona.length > 0 || filtroCirc.length > 0 || filtroDistretto.length > 0
-
   useEffect(() => {
     setIsClient(true)
     loadFilterOptions()
@@ -57,7 +55,7 @@ export default function QuadroComposizionePage() {
 
   useEffect(() => {
     if (!isClient) return
-    if (!hasSelection) { setSoci([]); return }
+    // Senza filtri territoriali si carica la composizione di TUTTO il Distretto.
     loadSoci()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isClient, filtroClub, filtroZona, filtroCirc, filtroDistretto])
@@ -111,7 +109,7 @@ export default function QuadroComposizionePage() {
         ? `Zone: ${filtroZona.join(', ')}`
         : filtroCirc.length > 0
           ? `Circoscrizioni: ${filtroCirc.join(', ')}`
-          : ''
+          : 'Tutto il Distretto 108 LA'
 
   function esportaExcel() {
     const rows = [
@@ -149,16 +147,14 @@ export default function QuadroComposizionePage() {
         Composizione del Club per Età e Anzianità
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
-        {hasSelection
-          ? <><strong className="text-foreground print:text-black">{ambitoLabel}</strong> · {totSoci} soci</>
-          : 'Seleziona un Club (o zona, circoscrizione, o l’intero Distretto) per vederne la composizione anagrafica per età e anzianità lionistica.'}
+        <><strong className="text-foreground print:text-black">{ambitoLabel}</strong> · {totSoci} soci</>
       </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
-        <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={!hasSelection || totSoci === 0}>
+        <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={totSoci === 0}>
           <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
         </Button>
-        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={!hasSelection || totSoci === 0}>
+        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={totSoci === 0}>
           <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
         </Button>
       </motion.div>
@@ -195,16 +191,11 @@ export default function QuadroComposizionePage() {
       <motion.div variants={itemVariants}>
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm print:border-none print:bg-transparent">
           <CardHeader className="pb-3 print-hide">
-            <CardTitle className="text-base font-semibold">Composizione {hasSelection && `· ${totSoci} soci`}</CardTitle>
+            <CardTitle className="text-base font-semibold">Composizione · {totSoci} soci</CardTitle>
           </CardHeader>
           <CardContent className="print:p-0 space-y-6">
             {error ? (
               <div className="flex justify-center items-center h-32 text-destructive text-sm">{error}</div>
-            ) : !hasSelection ? (
-              <div className="flex flex-col justify-center items-center h-32 gap-2 text-muted-foreground">
-                <Users className="w-8 h-8 opacity-30" />
-                <span className="text-sm">Seleziona uno o più club, oppure zone, circoscrizioni o l&apos;intero Distretto</span>
-              </div>
             ) : loading ? (
               <div className="flex justify-center items-center h-32">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
