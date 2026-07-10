@@ -311,7 +311,7 @@ export default function SociPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <MultiSelect options={CLASSIFICAZIONI} selected={filters.classificazione} onChange={(v) => updateFilters({ ...filters, classificazione: v })} placeholder="Classificazione (Effettivo, Fondatore…)" />
                         <MultiSelect options={programmi} selected={filters.programma} onChange={(v) => updateFilters({ ...filters, programma: v })} placeholder="Programma" />
-                        <MultiSelect options={FASCE_ANZIANITA} selected={filters.fasciaAnzianita} onChange={(v) => updateFilters({ ...filters, fasciaAnzianita: v })} placeholder="Fascia anzianità" />
+                        <MultiSelect options={FASCE_ANZIANITA} selected={filters.fasciaAnzianita} onChange={(v) => updateFilters({ ...filters, fasciaAnzianita: v })} placeholder="Fascia anzianità lionistica" />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <Input placeholder="Professione..." value={filters.professione} onChange={(e) => updateFilters({ ...filters, professione: e.target.value })} className="bg-background/50" />

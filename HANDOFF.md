@@ -27,6 +27,10 @@ Branch `main`, allineato a `origin/main`. Ultimi commit **già online**:
 - `65c0bb3` Officer: rimossa spunta "Solo incarichi attivi"; Attività: Distretto = tutte; rinomina titolo caratteristiche
 - `9e913ce` Rapporto caratteristiche soci: colonna Classificazione al posto di Tipo/Categoria
 
+## ✅ Sessione 2026-07-10 (parte 3) — email/telefono nelle stampe + rename filtro (committato)
+- **Email + Telefono aggiunti alle pagine di stampa separate**: `soci/stampa` (tabella PDF; Excel già li aveva) e `officer/stampa` (tabella PDF + Excel). Ora email/telefono sono presenti in tabella, stampa PDF ed Excel di **tutti** i rapporti soci/officer.
+- Filtri avanzati Soci: placeholder **"Fascia anzianità" → "Fascia anzianità lionistica"**.
+
 ## ✅ Sessione 2026-07-10 (parte 2) — email/telefono ovunque + UI (committato)
 - **Colonne Email + Telefono** aggiunte ai prospetti che ne erano privi: `soci/quadri/eta`, `soci/quadri/anzianita`, `soci/quadri/caratteristiche` (dai campi `email_preferita`/`telefono_cellulare` di `vista_soci_ricerca`) e `officer/quadri/incarichi-club` (dai campi `email`/`telefono` di `vista_officer_ricerca`). In tabella + Excel. Già presenti su Elenco Soci, Elenco Officer, Ruoli di Leadership.
 - **Pulsanti Excel / Stampa PDF spostati a sinistra** (rimosso `justify-between`) su eta, anzianita, caratteristiche.

@@ -188,6 +188,8 @@ function StampaSociInner() {
                     <TableHead>Programma</TableHead>
                     <TableHead>Città</TableHead>
                     <TableHead>Prov.</TableHead>
+                    <TableHead>Cellulare</TableHead>
+                    <TableHead>Email</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -206,6 +208,8 @@ function StampaSociInner() {
                       <TableCell>{s.programma}</TableCell>
                       <TableCell>{s.citta}</TableCell>
                       <TableCell>{s.stato_provincia}</TableCell>
+                      <TableCell className="font-mono whitespace-nowrap">{s.telefono_cellulare}</TableCell>
+                      <TableCell>{s.email_preferita}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -97,6 +97,8 @@ function StampaOfficerInner() {
                 { header: 'Nome', accessor: (o: any) => o.nome },
                 { header: 'Data inizio', accessor: (o: any) => fmtDateIT(o.data_inizio) },
                 { header: 'Data conclusione', accessor: (o: any) => fmtDateIT(o.data_conclusione) },
+                { header: 'Email', accessor: (o: any) => o.email ?? '' },
+                { header: 'Telefono', accessor: (o: any) => o.telefono ?? '' },
               ],
               `officer_${todayStamp()}`,
               'Officer'
@@ -160,6 +162,8 @@ function StampaOfficerInner() {
                     <TableHead>Circ.</TableHead>
                     <TableHead>Inizio</TableHead>
                     <TableHead>Fine</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefono</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -173,6 +177,8 @@ function StampaOfficerInner() {
                       <TableCell>{o.club_circoscrizione}</TableCell>
                       <TableCell>{formatDate(o.data_inizio)}</TableCell>
                       <TableCell>{o.data_conclusione ? formatDate(o.data_conclusione) : 'In corso'}</TableCell>
+                      <TableCell>{o.email}</TableCell>
+                      <TableCell className="font-mono whitespace-nowrap">{o.telefono}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
