@@ -136,8 +136,6 @@ export default function SociPage() {
     if (filters.professione) query = query.ilike('professione', `%${filters.professione}%`)
     if (filters.citta) query = query.ilike('citta', `%${filters.citta}%`)
     if (filters.provincia) query = query.ilike('stato_provincia', `%${filters.provincia}%`)
-    // Esclude SEMPRE i soci con data_ingresso anteriore al 1/7/2023 (date segnaposto Lions, da non considerare)
-    query = query.gte('data_ingresso', '2023-07-01')
 
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
@@ -168,7 +166,6 @@ export default function SociPage() {
     if (filters.professione) q = q.ilike('professione', `%${filters.professione}%`)
     if (filters.citta) q = q.ilike('citta', `%${filters.citta}%`)
     if (filters.provincia) q = q.ilike('stato_provincia', `%${filters.provincia}%`)
-    q = q.gte('data_ingresso', '2023-07-01')
     return q as T
   }
 

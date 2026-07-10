@@ -70,8 +70,6 @@ function StampaSociInner() {
     if (filters.professione) q = q.ilike('professione', `%${filters.professione}%`)
     if (filters.citta) q = q.ilike('citta', `%${filters.citta}%`)
     if (filters.provincia) q = q.ilike('stato_provincia', `%${filters.provincia}%`)
-    // Esclude SEMPRE i soci con data_ingresso anteriore al 1/7/2023 (coerente con l'elenco)
-    q = q.gte('data_ingresso', '2023-07-01')
 
     q.order(filters.sortField, { ascending: filters.sortDir === 'asc', nullsFirst: false }).range(0, 9999).then(({ data, error }) => {
       if (error) setError('Errore nel caricamento. Riprova.')
