@@ -8,14 +8,13 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SortableHead, MobileSortSelect, type SortState, nextSort } from '@/components/ui/sortable-head'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ChevronLeft, ChevronRight, SlidersHorizontal, ShieldCheck, FileText, Printer, FileSpreadsheet } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
-import { getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
+import { getAnnoSocialeRange, getAnniSociali } from '@/lib/anno-sociale'
 import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 
 const PAGE_SIZE = 20
@@ -28,10 +27,8 @@ interface Filters {
   zona: string[]
   circoscrizione: string[]
   distretto: string[]
-  dataInizioDa: string
-  dataInizioA: string
-  dataConclusioneDa: string
-  dataConclusioneA: string
+  // Anno sociale (uno o più) — anni di inizio incarico, formato start-year come stringa
+  anniSociali: string[]
 }
 
 const DISTRETTI = ['108 LA']
@@ -39,19 +36,7 @@ const DISTRETTI = ['108 LA']
 const EMPTY_FILTERS: Filters = {
   search: '', titolo: [],
   club: [], zona: [], circoscrizione: [], distretto: [],
-  dataInizioDa: '', dataInizioA: '',
-  dataConclusioneDa: '', dataConclusioneA: '',
-}
-
-// Ricava l'anno sociale selezionato confrontando l'intervallo data inizio incarico
-// con i range degli anni sociali; ritorna 'tutti' se non corrisponde a nessuno.
-function annoSocialeSelezionato(f: Filters): string {
-  if (!f.dataInizioDa || !f.dataInizioA) return 'tutti'
-  const match = getRecentAnniSociali(8).find((a) => {
-    const r = getAnnoSocialeRange(a.value)
-    return r.from === f.dataInizioDa && r.to === f.dataInizioA
-  })
-  return match ? String(match.value) : 'tutti'
+  anniSociali: [],
 }
 
 function countAdvancedFilters(f: Filters) {
@@ -60,8 +45,7 @@ function countAdvancedFilters(f: Filters) {
   if (f.zona.length) c++
   if (f.circoscrizione.length) c++
   if (f.distretto.length) c++
-  if (f.dataInizioDa || f.dataInizioA) c++
-  if (f.dataConclusioneDa || f.dataConclusioneA) c++
+  if (f.anniSociali.length) c++
   return c
 }
 
@@ -122,10 +106,10 @@ export default function OfficerPage() {
     if (filters.zona.length) query = query.in('club_zona', filters.zona)
     if (filters.circoscrizione.length) query = query.in('club_circoscrizione', filters.circoscrizione)
     if (filters.club.length) query = query.in('nome_club', filters.club)
-    if (filters.dataInizioDa) query = query.gte('data_inizio', filters.dataInizioDa)
-    if (filters.dataInizioA) query = query.lte('data_inizio', filters.dataInizioA)
-    if (filters.dataConclusioneDa) query = query.gte('data_conclusione', filters.dataConclusioneDa)
-    if (filters.dataConclusioneA) query = query.lte('data_conclusione', filters.dataConclusioneA)
+    if (filters.anniSociali.length) {
+      const orExpr = filters.anniSociali.map((y) => { const r = getAnnoSocialeRange(parseInt(y, 10)); return `and(data_inizio.gte.${r.from},data_inizio.lte.${r.to})` }).join(',')
+      query = query.or(orExpr)
+    }
 
     if (sort) query = query.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
 
@@ -151,10 +135,10 @@ export default function OfficerPage() {
     if (filters.zona.length) q = q.in('club_zona', filters.zona)
     if (filters.circoscrizione.length) q = q.in('club_circoscrizione', filters.circoscrizione)
     if (filters.club.length) q = q.in('nome_club', filters.club)
-    if (filters.dataInizioDa) q = q.gte('data_inizio', filters.dataInizioDa)
-    if (filters.dataInizioA) q = q.lte('data_inizio', filters.dataInizioA)
-    if (filters.dataConclusioneDa) q = q.gte('data_conclusione', filters.dataConclusioneDa)
-    if (filters.dataConclusioneA) q = q.lte('data_conclusione', filters.dataConclusioneA)
+    if (filters.anniSociali.length) {
+      const orExpr = filters.anniSociali.map((y) => { const r = getAnnoSocialeRange(parseInt(y, 10)); return `and(data_inizio.gte.${r.from},data_inizio.lte.${r.to})` }).join(',')
+      q = q.or(orExpr)
+    }
     if (sort) q = q.order(sort.field, { ascending: sort.dir === 'asc', nullsFirst: false })
     const { data, error } = await q.range(0, 49999)
     setExporting(false)
@@ -170,6 +154,8 @@ export default function OfficerPage() {
         { header: 'Nome', accessor: (o: any) => o.nome },
         { header: 'Data inizio', accessor: (o: any) => fmtDateIT(o.data_inizio) },
         { header: 'Data conclusione', accessor: (o: any) => fmtDateIT(o.data_conclusione) },
+        { header: 'Telefono', accessor: (o: any) => o.telefono ?? '' },
+        { header: 'Email', accessor: (o: any) => o.email ?? '' },
       ],
       `officer_${todayStamp()}`,
       'Officer'
@@ -236,22 +222,12 @@ export default function OfficerPage() {
                 <MultiSelect options={zone} selected={filters.zona} onChange={(v) => updateFilters({ ...filters, zona: v })} placeholder="Zona" />
                 <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => updateFilters({ ...filters, circoscrizione: v })} placeholder="Circoscrizione" />
                 <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => updateFilters({ ...filters, distretto: v })} placeholder="Distretto" />
-                <Select
-                  value={annoSocialeSelezionato(filters)}
-                  onValueChange={(v) => {
-                    if (!v || v === 'tutti') { updateFilters({ ...filters, dataInizioDa: '', dataInizioA: '' }); return }
-                    const r = getAnnoSocialeRange(parseInt(v, 10))
-                    updateFilters({ ...filters, dataInizioDa: r.from, dataInizioA: r.to })
-                  }}
-                >
-                  <SelectTrigger className="text-sm bg-background/50"><SelectValue placeholder="Anno sociale" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tutti">Tutti gli anni</SelectItem>
-                    {getRecentAnniSociali(8).map((a) => (
-                      <SelectItem key={a.value} value={String(a.value)}>{a.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <MultiSelect
+                  options={getAnniSociali().map((a) => a.label)}
+                  selected={filters.anniSociali.map((y) => getAnnoSocialeRange(parseInt(y, 10)).label)}
+                  onChange={(labels) => updateFilters({ ...filters, anniSociali: labels.map((l) => { const a = getAnniSociali().find((x) => x.label === l); return a ? String(a.value) : '' }).filter(Boolean) })}
+                  placeholder="Anno sociale (uno o più)"
+                />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
@@ -345,6 +321,12 @@ export default function OfficerPage() {
                           : <span className="text-green-500 font-medium">In corso</span>
                         }
                       </div>
+                      {(off.telefono || off.email) && (
+                        <div className="text-[10px] text-muted-foreground break-words">
+                          {off.telefono && <span className="font-mono">📞 {off.telefono}</span>}
+                          {off.email && <span className="block truncate">✉ {off.email}</span>}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -361,6 +343,8 @@ export default function OfficerPage() {
                         <SortableHead field="club_circoscrizione" label="Circ." sort={sort} onSort={handleSort} className="whitespace-nowrap" />
                         <SortableHead field="data_inizio" label="Inizio" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
                         <SortableHead field="data_conclusione" label="Fine" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="telefono" label="Telefono" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
+                        <SortableHead field="email" label="Email" sort={sort} onSort={handleSort} className="whitespace-nowrap" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -382,6 +366,8 @@ export default function OfficerPage() {
                               : <span className="text-green-500">In corso</span>
                             }
                           </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{off.telefono}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate" title={off.email}>{off.email}</TableCell>
                         </tr>
                       ))}
                     </TableBody>

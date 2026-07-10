@@ -9,6 +9,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Printer, ShieldCheck, FileSpreadsheet } from 'lucide-react'
 import { getArray, getString } from '@/lib/filters-url'
+import { getAnnoSocialeRange } from '@/lib/anno-sociale'
 import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 
 const LABELS: Record<string, string> = {
@@ -17,10 +18,7 @@ const LABELS: Record<string, string> = {
   zona: 'Zona',
   circoscrizione: 'Circoscrizione',
   club: 'Club',
-  dataInizioDa: 'Inizio dal',
-  dataInizioA: 'Inizio al',
-  dataConclusioneDa: 'Fine dal',
-  dataConclusioneA: 'Fine al',
+  anniSociali: 'Anno sociale',
 }
 
 function StampaOfficerInner() {
@@ -38,10 +36,7 @@ function StampaOfficerInner() {
     zona: getArray(sp, 'zona'),
     circoscrizione: getArray(sp, 'circoscrizione'),
     club: getArray(sp, 'club'),
-    dataInizioDa: getString(sp, 'dataInizioDa'),
-    dataInizioA: getString(sp, 'dataInizioA'),
-    dataConclusioneDa: getString(sp, 'dataConclusioneDa'),
-    dataConclusioneA: getString(sp, 'dataConclusioneA'),
+    anniSociali: getArray(sp, 'anniSociali'),
     sortField: getString(sp, 'sortField') || 'cognome',
     sortDir: getString(sp, 'sortDir') || 'asc',
   }
@@ -56,10 +51,10 @@ function StampaOfficerInner() {
     if (filters.zona.length) q = q.in('club_zona', filters.zona)
     if (filters.circoscrizione.length) q = q.in('club_circoscrizione', filters.circoscrizione)
     if (filters.club.length) q = q.in('nome_club', filters.club)
-    if (filters.dataInizioDa) q = q.gte('data_inizio', filters.dataInizioDa)
-    if (filters.dataInizioA) q = q.lte('data_inizio', filters.dataInizioA)
-    if (filters.dataConclusioneDa) q = q.gte('data_conclusione', filters.dataConclusioneDa)
-    if (filters.dataConclusioneA) q = q.lte('data_conclusione', filters.dataConclusioneA)
+    if (filters.anniSociali.length) {
+      const orExpr = filters.anniSociali.map((y: string) => { const r = getAnnoSocialeRange(parseInt(y, 10)); return `and(data_inizio.gte.${r.from},data_inizio.lte.${r.to})` }).join(',')
+      q = q.or(orExpr)
+    }
 
     q.order(filters.sortField, { ascending: filters.sortDir === 'asc', nullsFirst: false }).range(0, 9999).then(({ data, error }) => {
       if (error) setError('Errore nel caricamento. Riprova.')

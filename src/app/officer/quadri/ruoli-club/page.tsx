@@ -11,7 +11,7 @@ import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ArrowLeft, Printer, ShieldCheck, FileSpreadsheet } from 'lucide-react'
 import { exportToExcel, todayStamp } from '@/lib/excel-export'
-import { getCurrentAnnoSocialeStart, getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
+import { getCurrentAnnoSocialeStart, getAnnoSocialeRange, getAnniSociali } from '@/lib/anno-sociale'
 
 // Prospetto "Ruoli di leadership del club" (da Statuto LCI).
 // Template a righe fisse: per il club selezionato mostra chi ricopre ogni
@@ -70,7 +70,8 @@ type RenderRow = { label: string; off: Off | null }
 export default function QuadroRuoliClubPage() {
   const [clubs, setClubs] = useState<string[]>([])
   const [clubSel, setClubSel] = useState<string[]>([])
-  const [anno, setAnno] = useState<number>(getCurrentAnnoSocialeStart())
+  const anniOpzioni = useMemo(() => getAnniSociali(), [])
+  const [anniSociali, setAnniSociali] = useState<number[]>([getCurrentAnnoSocialeStart()])
   const [officers, setOfficers] = useState<Off[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -87,7 +88,7 @@ export default function QuadroRuoliClubPage() {
     if (!isClient) return
     if (!club) { setOfficers([]); return }
     loadOfficers()
-  }, [isClient, club, anno])
+  }, [isClient, club, anniSociali])
 
   async function loadClubs() {
     const { data } = await supabase.from('club').select('nome_club').range(0, 9999)
@@ -97,43 +98,32 @@ export default function QuadroRuoliClubPage() {
   async function loadOfficers() {
     setLoading(true)
     setError(null)
-    const { from, to } = getAnnoSocialeRange(anno)
-    // Incarichi del club attivi durante l'anno sociale (sovrapposizione mandato ↔ anno)
-    const offRes = await supabase
+    // Incarichi del club attivi durante gli anni sociali selezionati (sovrapposizione mandato ↔ finestra anni).
+    // Con più anni si usa la finestra [prima data inizio anno, ultima data fine anno].
+    let q = supabase
       .from('vista_officer_ricerca')
-      .select('id_incarico, matricola_socio, titolo_ufficiale, nome, cognome, data_inizio, data_conclusione')
+      .select('id_incarico, matricola_socio, titolo_ufficiale, nome, cognome, data_inizio, data_conclusione, email, telefono')
       .eq('nome_club', club)
-      .or(`data_inizio.is.null,data_inizio.lte.${to}`)
-      .or(`data_conclusione.is.null,data_conclusione.gte.${from}`)
-      .range(0, 9999)
+    if (anniSociali.length) {
+      const ranges = anniSociali.map((y) => getAnnoSocialeRange(y))
+      const from = ranges.map((r) => r.from).sort()[0]
+      const to = ranges.map((r) => r.to).sort().slice(-1)[0]
+      q = q.or(`data_inizio.is.null,data_inizio.lte.${to}`).or(`data_conclusione.is.null,data_conclusione.gte.${from}`)
+    }
+    const offRes = await q.range(0, 9999)
 
     if (offRes.error) { setError('Errore nel caricamento. Riprova.'); setLoading(false); return }
     const rows = offRes.data ?? []
 
-    // Email + telefono dai soci (la vista officer non li contiene)
-    const matricole = [...new Set(rows.map((o: any) => o.matricola_socio).filter(Boolean))] as string[]
-    const contatti = new Map<string, { email: string | null; tel: string | null }>()
-    if (matricole.length) {
-      const sociRes = await supabase
-        .from('vista_soci_ricerca')
-        .select('matricola_socio, email_preferita, telefono_cellulare')
-        .in('matricola_socio', matricole)
-      for (const s of sociRes.data ?? []) {
-        contatti.set(String((s as any).matricola_socio), {
-          email: (s as any).email_preferita ?? null,
-          tel: (s as any).telefono_cellulare ?? null,
-        })
-      }
-    }
-
+    // Email (indirizzo vero) e telefono cellulare arrivano già dalla vista officer.
     setOfficers(rows.map((o: any) => ({
       id_incarico: o.id_incarico,
       matricola_socio: o.matricola_socio,
       titolo_ufficiale: o.titolo_ufficiale,
       nome: o.nome,
       cognome: o.cognome,
-      email: contatti.get(String(o.matricola_socio))?.email ?? null,
-      telefono: contatti.get(String(o.matricola_socio))?.tel ?? null,
+      email: o.email ?? null,
+      telefono: o.telefono ?? null,
     })))
     setLoading(false)
   }
@@ -164,7 +154,9 @@ export default function QuadroRuoliClubPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [officers])
 
-  const annoLabel = getAnnoSocialeRange(anno).label
+  const annoLabel = anniSociali.length
+    ? [...anniSociali].sort((a, b) => a - b).map((y) => getAnnoSocialeRange(y).label).join(', ')
+    : 'tutti gli anni'
 
   function esportaExcel() {
     const allRows = [
@@ -247,14 +239,13 @@ export default function QuadroRuoliClubPage() {
                 />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Anno sociale</p>
-                <select
-                  value={anno}
-                  onChange={(e) => setAnno(parseInt(e.target.value))}
-                  className="w-full h-9 px-3 text-sm rounded-md border border-input bg-background/50 outline-none focus:ring-1 focus:ring-ring"
-                >
-                  {getRecentAnniSociali(8).map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
-                </select>
+                <p className="text-[10px] text-muted-foreground mb-1">Anno sociale (uno o più)</p>
+                <MultiSelect
+                  options={anniOpzioni.map((a) => a.label)}
+                  selected={[...anniSociali].sort((a, b) => b - a).map((y) => getAnnoSocialeRange(y).label)}
+                  onChange={(labels) => setAnniSociali(labels.map((l) => anniOpzioni.find((a) => a.label === l)!.value))}
+                  placeholder="Anno sociale"
+                />
               </div>
             </div>
           </CardContent>

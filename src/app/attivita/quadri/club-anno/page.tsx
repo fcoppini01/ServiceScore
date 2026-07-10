@@ -11,11 +11,11 @@ import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ArrowLeft, Printer, Activity, FileSpreadsheet } from 'lucide-react'
 import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
-import { getCurrentAnnoSocialeStart, getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
+import { getCurrentAnnoSocialeStart, getAnnoSocialeRange, getAnniSociali } from '@/lib/anno-sociale'
 
 export default function QuadroClubAnnoPage() {
   const [club, setClub] = useState<string[]>([])
-  const anniOpzioni = useMemo(() => getRecentAnniSociali(8), [])
+  const anniOpzioni = useMemo(() => getAnniSociali(), [])
   const [anniSociali, setAnniSociali] = useState<number[]>([getCurrentAnnoSocialeStart()])
   const [clubs, setClubs] = useState<string[]>([])
   const [zone, setZone] = useState<string[]>([])

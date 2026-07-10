@@ -11,7 +11,7 @@ import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ArrowLeft, Printer, ShieldCheck, FileSpreadsheet } from 'lucide-react'
 import { exportToExcel, todayStamp } from '@/lib/excel-export'
-import { getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
+import { getAnnoSocialeRange, getAnniSociali } from '@/lib/anno-sociale'
 
 export default function QuadroIncarichiClubPage() {
   const [officer, setOfficer] = useState<any[]>([])
@@ -27,7 +27,7 @@ export default function QuadroIncarichiClubPage() {
   const [filtroZona, setFiltroZona] = useState<string[]>([])
   const [filtroCirc, setFiltroCirc] = useState<string[]>([])
   const [filtroDistretto, setFiltroDistretto] = useState<string[]>([])
-  const anniOpzioni = useMemo(() => getRecentAnniSociali(8), [])
+  const anniOpzioni = useMemo(() => getAnniSociali(), [])
   const [anniSociali, setAnniSociali] = useState<number[]>([])
   const [groupByTitolo, setGroupByTitolo] = useState(true)
   const DISTRETTI = ['108 LA']
@@ -61,7 +61,7 @@ export default function QuadroIncarichiClubPage() {
     setError(null)
     let query = supabase
       .from('vista_officer_ricerca')
-      .select('id_incarico, titolo_ufficiale, nome_club, club_zona, club_circoscrizione, nome, cognome, data_inizio, data_conclusione')
+      .select('id_incarico, titolo_ufficiale, nome_club, club_zona, club_circoscrizione, nome, cognome, data_inizio, data_conclusione, email, telefono')
     if (filtroTitolo.length) query = query.in('titolo_ufficiale', filtroTitolo)
     if (filtroClub.length) query = query.in('nome_club', filtroClub)
     if (filtroZona.length) query = query.in('club_zona', filtroZona)
@@ -116,6 +116,8 @@ export default function QuadroIncarichiClubPage() {
                 { header: 'Circoscrizione', accessor: (o: any) => o.club_circoscrizione },
                 { header: 'Cognome', accessor: (o: any) => o.cognome },
                 { header: 'Nome', accessor: (o: any) => o.nome },
+                { header: 'Email', accessor: (o: any) => o.email ?? '' },
+                { header: 'Telefono', accessor: (o: any) => o.telefono ?? '' },
               ],
               `officer_incarichi_${todayStamp()}`,
               'Incarichi'
@@ -210,6 +212,8 @@ export default function QuadroIncarichiClubPage() {
                           <TableHead className="whitespace-nowrap">Circ.</TableHead>
                           <TableHead>Cognome</TableHead>
                           <TableHead>Nome</TableHead>
+                          <TableHead className="whitespace-nowrap">Email</TableHead>
+                          <TableHead className="whitespace-nowrap">Telefono</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -220,6 +224,8 @@ export default function QuadroIncarichiClubPage() {
                             <TableCell className="text-xs whitespace-nowrap">{o.club_circoscrizione}</TableCell>
                             <TableCell className="font-medium whitespace-nowrap">{o.cognome}</TableCell>
                             <TableCell className="whitespace-nowrap">{o.nome}</TableCell>
+                            <TableCell className="text-xs">{o.email ?? ''}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap font-mono">{o.telefono ?? ''}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -238,6 +244,8 @@ export default function QuadroIncarichiClubPage() {
                       <TableHead className="whitespace-nowrap">Circ.</TableHead>
                       <TableHead>Cognome</TableHead>
                       <TableHead>Nome</TableHead>
+                      <TableHead className="whitespace-nowrap">Email</TableHead>
+                      <TableHead className="whitespace-nowrap">Telefono</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -249,6 +257,8 @@ export default function QuadroIncarichiClubPage() {
                         <TableCell className="text-xs whitespace-nowrap">{o.club_circoscrizione}</TableCell>
                         <TableCell className="font-medium whitespace-nowrap">{o.cognome}</TableCell>
                         <TableCell className="whitespace-nowrap">{o.nome}</TableCell>
+                        <TableCell className="text-xs">{o.email ?? ''}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap font-mono">{o.telefono ?? ''}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

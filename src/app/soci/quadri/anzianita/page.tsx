@@ -53,7 +53,7 @@ export default function QuadroAnzianitaPage() {
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, nome, cognome, data_ingresso, anzianita_lionistica, fascia_anzianita, club_zona, club_circoscrizione, nome_club')
+      .select('matricola_socio, nome, cognome, data_ingresso, anzianita_lionistica, fascia_anzianita, club_zona, club_circoscrizione, nome_club, email_preferita, telefono_cellulare')
       .not('anzianita_lionistica', 'is', null)
     if (anzMin) query = query.gte('anzianita_lionistica', parseInt(anzMin))
     if (anzMax) query = query.lte('anzianita_lionistica', parseInt(anzMax))
@@ -76,7 +76,7 @@ export default function QuadroAnzianitaPage() {
 
   return (
     <motion.main initial="hidden" animate="visible" variants={containerVariants} className="container mx-auto p-4 sm:p-8 print-area">
-      <motion.div variants={itemVariants} className="flex items-center justify-between mb-4 print-hide gap-2 flex-wrap">
+      <motion.div variants={itemVariants} className="flex items-center mb-4 print-hide gap-2 flex-wrap">
         <Link href="/soci">
           <Button variant="ghost" size="sm" className="text-xs">
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Soci
@@ -96,6 +96,8 @@ export default function QuadroAnzianitaPage() {
                 { header: 'Data ingresso', accessor: (s: any) => fmtDateIT(s.data_ingresso) },
                 { header: 'Anni anzianità', accessor: (s: any) => s.anzianita_lionistica },
                 { header: 'Fascia anzianità', accessor: (s: any) => s.fascia_anzianita },
+                { header: 'Email', accessor: (s: any) => s.email_preferita ?? '' },
+                { header: 'Telefono', accessor: (s: any) => s.telefono_cellulare ?? '' },
               ],
               `soci_anzianita_${todayStamp()}`,
               'Soci per anzianità'
@@ -190,6 +192,8 @@ export default function QuadroAnzianitaPage() {
                       <TableHead className="whitespace-nowrap">Data di Ingresso</TableHead>
                       <TableHead className="whitespace-nowrap text-right">Anni</TableHead>
                       <TableHead className="whitespace-nowrap">Fascia anzianità</TableHead>
+                      <TableHead className="whitespace-nowrap">Email</TableHead>
+                      <TableHead className="whitespace-nowrap">Telefono</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -201,6 +205,8 @@ export default function QuadroAnzianitaPage() {
                         <TableCell className="text-xs whitespace-nowrap">{formatDate(s.data_ingresso)}</TableCell>
                         <TableCell className="tabular-nums text-right whitespace-nowrap">{s.anzianita_lionistica}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{s.fascia_anzianita}</TableCell>
+                        <TableCell className="text-xs">{s.email_preferita ?? ''}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap font-mono">{s.telefono_cellulare ?? ''}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -24,3 +24,15 @@ export function getRecentAnniSociali(count = 6): { value: number; label: string 
     return { value: start, label: `${start}/${String(start + 1).slice(-2)}` }
   })
 }
+
+// Anni sociali selezionabili nei filtri dei prospetti: dal 2023/24 (primo anno con
+// dati dopo il reimport — i dati ante 1/7/2023 sono stati rimossi) fino al prossimo
+// anno sociale (i mandati officer futuri sono già presenti). Ordine decrescente.
+export function getAnniSociali(minStart = 2023): { value: number; label: string }[] {
+  const max = getCurrentAnnoSocialeStart() + 1
+  const out: { value: number; label: string }[] = []
+  for (let y = max; y >= minStart; y--) {
+    out.push({ value: y, label: `${y}/${String(y + 1).slice(-2)}` })
+  }
+  return out
+}

@@ -20,8 +20,15 @@ const RAPPORTI = [
   },
   {
     href: '/attivita/quadri/club-anno-amm-service',
-    title: 'Classificazione Amministrazione vs Service',
-    desc: 'Le stesse attività divise in due gruppi: Amministrazione (riunioni, direttivi) e Service (servizio alla comunità), con subtotali per ciascuno e totali complessivi.',
+    title: 'Classificazione Amministrazione vs Service — Dettagliato',
+    desc: 'Le stesse attività divise in due gruppi: Amministrazione (riunioni, direttivi) e Service (servizio alla comunità), con l’elenco completo, subtotali per ciascuno e totali complessivi.',
+    icon: Briefcase,
+    color: 'text-amber-600',
+  },
+  {
+    href: '/attivita/quadri/amm-service-totali',
+    title: 'Classificazione Amministrazione vs Service — Totalizzato',
+    desc: 'Solo i numeri: totale complessivo e subtotali Service / Amministrazione, senza l’elenco delle attività. Utile per una sintesi rapida da stampare.',
     icon: Briefcase,
     color: 'text-amber-600',
   },

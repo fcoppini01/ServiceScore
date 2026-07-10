@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Printer, Activity, FileSpreadsheet } from 'lucide-react'
 import { getArray, getString } from '@/lib/filters-url'
 import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
+import { getAnnoSocialeRange } from '@/lib/anno-sociale'
 
 const LABELS: Record<string, string> = {
   search: 'Cerca',
@@ -24,8 +25,7 @@ const LABELS: Record<string, string> = {
   rapportoCompleto: 'Rapporto completo',
   attivitaDistintiva: 'Attività distintiva',
   finanziateLcif: 'Finanziata LCIF',
-  dataInizioDa: 'Inizio dal', dataInizioA: 'Inizio al',
-  dataConclusioneDa: 'Fine dal', dataConclusioneA: 'Fine al',
+  anniSociali: 'Anno sociale',
   minPersone: 'Min persone', maxPersone: 'Max persone',
   minPersoneLimite: 'Min persone limite', maxPersoneLimite: 'Max persone limite',
   minVolontari: 'Min volontari', maxVolontari: 'Max volontari',
@@ -64,10 +64,7 @@ function StampaAttivitaInner() {
     rapportoCompleto: getString(sp, 'rapportoCompleto'),
     attivitaDistintiva: getString(sp, 'attivitaDistintiva'),
     finanziateLcif: getString(sp, 'finanziateLcif'),
-    dataInizioDa: getString(sp, 'dataInizioDa'),
-    dataInizioA: getString(sp, 'dataInizioA'),
-    dataConclusioneDa: getString(sp, 'dataConclusioneDa'),
-    dataConclusioneA: getString(sp, 'dataConclusioneA'),
+    anniSociali: getArray(sp, 'anniSociali'),
     minPersone: getString(sp, 'minPersone'), maxPersone: getString(sp, 'maxPersone'),
     minPersoneLimite: getString(sp, 'minPersoneLimite'), maxPersoneLimite: getString(sp, 'maxPersoneLimite'),
     minVolontari: getString(sp, 'minVolontari'), maxVolontari: getString(sp, 'maxVolontari'),
@@ -102,10 +99,10 @@ function StampaAttivitaInner() {
     if (filters.rapportoCompleto) q = q.eq('rapporto_completo', filters.rapportoCompleto === 'true')
     if (filters.attivitaDistintiva) q = q.eq('attivita_distintiva', filters.attivitaDistintiva === 'true')
     if (filters.finanziateLcif) q = q.eq('finanziata_lcif', filters.finanziateLcif === 'true')
-    if (filters.dataInizioDa) q = q.gte('data_inizio', filters.dataInizioDa)
-    if (filters.dataInizioA) q = q.lte('data_inizio', filters.dataInizioA)
-    if (filters.dataConclusioneDa) q = q.gte('data_conclusione', filters.dataConclusioneDa)
-    if (filters.dataConclusioneA) q = q.lte('data_conclusione', filters.dataConclusioneA)
+    if (filters.anniSociali.length) {
+      const orExpr = filters.anniSociali.map((y: string) => { const r = getAnnoSocialeRange(parseInt(y, 10)); return `and(data_inizio.gte.${r.from},data_inizio.lte.${r.to})` }).join(',')
+      q = q.or(orExpr)
+    }
     if (filters.minPersone) q = q.gte('persone_servite', parseFloat(filters.minPersone))
     if (filters.maxPersone) q = q.lte('persone_servite', parseFloat(filters.maxPersone))
     if (filters.minPersoneLimite) q = q.gte('persone_servite_limite', parseFloat(filters.minPersoneLimite))

@@ -54,7 +54,7 @@ export default function QuadroEtaPage() {
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, titolo, nome, cognome, data_nascita, eta, fascia_eta, club_zona, club_circoscrizione, nome_club')
+      .select('matricola_socio, titolo, nome, cognome, data_nascita, eta, fascia_eta, club_zona, club_circoscrizione, nome_club, email_preferita, telefono_cellulare')
       .not('eta', 'is', null)
     if (etaMin) query = query.gte('eta', parseInt(etaMin))
     if (etaMax) query = query.lte('eta', parseInt(etaMax))
@@ -78,7 +78,7 @@ export default function QuadroEtaPage() {
 
   return (
     <motion.main initial="hidden" animate="visible" variants={containerVariants} className="container mx-auto p-4 sm:p-8 print-area">
-      <motion.div variants={itemVariants} className="flex items-center justify-between mb-4 print-hide gap-2 flex-wrap">
+      <motion.div variants={itemVariants} className="flex items-center mb-4 print-hide gap-2 flex-wrap">
         <Link href="/soci">
           <Button variant="ghost" size="sm" className="text-xs">
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Soci
@@ -100,6 +100,8 @@ export default function QuadroEtaPage() {
                 { header: 'Data nascita', accessor: (s: any) => fmtDateIT(s.data_nascita) },
                 { header: 'Età', accessor: (s: any) => s.eta },
                 { header: "Fascia d'età", accessor: (s: any) => s.fascia_eta },
+                { header: 'Email', accessor: (s: any) => s.email_preferita ?? '' },
+                { header: 'Telefono', accessor: (s: any) => s.telefono_cellulare ?? '' },
               ],
               `soci_fasce_eta_${todayStamp()}`,
               'Soci per età'
@@ -196,6 +198,8 @@ export default function QuadroEtaPage() {
                       <TableHead className="whitespace-nowrap">Compleanno</TableHead>
                       <TableHead className="whitespace-nowrap text-right">Età</TableHead>
                       <TableHead className="whitespace-nowrap">Fascia</TableHead>
+                      <TableHead className="whitespace-nowrap">Email</TableHead>
+                      <TableHead className="whitespace-nowrap">Telefono</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -209,6 +213,8 @@ export default function QuadroEtaPage() {
                         <TableCell className="text-xs whitespace-nowrap">{formatDate(s.data_nascita)}</TableCell>
                         <TableCell className="tabular-nums text-right whitespace-nowrap">{s.eta}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{s.fascia_eta}</TableCell>
+                        <TableCell className="text-xs">{s.email_preferita ?? ''}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap font-mono">{s.telefono_cellulare ?? ''}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

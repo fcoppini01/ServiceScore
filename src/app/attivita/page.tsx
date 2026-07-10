@@ -15,7 +15,7 @@ import { containerVariants, itemVariants } from '@/lib/animations'
 import { ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, Activity, FileText, Printer, FileSpreadsheet } from 'lucide-react'
 import Link from 'next/link'
 import { filtersToQueryString } from '@/lib/filters-url'
-import { getAnnoSocialeRange, getRecentAnniSociali } from '@/lib/anno-sociale'
+import { getAnnoSocialeRange, getAnniSociali } from '@/lib/anno-sociale'
 import { exportToExcel, todayStamp, fmtDateIT } from '@/lib/excel-export'
 
 const PAGE_SIZE = 20
@@ -35,11 +35,8 @@ interface Filters {
   organizzazioneBeneficiata: string
   attivitaDistintiva: string
   finanziateLcif: string
-  // Advanced — Date
-  dataInizioDa: string
-  dataInizioA: string
-  dataConclusioneDa: string
-  dataConclusioneA: string
+  // Anno sociale (uno o più) — anni di inizio attività, formato start-year come stringa
+  anniSociali: string[]
   // Advanced — Impatto
   minPersone: string; maxPersone: string
   minPersoneLimite: string; maxPersoneLimite: string
@@ -63,24 +60,13 @@ const EMPTY_FILTERS: Filters = {
   club: [], zona: [], circoscrizione: [], distretto: [],
   tipoProgetto: [], livelloAttivita: [],
   organizzazioneBeneficiata: '', attivitaDistintiva: '', finanziateLcif: '',
-  dataInizioDa: '', dataInizioA: '', dataConclusioneDa: '', dataConclusioneA: '',
+  anniSociali: [],
   minPersone: '', maxPersone: '', minPersoneLimite: '', maxPersoneLimite: '',
   minVolontari: '', maxVolontari: '', minOre: '', maxOre: '', minOreCapped: '', maxOreCapped: '',
   minFondiDonati: '', maxFondiDonati: '', minFondiDonatiCapped: '', maxFondiDonatiCapped: '',
   minDonazioneLcif: '', maxDonazioneLcif: '', minFondiRaccolti: '', maxFondiRaccolti: '',
   minFondiRaccoltiCapped: '', maxFondiRaccoltiCapped: '',
   minAlberi: '', maxAlberi: '',
-}
-
-// Ricava l'anno sociale attualmente selezionato confrontando l'intervallo data inizio
-// con i range degli anni sociali; ritorna 'tutti' se non corrisponde a nessuno.
-function annoSocialeSelezionato(f: Filters): string {
-  if (!f.dataInizioDa || !f.dataInizioA) return 'tutti'
-  const match = getRecentAnniSociali(8).find((a) => {
-    const r = getAnnoSocialeRange(a.value)
-    return r.from === f.dataInizioDa && r.to === f.dataInizioA
-  })
-  return match ? String(match.value) : 'tutti'
 }
 
 function countAdvancedFilters(f: Filters) {
@@ -92,8 +78,7 @@ function countAdvancedFilters(f: Filters) {
   if (f.organizzazioneBeneficiata) c++
   if (f.attivitaDistintiva) c++
   if (f.finanziateLcif) c++
-  if (f.dataInizioDa || f.dataInizioA) c++
-  if (f.dataConclusioneDa || f.dataConclusioneA) c++
+  if (f.anniSociali.length) c++
   if (f.minPersone || f.maxPersone) c++
   if (f.minPersoneLimite || f.maxPersoneLimite) c++
   if (f.minVolontari || f.maxVolontari) c++
@@ -213,10 +198,11 @@ export default function AttivitaPage() {
     else if (filters.organizzazioneBeneficiata === 'ALTRO') q = q.not('organizzazione_beneficiata', 'is', null).not('organizzazione_beneficiata', 'ilike', '%lcif%')
     if (filters.attivitaDistintiva) q = q.eq('attivita_distintiva', filters.attivitaDistintiva === 'true')
     if (filters.finanziateLcif) q = q.eq('finanziata_lcif', filters.finanziateLcif === 'true')
-    if (filters.dataInizioDa) q = q.gte('data_inizio', filters.dataInizioDa)
-    if (filters.dataInizioA) q = q.lte('data_inizio', filters.dataInizioA)
-    if (filters.dataConclusioneDa) q = q.gte('data_conclusione', filters.dataConclusioneDa)
-    if (filters.dataConclusioneA) q = q.lte('data_conclusione', filters.dataConclusioneA)
+    // Anno sociale (uno o più): unione (OR) degli intervalli 1 lug → 30 giu sulla data inizio
+    if (filters.anniSociali.length) {
+      const orExpr = filters.anniSociali.map((y) => { const r = getAnnoSocialeRange(parseInt(y, 10)); return `and(data_inizio.gte.${r.from},data_inizio.lte.${r.to})` }).join(',')
+      q = q.or(orExpr)
+    }
     if (filters.minPersone) q = q.gte('persone_servite', parseFloat(filters.minPersone))
     if (filters.maxPersone) q = q.lte('persone_servite', parseFloat(filters.maxPersone))
     if (filters.minPersoneLimite) q = q.gte('persone_servite_limite', parseFloat(filters.minPersoneLimite))
@@ -382,22 +368,12 @@ export default function AttivitaPage() {
                 <MultiSelect options={zone} selected={filters.zona} onChange={(v) => upd({ zona: v })} placeholder="Zona" />
                 <MultiSelect options={circoscrizioni} selected={filters.circoscrizione} onChange={(v) => upd({ circoscrizione: v })} placeholder="Circoscrizione" />
                 <MultiSelect options={DISTRETTI} selected={filters.distretto} onChange={(v) => upd({ distretto: v })} placeholder="Distretto" />
-                <Select
-                  value={annoSocialeSelezionato(filters)}
-                  onValueChange={(v) => {
-                    if (!v || v === 'tutti') { upd({ dataInizioDa: '', dataInizioA: '' }); return }
-                    const r = getAnnoSocialeRange(parseInt(v, 10))
-                    upd({ dataInizioDa: r.from, dataInizioA: r.to })
-                  }}
-                >
-                  <SelectTrigger className="text-sm bg-background/50"><SelectValue placeholder="Anno sociale" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tutti">Tutti gli anni</SelectItem>
-                    {getRecentAnniSociali(8).map((a) => (
-                      <SelectItem key={a.value} value={String(a.value)}>{a.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <MultiSelect
+                  options={getAnniSociali().map((a) => a.label)}
+                  selected={filters.anniSociali.map((y) => getAnnoSocialeRange(parseInt(y, 10)).label)}
+                  onChange={(labels) => upd({ anniSociali: labels.map((l) => { const a = getAnniSociali().find((x) => x.label === l); return a ? String(a.value) : '' }).filter(Boolean) })}
+                  placeholder="Anno sociale (uno o più)"
+                />
               </div>
 
               <div>

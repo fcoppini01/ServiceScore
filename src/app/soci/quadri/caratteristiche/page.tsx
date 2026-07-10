@@ -60,7 +60,7 @@ export default function QuadroCaratteristichePage() {
     setError(null)
     let query = supabase
       .from('vista_soci_ricerca')
-      .select('matricola_socio, cognome, nome, categoria_socio, programma, nome_club, club_zona, club_circoscrizione')
+      .select('matricola_socio, cognome, nome, categoria_socio, programma, nome_club, club_zona, club_circoscrizione, email_preferita, telefono_cellulare')
     if (filtroClassif.length) query = query.in('categoria_socio', filtroClassif)
     if (filtroProg.length) query = query.in('programma', filtroProg)
     if (filtroZona.length) query = query.in('club_zona', filtroZona)
@@ -76,7 +76,7 @@ export default function QuadroCaratteristichePage() {
 
   return (
     <motion.main initial="hidden" animate="visible" variants={containerVariants} className="container mx-auto p-4 sm:p-8 print-area">
-      <motion.div variants={itemVariants} className="flex items-center justify-between mb-4 print-hide gap-2 flex-wrap">
+      <motion.div variants={itemVariants} className="flex items-center mb-4 print-hide gap-2 flex-wrap">
         <Link href="/soci">
           <Button variant="ghost" size="sm" className="text-xs">
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Soci
@@ -95,6 +95,8 @@ export default function QuadroCaratteristichePage() {
                 { header: 'Circoscrizione', accessor: (s: any) => s.club_circoscrizione ?? '' },
                 { header: 'Cognome', accessor: (s: any) => s.cognome },
                 { header: 'Nome', accessor: (s: any) => s.nome },
+                { header: 'Email', accessor: (s: any) => s.email_preferita ?? '' },
+                { header: 'Telefono', accessor: (s: any) => s.telefono_cellulare ?? '' },
               ],
               `soci_caratteristiche_${todayStamp()}`,
               'Caratteristiche'
@@ -121,16 +123,16 @@ export default function QuadroCaratteristichePage() {
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <MultiSelect options={CLASSIFICAZIONI} selected={filtroClassif} onChange={setFiltroClassif} placeholder="Classificazione (Effettivo, Fondatore…)" />
-              <MultiSelect options={programmi} selected={filtroProg} onChange={setFiltroProg} placeholder="Programma" />
-            </div>
-            {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto */}
+            {/* Filtri territoriali — ordine fisso Club, Zona, Circoscrizione, Distretto (sopra) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <MultiSelect options={clubs} selected={filtroClub} onChange={setFiltroClub} placeholder="Club" />
               <MultiSelect options={zone} selected={filtroZona} onChange={setFiltroZona} placeholder="Zona" />
               <MultiSelect options={circoscrizioni} selected={filtroCirc} onChange={setFiltroCirc} placeholder="Circoscrizione" />
               <MultiSelect options={['108 LA']} selected={[]} onChange={() => {}} placeholder="Distretto: 108 LA" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <MultiSelect options={CLASSIFICAZIONI} selected={filtroClassif} onChange={setFiltroClassif} placeholder="Classificazione (Effettivo, Fondatore…)" />
+              <MultiSelect options={programmi} selected={filtroProg} onChange={setFiltroProg} placeholder="Programma" />
             </div>
             {(filtroClassif.length + filtroProg.length + filtroZona.length + filtroCirc.length + filtroClub.length) > 0 && (
               <Button variant="outline" size="sm" onClick={() => { setFiltroClassif([]); setFiltroProg([]); setFiltroZona([]); setFiltroCirc([]); setFiltroClub([]) }} className="text-xs">Cancella filtri</Button>
@@ -166,6 +168,8 @@ export default function QuadroCaratteristichePage() {
                       <TableHead>Club</TableHead>
                       <TableHead>Cognome</TableHead>
                       <TableHead>Nome</TableHead>
+                      <TableHead className="whitespace-nowrap">Email</TableHead>
+                      <TableHead className="whitespace-nowrap">Telefono</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -176,6 +180,8 @@ export default function QuadroCaratteristichePage() {
                         <TableCell className="text-xs">{s.nome_club ?? ''}</TableCell>
                         <TableCell className="font-medium whitespace-nowrap">{s.cognome}</TableCell>
                         <TableCell className="whitespace-nowrap">{s.nome}</TableCell>
+                        <TableCell className="text-xs">{s.email_preferita ?? ''}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap font-mono">{s.telefono_cellulare ?? ''}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
