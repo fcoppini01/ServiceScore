@@ -27,6 +27,10 @@ Branch `main`, allineato a `origin/main`. Ultimi commit **già online**:
 - `65c0bb3` Officer: rimossa spunta "Solo incarichi attivi"; Attività: Distretto = tutte; rinomina titolo caratteristiche
 - `9e913ce` Rapporto caratteristiche soci: colonna Classificazione al posto di Tipo/Categoria
 
+## ✅ Sessione 2026-07-10 (parte 4) — pulsanti Excel/Stampa sotto il sottotitolo (committato)
+Layout uniformato su TUTTI i prospetti: i pulsanti **Excel / Stampa PDF** ora stanno in una riga **sotto il sottotitolo** (ordine: back link → titolo → sottotitolo → pulsanti → filtri), come nelle pagine principali (Elenco Soci/Attività/Officer). Prima erano nella barra in alto col link "Torna a…".
+Pagine toccate: `soci/quadri/eta`, `soci/quadri/anzianita`, `soci/quadri/caratteristiche`, `soci/stampa`, `officer/stampa`, `officer/quadri/incarichi-club`, `officer/quadri/ruoli-club`, `attivita/quadri/club-anno`, `attivita/quadri/club-anno-amm-service`, `attivita/quadri/amm-service-totali`. Le pagine principali erano già così.
+
 ## ✅ Sessione 2026-07-10 (parte 3) — email/telefono nelle stampe + rename filtro (committato)
 - **Email + Telefono aggiunti alle pagine di stampa separate**: `soci/stampa` (tabella PDF; Excel già li aveva) e `officer/stampa` (tabella PDF + Excel). Ora email/telefono sono presenti in tabella, stampa PDF ed Excel di **tutti** i rapporti soci/officer.
 - Filtri avanzati Soci: placeholder **"Fascia anzianità" → "Fascia anzianità lionistica"**.

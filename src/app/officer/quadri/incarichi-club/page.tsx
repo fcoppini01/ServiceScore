@@ -104,6 +104,19 @@ export default function QuadroIncarichiClubPage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Officer
           </Button>
         </Link>
+      </motion.div>
+
+      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
+        Classificazione degli Incarichi con le Nomine dai Club
+      </motion.h1>
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
+        Distretto Lions 108 LA · {officer.length} incarichi
+        {filtroZona.length > 0 && ` · Zone: ${filtroZona.join(', ')}`}
+        {filtroCirc.length > 0 && ` · Circoscrizioni: ${filtroCirc.join(', ')}`}
+        · Ordinati per titolo ufficiale e club
+      </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -133,16 +146,6 @@ export default function QuadroIncarichiClubPage() {
           </Button>
         </div>
       </motion.div>
-
-      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Classificazione degli Incarichi con le Nomine dai Club
-      </motion.h1>
-      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
-        Distretto Lions 108 LA · {officer.length} incarichi
-        {filtroZona.length > 0 && ` · Zone: ${filtroZona.join(', ')}`}
-        {filtroCirc.length > 0 && ` · Circoscrizioni: ${filtroCirc.join(', ')}`}
-        · Ordinati per titolo ufficiale e club
-      </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">

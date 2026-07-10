@@ -96,6 +96,16 @@ function StampaSociInner() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Soci
           </Button>
         </Link>
+      </div>
+
+      <h1 className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
+        Elenco Soci · Risultati Filtrati
+      </h1>
+      <p className="text-sm text-muted-foreground mb-3 print:text-black">
+        Distretto Lions 108 LA · {soci.length} soci trovati
+      </p>
+
+      <div className="mb-4 flex items-center gap-2 flex-wrap print-hide">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -135,13 +145,6 @@ function StampaSociInner() {
           </Button>
         </div>
       </div>
-
-      <h1 className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Elenco Soci · Risultati Filtrati
-      </h1>
-      <p className="text-sm text-muted-foreground mb-3 print:text-black">
-        Distretto Lions 108 LA · {soci.length} soci trovati
-      </p>
 
       {activeFilters.length > 0 && (
         <div className="mb-5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs print:border-black print:bg-transparent">

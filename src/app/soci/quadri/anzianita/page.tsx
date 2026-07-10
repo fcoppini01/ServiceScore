@@ -82,6 +82,16 @@ export default function QuadroAnzianitaPage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Soci
           </Button>
         </Link>
+      </motion.div>
+
+      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
+        Classificazione Soci per Anzianità Lionistica
+      </motion.h1>
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
+        Distretto Lions 108 LA · {soci.length} soci · Ordinati per anzianità decrescente
+      </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -113,13 +123,6 @@ export default function QuadroAnzianitaPage() {
           </Button>
         </div>
       </motion.div>
-
-      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Classificazione Soci per Anzianità Lionistica
-      </motion.h1>
-      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
-        Distretto Lions 108 LA · {soci.length} soci · Ordinati per anzianità decrescente
-      </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">

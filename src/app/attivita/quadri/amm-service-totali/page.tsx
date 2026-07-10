@@ -146,20 +146,12 @@ export default function QuadroAmmServiceTotaliPage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Rapporti Attività
           </Button>
         </Link>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
-            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
-          </Button>
-          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
-            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-          </Button>
-        </div>
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
         Classificazione Amministrazione vs Service — Totalizzato
       </motion.h1>
-      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
         {haSelezione ? (
           <><strong className="text-foreground print:text-black">
             {filtroDistretto.length > 0
@@ -172,6 +164,17 @@ export default function QuadroAmmServiceTotaliPage() {
           </strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {activities.length} attività ({amministrazione.length} Amministrazione, {service.length} Service)</>
         ) : 'Seleziona uno o più club (oppure zone, circoscrizioni o l’intero Distretto) per i totali'}
       </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
+            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          </Button>
+        </div>
+      </motion.div>
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">

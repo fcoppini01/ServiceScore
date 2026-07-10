@@ -206,6 +206,18 @@ export default function QuadroRuoliClubPage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Rapporti Officer
           </Button>
         </Link>
+      </motion.div>
+
+      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
+        Ruoli di Leadership del Club
+      </motion.h1>
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
+        {club
+          ? <>Club <strong className="text-foreground print:text-black">{club}</strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong></>
+          : 'Seleziona un club per generare il prospetto dei ruoli statutari (Officer di club da Statuto LCI)'}
+      </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={!club}>
             <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
@@ -215,15 +227,6 @@ export default function QuadroRuoliClubPage() {
           </Button>
         </div>
       </motion.div>
-
-      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Ruoli di Leadership del Club
-      </motion.h1>
-      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
-        {club
-          ? <>Club <strong className="text-foreground print:text-black">{club}</strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong></>
-          : 'Seleziona un club per generare il prospetto dei ruoli statutari (Officer di club da Statuto LCI)'}
-      </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">

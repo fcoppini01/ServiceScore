@@ -184,6 +184,26 @@ export default function QuadroClubAnnoAmmServicePage() {
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna ad Attività
           </Button>
         </Link>
+      </motion.div>
+
+      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
+        Classificazione Amministrazione vs Service — Dettagliato
+      </motion.h1>
+      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
+        {club.length > 0 || filtroZona.length > 0 || filtroCircoscrizione.length > 0 || filtroDistretto.length > 0 ? (
+          <><strong className="text-foreground print:text-black">
+            {filtroDistretto.length > 0
+              ? 'Tutto il Distretto 108 LA'
+              : club.length > 0
+                ? `${club.length} club selezionati`
+                : filtroZona.length > 0
+                  ? `Zone: ${filtroZona.join(', ')}`
+                  : `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`}
+          </strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {activities.length} attività ({amministrazione.length} Amministrazione, {service.length} Service)</>
+        ) : 'Seleziona uno o più club (oppure zone, circoscrizioni o l’intero Distretto) per visualizzare le attività'}
+      </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -219,23 +239,6 @@ export default function QuadroClubAnnoAmmServicePage() {
           </Button>
         </div>
       </motion.div>
-
-      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Classificazione Amministrazione vs Service — Dettagliato
-      </motion.h1>
-      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
-        {club.length > 0 || filtroZona.length > 0 || filtroCircoscrizione.length > 0 || filtroDistretto.length > 0 ? (
-          <><strong className="text-foreground print:text-black">
-            {filtroDistretto.length > 0
-              ? 'Tutto il Distretto 108 LA'
-              : club.length > 0
-                ? `${club.length} club selezionati`
-                : filtroZona.length > 0
-                  ? `Zone: ${filtroZona.join(', ')}`
-                  : `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`}
-          </strong> · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {activities.length} attività ({amministrazione.length} Amministrazione, {service.length} Service)</>
-        ) : 'Seleziona uno o più club (oppure zone, circoscrizioni o l’intero Distretto) per visualizzare le attività'}
-      </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
