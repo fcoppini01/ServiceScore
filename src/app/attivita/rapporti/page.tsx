@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
-import { ArrowLeft, FileText, Briefcase, Activity } from 'lucide-react'
+import { ArrowLeft, FileText, Briefcase, Activity, Coins } from 'lucide-react'
 
 // Pagina indice dei Rapporti Attività: raggruppa le classificazioni stampabili
 // per la sezione Attività. Sostituisce la lista "Quadri di Stampa" che era
@@ -38,6 +38,13 @@ const RAPPORTI = [
     desc: 'Prospetto a incrocio: per la selezione mostra Totale / Amministrazione / Service con attività, persone servite, volontari e ore (numeri e percentuali). Filtri per club, zona, circoscrizione, Distretto e anno sociale.',
     icon: Activity,
     color: 'text-orange-600',
+  },
+  {
+    href: '/attivita/quadri/donazioni-attivita',
+    title: 'Struttura Dati Donazioni e Attività per Club',
+    desc: 'Un blocco per ogni club (ordine alfabetico), con Totali Generali in testa: dati finanziari (donati, raccolti, % raccolti/donati) e ripartizione Totale / Amministrazione / Service in attività, persone, volontari e ore. Ogni valore con la % sul Totale Generale.',
+    icon: Coins,
+    color: 'text-emerald-600',
   },
 ]
 
