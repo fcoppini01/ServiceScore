@@ -50,7 +50,10 @@ export default function RegisterPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: callbackUrl.toString() }
+      // La matricola va anche nei metadati: il trigger handle_new_user collega
+      // l'account al socio in automatico, senza dipendere dal parametro nell'URL
+      // dell'email di conferma (che può perdersi). Lo staff @info01.it non la passa.
+      options: { emailRedirectTo: callbackUrl.toString(), data: m ? { matricola: m } : undefined }
     })
 
     if (error) {
