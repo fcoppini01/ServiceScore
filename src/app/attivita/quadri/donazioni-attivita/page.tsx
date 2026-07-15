@@ -187,20 +187,12 @@ export default function QuadroDonazioniAttivitaPage() {
 
   return (
     <motion.main initial="hidden" animate="visible" variants={containerVariants} className="container mx-auto p-4 sm:p-8 print-area print-landscape">
-      <motion.div variants={itemVariants} className="flex items-center justify-between mb-4 print-hide gap-2 flex-wrap">
+      <motion.div variants={itemVariants} className="mb-4 print-hide">
         <Link href="/attivita/rapporti">
           <Button variant="ghost" size="sm" className="text-xs">
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Torna a Rapporti Attività
           </Button>
         </Link>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
-            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
-          </Button>
-          <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
-            <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
-          </Button>
-        </div>
       </motion.div>
 
       <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
@@ -211,6 +203,15 @@ export default function QuadroDonazioniAttivitaPage() {
           ? <>{filtroDistretto.length > 0 ? 'Tutto il Distretto 108 LA' : club.length > 0 ? `${club.length} club` : filtroZona.length > 0 ? `Zone: ${filtroZona.join(', ')}` : `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`} · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {blocks.length} club · {activities.length} attività · <span className="italic">le percentuali sono sul Totale Generale</span></>
           : 'Seleziona un club, una zona, una circoscrizione o l’intero Distretto per generare il prospetto'}
       </motion.p>
+
+      <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
+        <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
+          <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+        </Button>
+        <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
+          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+        </Button>
+      </motion.div>
 
       <motion.div variants={itemVariants} className="mb-6 print-hide">
         <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
