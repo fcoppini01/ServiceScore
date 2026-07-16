@@ -57,7 +57,7 @@ export default function LoginPage() {
                 className="mb-4"
               >
                 <Image
-                  src="/logo_ufficiale.png"
+                  src="/logonuovodigitalions.png"
                   alt="Lions Club"
                   width={56}
                   height={56}

@@ -127,7 +127,7 @@ export default function Home() {
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl scale-150" />
               <Image
-                src="/logo_ufficiale.png"
+                src="/logonuovodigitalions.png"
                 alt="Lions Club"
                 width={80}
                 height={80}

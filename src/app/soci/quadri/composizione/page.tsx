@@ -33,7 +33,16 @@ const FASCE_ANZ = [
   { label: 'Over 20', test: (a: number) => a > 20 },
 ]
 
-type Socio = { eta: number | null; anzianita_lionistica: number | null }
+// Fasce di genere (diversità di genere richiesta dal Direttivo).
+// Tutto ciò che non è Maschio/Femmina (es. "Preferisco non rispondere" o vuoto)
+// confluisce in "Altro / N.D." per non perdere il socio dal totale.
+const FASCE_SESSO = [
+  { label: 'Uomini',      test: (s: string) => s === 'Maschio' },
+  { label: 'Donne',       test: (s: string) => s === 'Femmina' },
+  { label: 'Altro / N.D.', test: (s: string) => s !== 'Maschio' && s !== 'Femmina' },
+]
+
+type Socio = { eta: number | null; anzianita_lionistica: number | null; sesso: string | null }
 
 export default function QuadroComposizionePage() {
   const [clubs, setClubs] = useState<string[]>([])
@@ -74,7 +83,7 @@ export default function QuadroComposizionePage() {
     setError(null)
     let q = supabase
       .from('vista_soci_ricerca')
-      .select('eta, anzianita_lionistica, nome_club, club_zona, club_circoscrizione')
+      .select('eta, anzianita_lionistica, sesso, nome_club, club_zona, club_circoscrizione')
     // Distretto selezionato = tutti i soci (nessun filtro territoriale)
     if (filtroDistretto.length === 0) {
       if (filtroClub.length) q = q.in('nome_club', filtroClub)
@@ -99,6 +108,14 @@ export default function QuadroComposizionePage() {
   })), [soci])
   const totAnz = distAnz.reduce((s, f) => s + f.count, 0)
 
+  // Composizione per genere: il totale coincide sempre con i soci caricati
+  // (i valori mancanti finiscono in "Altro / N.D.").
+  const distSesso = useMemo(() => FASCE_SESSO.map(f => ({
+    label: f.label,
+    count: soci.filter(s => f.test((s.sesso ?? '').trim())).length,
+  })), [soci])
+  const totSesso = distSesso.reduce((s, f) => s + f.count, 0)
+
   const totSoci = soci.length
 
   const ambitoLabel = filtroDistretto.length > 0
@@ -117,6 +134,8 @@ export default function QuadroComposizionePage() {
       { tipo: "Fasce d'Età", fascia: 'Totale', q: totEta, pct: '100%' },
       ...distAnz.map(f => ({ tipo: 'Anzianità Lionistica', fascia: f.label, q: f.count, pct: totAnz > 0 ? `${((f.count / totAnz) * 100).toFixed(1)}%` : '—' })),
       { tipo: 'Anzianità Lionistica', fascia: 'Totale', q: totAnz, pct: '100%' },
+      ...distSesso.map(f => ({ tipo: 'Genere', fascia: f.label, q: f.count, pct: totSesso > 0 ? `${((f.count / totSesso) * 100).toFixed(1)}%` : '—' })),
+      { tipo: 'Genere', fascia: 'Totale', q: totSesso, pct: '100%' },
     ]
     exportToExcel(
       rows,
@@ -293,6 +312,45 @@ export default function QuadroComposizionePage() {
                       Nota: {totSoci - totAnz} {totSoci - totAnz === 1 ? 'socio non ha' : 'soci non hanno'} la data di ingresso registrata
                     </p>
                   )}
+                </div>
+
+                {/* Tabella 3: Composizione per genere */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <span className="inline-block w-1 h-4 bg-purple-500 rounded-full" />
+                    Composizione per Sesso
+                  </h3>
+                  <div className="overflow-x-auto rounded-lg border border-border/50">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/40">
+                          <th className="text-left px-3 py-2 font-semibold text-xs uppercase text-muted-foreground border-r border-border/50">Fascia</th>
+                          {distSesso.map(f => (
+                            <th key={f.label} className="px-3 py-2 font-semibold text-xs uppercase text-muted-foreground text-center border-r border-border/50 last:border-r-0">{f.label}</th>
+                          ))}
+                          <th className="px-3 py-2 font-semibold text-xs uppercase text-purple-700 dark:text-purple-400 text-center bg-purple-500/5">Totale</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-t border-border/50">
+                          <td className="px-3 py-2 font-medium text-xs text-muted-foreground border-r border-border/50">Quantità</td>
+                          {distSesso.map(f => (
+                            <td key={f.label} className="px-3 py-2 text-center tabular-nums font-semibold border-r border-border/50 last:border-r-0">{f.count}</td>
+                          ))}
+                          <td className="px-3 py-2 text-center tabular-nums font-bold bg-purple-500/5 text-purple-700 dark:text-purple-400">{totSesso}</td>
+                        </tr>
+                        <tr className="border-t border-border/50 bg-muted/20">
+                          <td className="px-3 py-2 font-medium text-xs text-muted-foreground border-r border-border/50">%</td>
+                          {distSesso.map(f => (
+                            <td key={f.label} className="px-3 py-2 text-center tabular-nums text-xs text-muted-foreground border-r border-border/50 last:border-r-0">
+                              {totSesso > 0 ? `${((f.count / totSesso) * 100).toFixed(1)}%` : '—'}
+                            </td>
+                          ))}
+                          <td className="px-3 py-2 text-center tabular-nums text-xs font-bold bg-purple-500/10 text-purple-700 dark:text-purple-400">100%</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </>
             )}

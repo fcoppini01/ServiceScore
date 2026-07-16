@@ -24,6 +24,8 @@ type Att = {
   persone_servite_limite: number | null
   totale_volontari: number | null
   totale_ore_servizio_capped: number | null
+  fondi_donati_usd_capped: number | null
+  fondi_raccolti_usd_capped: number | null
 }
 
 const fmtNum = (n: number) => n.toLocaleString('it-IT', { maximumFractionDigits: 0 })
@@ -35,7 +37,9 @@ function aggregate(rows: Att[]) {
     persone: acc.persone + (Number(r.persone_servite_limite) || 0),
     volontari: acc.volontari + (Number(r.totale_volontari) || 0),
     ore: acc.ore + (Number(r.totale_ore_servizio_capped) || 0),
-  }), { n: 0, persone: 0, volontari: 0, ore: 0 })
+    donati: acc.donati + (Number(r.fondi_donati_usd_capped) || 0),
+    raccolti: acc.raccolti + (Number(r.fondi_raccolti_usd_capped) || 0),
+  }), { n: 0, persone: 0, volontari: 0, ore: 0, donati: 0, raccolti: 0 })
 }
 
 export default function QuadroSintesiClubPage() {
@@ -79,7 +83,7 @@ export default function QuadroSintesiClubPage() {
     setError(null)
     let q = supabase
       .from('vista_report_ricerca')
-      .select('causa, persone_servite_limite, totale_volontari, totale_ore_servizio_capped, sponsor_nome_account, sponsor_zona, sponsor_circoscrizione')
+      .select('causa, persone_servite_limite, totale_volontari, totale_ore_servizio_capped, fondi_donati_usd_capped, fondi_raccolti_usd_capped, sponsor_nome_account, sponsor_zona, sponsor_circoscrizione')
     // Anno sociale multi-selezione: unione (OR) degli intervalli 1 lug → 30 giu
     if (anniSociali.length) {
       const orExpr = anniSociali.map((y) => { const { from, to } = getAnnoSocialeRange(y); return `and(data_inizio.gte.${from},data_inizio.lte.${to})` }).join(',')
@@ -123,6 +127,8 @@ export default function QuadroSintesiClubPage() {
       persN: a.persone, persPct: fmtPct(a.persone, totals.tot.persone),
       volN: a.volontari, volPct: fmtPct(a.volontari, totals.tot.volontari),
       oreN: a.ore, orePct: fmtPct(a.ore, totals.tot.ore),
+      donN: a.donati, donPct: fmtPct(a.donati, totals.tot.donati),
+      racN: a.raccolti, racPct: fmtPct(a.raccolti, totals.tot.raccolti),
     })
     const data = [
       riga('Totale Attività', totals.tot),
@@ -141,6 +147,10 @@ export default function QuadroSintesiClubPage() {
         { header: 'Volontari %', accessor: (r: any) => r.volPct },
         { header: 'Ore N°', accessor: (r: any) => r.oreN },
         { header: 'Ore %', accessor: (r: any) => r.orePct },
+        { header: 'Donati ($)', accessor: (r: any) => r.donN },
+        { header: 'Donati %', accessor: (r: any) => r.donPct },
+        { header: 'Raccolti ($)', accessor: (r: any) => r.racN },
+        { header: 'Raccolti %', accessor: (r: any) => r.racPct },
       ],
       `sintesi_attivita_club_${todayStamp()}`,
       'Sintesi Amm vs Service'
@@ -239,7 +249,9 @@ export default function QuadroSintesiClubPage() {
                       <th colSpan={2} className="text-center px-3 py-2 font-semibold text-xs uppercase text-muted-foreground border-r border-border/50">Attività</th>
                       <th colSpan={2} className="text-center px-3 py-2 font-semibold text-xs uppercase text-muted-foreground border-r border-border/50">Persone Servite</th>
                       <th colSpan={2} className="text-center px-3 py-2 font-semibold text-xs uppercase text-muted-foreground border-r border-border/50">Totale Volontari</th>
-                      <th colSpan={2} className="text-center px-3 py-2 font-semibold text-xs uppercase text-muted-foreground">Ore Volontari</th>
+                      <th colSpan={2} className="text-center px-3 py-2 font-semibold text-xs uppercase text-muted-foreground border-r border-border/50">Ore Volontari</th>
+                      <th colSpan={2} className="text-center px-3 py-2 font-semibold text-xs uppercase text-muted-foreground border-r border-border/50">Donati ($)</th>
+                      <th colSpan={2} className="text-center px-3 py-2 font-semibold text-xs uppercase text-muted-foreground">Raccolti ($)</th>
                     </tr>
                     <tr className="bg-muted/20 text-[10px] uppercase text-muted-foreground">
                       <th className="px-3 py-1 text-center font-semibold">N°</th>
@@ -249,6 +261,10 @@ export default function QuadroSintesiClubPage() {
                       <th className="px-3 py-1 text-center font-semibold">N°</th>
                       <th className="px-3 py-1 text-center font-semibold border-r border-border/50">%</th>
                       <th className="px-3 py-1 text-center font-semibold">N°</th>
+                      <th className="px-3 py-1 text-center font-semibold border-r border-border/50">%</th>
+                      <th className="px-3 py-1 text-center font-semibold">$</th>
+                      <th className="px-3 py-1 text-center font-semibold border-r border-border/50">%</th>
+                      <th className="px-3 py-1 text-center font-semibold">$</th>
                       <th className="px-3 py-1 text-center font-semibold">%</th>
                     </tr>
                   </thead>
@@ -263,6 +279,10 @@ export default function QuadroSintesiClubPage() {
                       <td className="px-3 py-2 text-center tabular-nums font-bold">{fmtNum(totals.tot.volontari)}</td>
                       <td className="px-3 py-2 text-center tabular-nums font-bold border-r border-border/50">100%</td>
                       <td className="px-3 py-2 text-center tabular-nums font-bold">{fmtNum(totals.tot.ore)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums font-bold border-r border-border/50">100%</td>
+                      <td className="px-3 py-2 text-center tabular-nums font-bold">{fmtNum(totals.tot.donati)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums font-bold border-r border-border/50">100%</td>
+                      <td className="px-3 py-2 text-center tabular-nums font-bold">{fmtNum(totals.tot.raccolti)}</td>
                       <td className="px-3 py-2 text-center tabular-nums font-bold">100%</td>
                     </tr>
                     {/* Amministrazione */}
@@ -280,7 +300,11 @@ export default function QuadroSintesiClubPage() {
                       <td className="px-3 py-2 text-center tabular-nums">{fmtNum(totals.amm.volontari)}</td>
                       <td className="px-3 py-2 text-center tabular-nums text-muted-foreground border-r border-border/50">{fmtPct(totals.amm.volontari, totals.tot.volontari)}</td>
                       <td className="px-3 py-2 text-center tabular-nums">{fmtNum(totals.amm.ore)}</td>
-                      <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{fmtPct(totals.amm.ore, totals.tot.ore)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums text-muted-foreground border-r border-border/50">{fmtPct(totals.amm.ore, totals.tot.ore)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums">{fmtNum(totals.amm.donati)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums text-muted-foreground border-r border-border/50">{fmtPct(totals.amm.donati, totals.tot.donati)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums">{fmtNum(totals.amm.raccolti)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{fmtPct(totals.amm.raccolti, totals.tot.raccolti)}</td>
                     </tr>
                     {/* Service */}
                     <tr className="border-t border-border/50 bg-muted/10">
@@ -297,7 +321,11 @@ export default function QuadroSintesiClubPage() {
                       <td className="px-3 py-2 text-center tabular-nums">{fmtNum(totals.ser.volontari)}</td>
                       <td className="px-3 py-2 text-center tabular-nums text-muted-foreground border-r border-border/50">{fmtPct(totals.ser.volontari, totals.tot.volontari)}</td>
                       <td className="px-3 py-2 text-center tabular-nums">{fmtNum(totals.ser.ore)}</td>
-                      <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{fmtPct(totals.ser.ore, totals.tot.ore)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums text-muted-foreground border-r border-border/50">{fmtPct(totals.ser.ore, totals.tot.ore)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums">{fmtNum(totals.ser.donati)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums text-muted-foreground border-r border-border/50">{fmtPct(totals.ser.donati, totals.tot.donati)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums">{fmtNum(totals.ser.raccolti)}</td>
+                      <td className="px-3 py-2 text-center tabular-nums text-muted-foreground">{fmtPct(totals.ser.raccolti, totals.tot.raccolti)}</td>
                     </tr>
                   </tbody>
                 </table>

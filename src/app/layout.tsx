@@ -26,9 +26,9 @@ export const metadata: Metadata = {
   },
   description: "Sistema gestionale per i Lions Club Distretto 108 LA",
   icons: {
-    icon: "/logo_ufficiale.png",
-    shortcut: "/logo_ufficiale.png",
-    apple: "/logo_ufficiale.png",
+    icon: "/logonuovodigitalions.png",
+    shortcut: "/logonuovodigitalions.png",
+    apple: "/logonuovodigitalions.png",
   },
   openGraph: {
     title: "DigitaLions - Lions Club",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     siteName: "DigitaLions",
     images: [
       {
-        url: "/logo_ufficiale.png",
+        url: "/logonuovodigitalions.png",
         width: 1200,
         height: 630,
         alt: "Lions Club Logo",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DigitaLions - Lions Club",
     description: "Sistema gestionale per i Lions Club Distretto 108 LA",
-    images: ["/logo_ufficiale.png"],
+    images: ["/logonuovodigitalions.png"],
   },
 };
 

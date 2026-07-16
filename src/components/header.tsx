@@ -48,6 +48,10 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    href: "/fascicoli",
+    label: "Fascicoli per Club",
+  },
+  {
     href: "/sfida-leoni",
     label: "Sfida dei Leoni",
   },
@@ -173,7 +177,7 @@ export function Header() {
         >
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <Image
-              src="/logo_ufficiale.png"
+              src="/logonuovodigitalions.png"
               alt="Lions Club"
               width={26}
               height={26}

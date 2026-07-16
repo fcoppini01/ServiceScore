@@ -45,7 +45,7 @@ export function Footer() {
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           >
             <Image
-              src="/logo_ufficiale.png"
+              src="/logonuovodigitalions.png"
               alt="Lions Logo"
               width={30}
               height={30}

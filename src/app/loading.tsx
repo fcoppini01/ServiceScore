@@ -77,7 +77,7 @@ export default function Loading() {
             }}
           >
             <Image 
-              src="/logo_ufficiale.png" 
+              src="/logonuovodigitalions.png" 
               alt="Lions Club"
               fill
               className="object-contain"
