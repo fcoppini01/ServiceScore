@@ -595,8 +595,8 @@ export default function AttivitaPage() {
                         <span><span className="font-medium text-foreground">{att.totale_volontari ?? 0}</span> volontari</span>
                         <span><span className="font-medium text-foreground">{att.totale_ore_servizio ?? 0}</span> ore</span>
                         {att.alberi_piantati > 0 && <span><span className="font-medium text-foreground">{att.alberi_piantati}</span> alberi</span>}
-                        <span>raccolti <span className="font-medium text-foreground tabular-nums">€{att.totale_fondi_raccolti ?? 0}</span></span>
-                        {att.totale_fondi_donati > 0 && <span>donati <span className="font-medium text-foreground tabular-nums">€{att.totale_fondi_donati}</span></span>}
+                        <span>raccolti <span className="font-medium text-foreground tabular-nums">$ {Number(att.totale_fondi_raccolti ?? 0).toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span></span>
+                        {att.totale_fondi_donati > 0 && <span>donati <span className="font-medium text-foreground tabular-nums">$ {Number(att.totale_fondi_donati).toLocaleString('it-IT', { maximumFractionDigits: 0 })}</span></span>}
                       </div>
                       {att.data_inizio && (
                         <div className="text-[10px] text-muted-foreground pt-1">
@@ -649,8 +649,8 @@ export default function AttivitaPage() {
                           <TableCell className="text-sm tabular-nums text-right">{att.persone_servite ?? 0}</TableCell>
                           <TableCell className="text-sm tabular-nums text-right">{att.totale_volontari ?? 0}</TableCell>
                           <TableCell className="text-sm tabular-nums text-right">{att.totale_ore_servizio ?? 0}</TableCell>
-                          <TableCell className="text-sm tabular-nums text-right">€{att.totale_fondi_donati ?? 0}</TableCell>
-                          <TableCell className="text-sm tabular-nums text-right">€{att.totale_fondi_raccolti ?? 0}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-right">$ {Number(att.totale_fondi_donati ?? 0).toLocaleString('it-IT', { maximumFractionDigits: 0 })}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-right">$ {Number(att.totale_fondi_raccolti ?? 0).toLocaleString('it-IT', { maximumFractionDigits: 0 })}</TableCell>
                           <TableCell className="text-sm tabular-nums text-right">{att.alberi_piantati ?? 0}</TableCell>
                         </tr>
                       ))}
