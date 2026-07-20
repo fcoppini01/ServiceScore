@@ -154,9 +154,12 @@ function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub;
           grafico (public/copertina-fascicolo.png) SENZA nome club; il nome del club
           viene scritto dinamicamente qui sopra, sotto "Report di Conoscenza (Mod.2)". */}
       <div
-        className="relative w-full mx-auto max-w-[620px] rounded-lg overflow-hidden shadow-sm mb-8 [container-type:inline-size] print:shadow-none print:max-w-none print:rounded-none print:mb-0 print:break-after-page"
-        style={{ aspectRatio: '1500 / 2167', backgroundColor: '#eceff2', backgroundImage: "url('/copertina-fascicolo.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+        className="relative w-full mx-auto max-w-[620px] rounded-lg overflow-hidden shadow-sm mb-8 bg-[#eceff2] [container-type:inline-size] print:shadow-none print:rounded-none print:mb-0 print:w-auto print:max-w-none print:h-[265mm] print:mx-auto print:break-after-page"
+        style={{ aspectRatio: '1728 / 2496' }}
       >
+        {/* <img> (non background CSS) così la copertina viene inclusa nella stampa PDF */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/copertina-fascicolo.png" alt="Copertina fascicolo di club" className="absolute inset-0 h-full w-full object-cover" />
         <span className="absolute left-[11.5%] top-[62.5%] italic font-extrabold text-white text-[4cqw] leading-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
           Lions Club {clubTitolo}
         </span>

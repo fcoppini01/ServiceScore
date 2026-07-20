@@ -228,8 +228,8 @@ function StampaAttivitaInner() {
             <span><strong className="tabular-nums">{fmtNum(totali.persone)}</strong> persone servite</span>
             <span><strong className="tabular-nums">{fmtNum(totali.volontari)}</strong> volontari</span>
             <span><strong className="tabular-nums">{fmtNum(totali.ore)}</strong> ore servizio</span>
-            <span>€ <strong className="tabular-nums">{fmtNum(totali.donati)}</strong> donati</span>
-            <span>€ <strong className="tabular-nums">{fmtNum(totali.raccolti)}</strong> raccolti</span>
+            <span>$ <strong className="tabular-nums">{fmtNum(totali.donati)}</strong> donati</span>
+            <span>$ <strong className="tabular-nums">{fmtNum(totali.raccolti)}</strong> raccolti</span>
           </div>
         </div>
       )}
@@ -263,8 +263,8 @@ function StampaAttivitaInner() {
                     <TableHead className="text-right">Persone</TableHead>
                     <TableHead className="text-right">Volont.</TableHead>
                     <TableHead className="text-right">Ore</TableHead>
-                    <TableHead className="text-right">€ Donati</TableHead>
-                    <TableHead className="text-right">€ Raccolti</TableHead>
+                    <TableHead className="text-right">Donati ($)</TableHead>
+                    <TableHead className="text-right">Raccolti ($)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -289,8 +289,8 @@ function StampaAttivitaInner() {
                     <TableCell className="text-right tabular-nums">{fmtNum(totali.persone)}</TableCell>
                     <TableCell className="text-right tabular-nums">{fmtNum(totali.volontari)}</TableCell>
                     <TableCell className="text-right tabular-nums">{fmtNum(totali.ore)}</TableCell>
-                    <TableCell className="text-right tabular-nums">€ {fmtNum(totali.donati)}</TableCell>
-                    <TableCell className="text-right tabular-nums">€ {fmtNum(totali.raccolti)}</TableCell>
+                    <TableCell className="text-right tabular-nums">$ {fmtNum(totali.donati)}</TableCell>
+                    <TableCell className="text-right tabular-nums">$ {fmtNum(totali.raccolti)}</TableCell>
                   </TableRow>
                 </TableBody>
               </table>
