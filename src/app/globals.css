@@ -239,6 +239,17 @@ body:has(.print-landscape) {
     overflow: visible !important;
     text-overflow: clip !important;
   }
+  /* Nome club sulla copertina di stampa (fascicoli): l'immagine di sfondo è
+     già pre-ruotata di 90° (copertina-fascicolo-landscape.png), quindi anche
+     il testo overlay va ruotato -90° (stesso verso, senso antiorario) per
+     restare allineato alla grafica. Posizione ricalcolata dal punto originale
+     (11.5%, 62.5%) della copertina verticale, ruotato nel nuovo riferimento
+     orizzontale: new_left = old_top, new_top = 1 - old_left. */
+  .copertina-print-label {
+    left: 62.5%;
+    top: 88.5%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+  }
 }
 
 /* Performance rapporti/stampe con migliaia di righe: a SCHERMO il browser
