@@ -152,17 +152,22 @@ function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub;
     <section className={primo ? '' : 'print:break-before-page'}>
       {/* Copertina del fascicolo (una pagina intera per club). Lo sfondo è il template
           grafico (public/copertina-fascicolo.png) SENZA nome club; il nome del club
-          viene scritto dinamicamente qui sopra, sotto "Report di Conoscenza (Mod.2)". */}
-      <div
-        className="relative w-full mx-auto max-w-[620px] rounded-lg overflow-hidden shadow-sm mb-8 bg-[#eceff2] [container-type:inline-size] print:shadow-none print:rounded-none print:mb-0 print:w-auto print:max-w-none print:h-[265mm] print:mx-auto print:break-after-page"
-        style={{ aspectRatio: '1728 / 2496' }}
-      >
-        {/* <img> (non background CSS) così la copertina viene inclusa nella stampa PDF */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/copertina-fascicolo.png" alt="Copertina fascicolo di club" className="absolute inset-0 h-full w-full object-cover" />
-        <span className="absolute left-[11.5%] top-[62.5%] italic font-extrabold text-white text-[4cqw] leading-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
-          Lions Club {clubTitolo}
-        </span>
+          viene scritto dinamicamente qui sopra, sotto "Report di Conoscenza (Mod.2)".
+          La stampa resta A4 landscape (come il resto del fascicolo): la copertina,
+          disegnata in verticale, viene ruotata di 90° per riempire l'intera pagina
+          orizzontale — va girato il foglio per leggerla, va bene così su richiesta. */}
+      <div className="print:relative print:w-full print:h-[194mm] print:break-after-page">
+        <div
+          className="relative w-full mx-auto max-w-[620px] rounded-lg overflow-hidden shadow-sm mb-8 bg-[#eceff2] [container-type:inline-size] print:shadow-none print:rounded-none print:mb-0 print:mx-0 print:max-w-none print:absolute print:top-1/2 print:left-1/2 print:w-[194mm] print:h-[281mm] print:[transform:translate(-50%,-50%)_rotate(90deg)]"
+          style={{ aspectRatio: '1728 / 2496' }}
+        >
+          {/* <img> (non background CSS) così la copertina viene inclusa nella stampa PDF */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/copertina-fascicolo.png" alt="Copertina fascicolo di club" className="absolute inset-0 h-full w-full object-cover" />
+          <span className="absolute left-[11.5%] top-[62.5%] italic font-extrabold text-white text-[4cqw] leading-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
+            Lions Club {clubTitolo}
+          </span>
+        </div>
       </div>
 
       <div className="mt-8 print:mt-0 mb-2 pb-2 border-b-2 border-primary print:border-black">
