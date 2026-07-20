@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { motion } from 'framer-motion'
 import { containerVariants, itemVariants } from '@/lib/animations'
 import { ArrowLeft, Printer, FolderOpen } from 'lucide-react'
@@ -145,13 +144,27 @@ function SezioneTitolo({ n, title }: { n: string; title: string }) {
 }
 
 // --- Blocco fascicolo di un singolo club ---
-function FascicoloBlock({ f, annoConcluso, annoNomine, primo }: { f: FascicoloClub; annoConcluso: string; annoNomine: string; primo: boolean }) {
+function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub; anniLabel: string; annoNomine: string; primo: boolean }) {
   const tri = f.triennio
+  // Nome club in "Title Case" per adattarsi allo stile della copertina (es. "Pontedera").
+  const clubTitolo = f.club.toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase())
   return (
     <section className={primo ? '' : 'print:break-before-page'}>
+      {/* Copertina del fascicolo (una pagina intera per club). Lo sfondo è il template
+          grafico (public/copertina-fascicolo.png) SENZA nome club; il nome del club
+          viene scritto dinamicamente qui sopra, sotto "Report di Conoscenza (Mod.2)". */}
+      <div
+        className="relative w-full mx-auto max-w-[620px] rounded-lg overflow-hidden shadow-sm mb-8 [container-type:inline-size] print:shadow-none print:max-w-none print:rounded-none print:mb-0 print:break-after-page"
+        style={{ aspectRatio: '1500 / 2167', backgroundColor: '#eceff2', backgroundImage: "url('/copertina-fascicolo.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
+        <span className="absolute left-[11.5%] top-[56.5%] italic font-extrabold text-white text-[4.2cqw] leading-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
+          Lions Club {clubTitolo}
+        </span>
+      </div>
+
       <div className="mt-8 print:mt-0 mb-2 pb-2 border-b-2 border-primary print:border-black">
         <h2 className="text-xl font-bold print:text-black">Fascicolo Club {f.club}</h2>
-        <p className="text-xs text-muted-foreground print:text-black">{f.totSoci} soci · Anno concluso {annoConcluso} · Nomine anno in corso {annoNomine}</p>
+        <p className="text-xs text-muted-foreground print:text-black">{f.totSoci} soci · Anni sociali {anniLabel} · Nomine anno in corso {annoNomine}</p>
       </div>
 
       {/* Sez. 1 - Composizione */}
@@ -222,7 +235,7 @@ function FascicoloBlock({ f, annoConcluso, annoNomine, primo }: { f: FascicoloCl
       </p>
 
       {/* Sez. 4 - Attività */}
-      <SezioneTitolo n="Mod. 2 - Sez. 4" title={`Attività dell'anno sociale concluso ${annoConcluso} — Amministrazione vs Service`} />
+      <SezioneTitolo n="Mod. 2 - Sez. 4" title={`Attività degli anni sociali ${anniLabel} — Amministrazione vs Service`} />
       <div className="mb-3"><TotaliBox label="Totali complessivi (Service + Amministrazione)" t={f.totComplessivi} accent /></div>
       <div className="mb-2"><TotaliBox label="Subtotale Service" t={f.totService} /></div>
       <div className="mb-4"><AttivitaTable rows={f.service} label="Service" color="border-emerald-400" /></div>
@@ -292,8 +305,8 @@ export default function FascicoliPage() {
   const [filtroCirc, setFiltroCirc] = useState<string[]>([])
   const [filtroDistretto, setFiltroDistretto] = useState<string[]>([])
 
-  const anniOpzioni = useMemo(() => getAnniSociali().filter((a) => a.value <= getCurrentAnnoSocialeStart()), [])
-  const [annoConclusoStart, setAnnoConclusoStart] = useState<number>(getCurrentAnnoSocialeStart() - 1)
+  const anniOpzioni = useMemo(() => getAnniSociali(), [])
+  const [anniSociali, setAnniSociali] = useState<number[]>([getCurrentAnnoSocialeStart() - 1])
 
   const [fascicoli, setFascicoli] = useState<FascicoloClub[]>([])
   const [loading, setLoading] = useState(false)
@@ -332,7 +345,7 @@ export default function FascicoliPage() {
     if (clubSelezionati.length === 0) { setFascicoli([]); return }
     setLoading(true); setError(null)
     try {
-      const res = await buildFascicoli(clubSelezionati, annoConclusoStart)
+      const res = await buildFascicoli(clubSelezionati, anniSociali)
       setFascicoli(res)
     } catch {
       setError('Errore nella generazione dei fascicoli. Riprova.')
@@ -340,8 +353,11 @@ export default function FascicoliPage() {
     setLoading(false)
   }
 
-  const annoConcluso = getAnnoSocialeRange(annoConclusoStart).label
-  const annoNomine = getAnnoSocialeRange(annoConclusoStart + 1).label
+  const annoRif = anniSociali.length ? Math.max(...anniSociali) : getCurrentAnnoSocialeStart() - 1
+  const anniLabel = anniSociali.length
+    ? [...anniSociali].sort((a, b) => a - b).map((y) => getAnnoSocialeRange(y).label).join(', ')
+    : '—'
+  const annoNomine = getAnnoSocialeRange(annoRif + 1).label
 
   if (!isClient) return null
 
@@ -394,19 +410,17 @@ export default function FascicoliPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <p className="text-[10px] text-muted-foreground mb-1">Anno sociale concluso di riferimento</p>
-                <Select value={String(annoConclusoStart)} onValueChange={(v) => setAnnoConclusoStart(Number(v))}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {anniOpzioni.map((a) => (
-                      <SelectItem key={a.value} value={String(a.value)} className="text-xs">{a.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <p className="text-[10px] text-muted-foreground mb-1">Anno sociale (uno o più)</p>
+                <MultiSelect
+                  options={anniOpzioni.map((a) => a.label)}
+                  selected={[...anniSociali].sort((a, b) => b - a).map((y) => getAnnoSocialeRange(y).label)}
+                  onChange={(labels) => setAnniSociali(labels.map((l) => anniOpzioni.find((a) => a.label === l)!.value))}
+                  placeholder="Anno sociale"
+                />
               </div>
               <div className="flex items-end">
                 <p className="text-[10px] text-muted-foreground italic">
-                  Composizione e Attività si riferiscono all&apos;anno concluso <strong>{annoConcluso}</strong>; le Nomine all&apos;anno in corso <strong>{annoNomine}</strong>; il Riepilogo agli ultimi tre anni conclusi.
+                  La Sez. 4 (Attività) copre gli anni selezionati <strong>{anniLabel}</strong>. Le Nomine si riferiscono all&apos;anno in corso <strong>{annoNomine}</strong> e il Riepilogo agli ultimi tre anni conclusi rispetto al più recente selezionato.
                 </p>
               </div>
             </div>
@@ -428,7 +442,7 @@ export default function FascicoliPage() {
       ) : (
         <div>
           {fascicoli.map((f, i) => (
-            <FascicoloBlock key={f.club} f={f} annoConcluso={annoConcluso} annoNomine={annoNomine} primo={i === 0} />
+            <FascicoloBlock key={f.club} f={f} anniLabel={anniLabel} annoNomine={annoNomine} primo={i === 0} />
           ))}
         </div>
       )}

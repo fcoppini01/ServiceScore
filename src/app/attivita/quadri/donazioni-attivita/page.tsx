@@ -35,7 +35,17 @@ const fmt = (n: number) => Math.round(n).toLocaleString('it-IT')
 const pct = (v: number, den: number) => (den > 0 ? Math.round((v / den) * 100) : 0)
 const ratio = (racc: number, don: number) => (don > 0 ? (racc / don) * 100 : 0)
 
-type ClubBlock = { nome: string; tot: Agg; amm: Agg; srv: Agg }
+type YearBlock = { year: number; label: string; tot: Agg; amm: Agg; srv: Agg }
+type ClubBlock = { nome: string; tot: Agg; amm: Agg; srv: Agg; perYear: YearBlock[] }
+
+// Anno sociale (1 lug → 30 giu) a cui appartiene una data attività.
+function annoStartOf(d: string | null): number | null {
+  if (!d) return null
+  const y = parseInt(d.slice(0, 4), 10)
+  const m = parseInt(d.slice(5, 7), 10)
+  if (!y) return null
+  return m >= 7 ? y : y - 1
+}
 
 export default function QuadroDonazioniAttivitaPage() {
   const [club, setClub] = useState<string[]>([])
@@ -87,19 +97,34 @@ export default function QuadroDonazioniAttivitaPage() {
     setLoading(false)
   }
 
-  // Raggruppa per club → Totale/Amm/Service, ordinato alfabeticamente per nome club.
+  // Raggruppa per club → Totale/Amm/Service (somma anni) + ripartizione per singolo
+  // anno sociale. Ordinato alfabeticamente per nome club.
   const { blocks, grand } = useMemo(() => {
-    const map = new Map<string, ClubBlock>()
+    type Acc = ClubBlock & { years: Map<number, { tot: Agg; amm: Agg; srv: Agg }> }
+    const map = new Map<string, Acc>()
     const grand = { tot: zero(), amm: zero(), srv: zero() }
     for (const a of activities) {
       const nome = a.sponsor_nome_account || '—'
-      if (!map.has(nome)) map.set(nome, { nome, tot: zero(), amm: zero(), srv: zero() })
+      if (!map.has(nome)) map.set(nome, { nome, tot: zero(), amm: zero(), srv: zero(), perYear: [], years: new Map() })
       const b = map.get(nome)!
       const isAmm = a.causa === AMM
       add(b.tot, a); add(isAmm ? b.amm : b.srv, a)
       add(grand.tot, a); add(isAmm ? grand.amm : grand.srv, a)
+      const ay = annoStartOf(a.data_inizio)
+      if (ay != null) {
+        if (!b.years.has(ay)) b.years.set(ay, { tot: zero(), amm: zero(), srv: zero() })
+        const yb = b.years.get(ay)!
+        add(yb.tot, a); add(isAmm ? yb.amm : yb.srv, a)
+      }
     }
-    const blocks = [...map.values()].sort((x, y) => x.nome.localeCompare(y.nome, 'it'))
+    const blocks: ClubBlock[] = [...map.values()]
+      .sort((x, y) => x.nome.localeCompare(y.nome, 'it'))
+      .map((b) => ({
+        nome: b.nome, tot: b.tot, amm: b.amm, srv: b.srv,
+        perYear: [...b.years.entries()]
+          .sort((a, c) => a[0] - c[0])
+          .map(([year, v]) => ({ year, label: getAnnoSocialeRange(year).label, tot: v.tot, amm: v.amm, srv: v.srv })),
+      }))
     return { blocks, grand }
   }, [activities])
 
@@ -120,7 +145,15 @@ export default function QuadroDonazioniAttivitaPage() {
       racc_don: sez === 'Totale' ? Math.round(ratio(a.raccolti, a.donati)) : '',
     })
     push('TOTALI GENERALI', 'Totale', grand.tot); push('TOTALI GENERALI', 'Amministrazione', grand.amm); push('TOTALI GENERALI', 'Service', grand.srv)
-    blocks.forEach((b) => { push(b.nome, 'Totale', b.tot); push(b.nome, 'Amministrazione', b.amm); push(b.nome, 'Service', b.srv) })
+    blocks.forEach((b) => {
+      push(b.nome, 'Totale', b.tot); push(b.nome, 'Amministrazione', b.amm); push(b.nome, 'Service', b.srv)
+      if (anniSociali.length > 1 && b.perYear.length > 1) {
+        b.perYear.forEach((y) => {
+          const area = `${b.nome} · ${y.label}`
+          push(area, 'Totale', y.tot); push(area, 'Amministrazione', y.amm); push(area, 'Service', y.srv)
+        })
+      }
+    })
     exportToExcel(rows, [
       { header: 'Area / Club', accessor: (r: any) => r.area },
       { header: 'Sezione', accessor: (r: any) => r.sez },
@@ -141,7 +174,7 @@ export default function QuadroDonazioniAttivitaPage() {
   if (!isClient) return null
 
   // Blocco (Totali generali o singolo club): finanziario + tabella attività
-  function AreaBlock({ nome, tot, amm, srv, head = false }: { nome: string; tot: Agg; amm: Agg; srv: Agg; head?: boolean }) {
+  function AreaBlock({ nome, tot, amm, srv, head = false, sub = false }: { nome: string; tot: Agg; amm: Agg; srv: Agg; head?: boolean; sub?: boolean }) {
     const cell = (v: number, den: number) => `${fmt(v)} (${pct(v, den)}%)`
     const g = grand.tot
     const R = (label: string, a: Agg) => (
@@ -154,8 +187,8 @@ export default function QuadroDonazioniAttivitaPage() {
       </TableRow>
     )
     return (
-      <div className={`rounded-lg px-4 py-3 ${head ? 'border-2 border-primary/30 bg-primary/5' : 'border border-border/60 bg-muted/20'} print:border-black print:bg-transparent`}>
-        <p className={`text-sm font-bold uppercase tracking-wide mb-2 print:text-black ${head ? 'text-primary' : 'text-foreground'}`}>
+      <div className={`rounded-lg px-4 py-3 ${head ? 'border-2 border-primary/30 bg-primary/5' : sub ? 'border border-border/40 bg-background/40' : 'border border-border/60 bg-muted/20'} print:border-black print:bg-transparent`}>
+        <p className={`font-bold uppercase tracking-wide mb-2 print:text-black ${head ? 'text-primary text-sm' : sub ? 'text-foreground text-xs' : 'text-foreground text-sm'}`}>
           {head ? 'Totali Generali' : nome}
         </p>
         <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs mb-2">
@@ -273,7 +306,16 @@ export default function QuadroDonazioniAttivitaPage() {
               <>
                 <AreaBlock nome="Totali Generali" tot={grand.tot} amm={grand.amm} srv={grand.srv} head />
                 {blocks.map((b) => (
-                  <AreaBlock key={b.nome} nome={b.nome} tot={b.tot} amm={b.amm} srv={b.srv} />
+                  <div key={b.nome} className="space-y-2">
+                    <AreaBlock nome={b.nome} tot={b.tot} amm={b.amm} srv={b.srv} />
+                    {anniSociali.length > 1 && b.perYear.length > 1 && (
+                      <div className="ml-3 sm:ml-6 pl-3 border-l-2 border-primary/20 space-y-2">
+                        {b.perYear.map((y) => (
+                          <AreaBlock key={y.year} nome={`${b.nome} · ${y.label}`} tot={y.tot} amm={y.amm} srv={y.srv} sub />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </>
             )}

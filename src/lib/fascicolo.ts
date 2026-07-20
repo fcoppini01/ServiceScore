@@ -71,6 +71,15 @@ export function norm(s: string | null | undefined): string {
   return (s ?? '').toLowerCase().replace(/\s+/g, ' ').trim()
 }
 
+// Anno sociale (1 lug → 30 giu) a cui appartiene una data.
+function annoStartOf(d: string | null): number | null {
+  if (!d) return null
+  const y = parseInt(d.slice(0, 4), 10)
+  const m = parseInt(d.slice(5, 7), 10)
+  if (!y) return null
+  return m >= 7 ? y : y - 1
+}
+
 // ---- Tipi -------------------------------------------------------------
 export type Fascia = { label: string; count: number }
 export type Distribuzione = { fasce: Fascia[]; tot: number }
@@ -176,18 +185,22 @@ function buildGroup(roles: RoleDef[], officers: Off[], usedIds: Set<unknown>): R
 /**
  * Costruisce i fascicoli per i club indicati.
  * @param clubs elenco nomi club (ordine alfabetico consigliato)
- * @param annoConclusoStart anno sociale concluso di riferimento (es. 2025 = 2025/26).
- *        Le Nomine usano l'anno in corso = annoConclusoStart + 1.
- *        Il triennio usa annoConclusoStart-2 .. annoConclusoStart.
+ * @param anniSociali anni sociali selezionati (es. [2025] = 2025/26). L'anno più
+ *        recente è quello "di riferimento": le Nomine usano riferimento + 1 e il
+ *        Riepilogo usa gli ultimi 3 anni conclusi (riferimento-2 .. riferimento).
+ *        La Sez. 4 (Attività) copre TUTTI gli anni selezionati.
  */
-export async function buildFascicoli(clubs: string[], annoConclusoStart: number): Promise<FascicoloClub[]> {
-  if (clubs.length === 0) return []
+export async function buildFascicoli(clubs: string[], anniSociali: number[]): Promise<FascicoloClub[]> {
+  if (clubs.length === 0 || anniSociali.length === 0) return []
 
+  const annoConclusoStart = Math.max(...anniSociali)   // anno di riferimento (più recente selezionato)
+  const anniSet = new Set(anniSociali)
   const annoNomine = annoConclusoStart + 1
   const anniTriennio = [annoConclusoStart - 2, annoConclusoStart - 1, annoConclusoStart]
 
-  // Finestra date per le attività = intero triennio (copre anche la Sez. 4).
-  const attFrom = getAnnoSocialeRange(anniTriennio[0]).from
+  // Finestra date per le attività = dal più vecchio tra (inizio triennio) e (anno
+  // selezionato più vecchio) fino all'anno di riferimento: copre Sez. 4 + triennio.
+  const attFrom = getAnnoSocialeRange(Math.min(anniTriennio[0], ...anniSociali)).from
   const attTo = getAnnoSocialeRange(annoConclusoStart).to
   // Finestra officer = anno concluso (past president) .. anno in corso (nomine).
   const offFrom = getAnnoSocialeRange(annoConclusoStart).from
@@ -223,8 +236,6 @@ export async function buildFascicoli(clubs: string[], annoConclusoStart: number)
   const sociAll = sociRes.data ?? []
   const offAll = offRes.data ?? []
   const attAll = attRes.data ?? []
-
-  const { from: conclFrom, to: conclTo } = getAnnoSocialeRange(annoConclusoStart)
 
   return clubs.map((club) => {
     // --- Soci del club ---
@@ -263,10 +274,10 @@ export async function buildFascicoli(clubs: string[], annoConclusoStart: number)
       .filter((o) => !used.has(o.id_incarico))
       .map((o) => ({ label: o.titolo_ufficiale ?? '—', off: o }))
 
-    // --- Attività anno concluso (Sez. 4) ---
+    // --- Attività degli anni selezionati (Sez. 4) ---
     const attClub = attAll.filter((a) => a.sponsor_nome_account === club)
     const attConcluso = attClub
-      .filter((a) => a.data_inizio != null && a.data_inizio >= conclFrom && a.data_inizio <= conclTo)
+      .filter((a) => { const ay = annoStartOf(a.data_inizio); return ay != null && anniSet.has(ay) })
       .sort((a, b) => String(a.data_inizio).localeCompare(String(b.data_inizio)))
     const service = attConcluso.filter((a) => a.causa !== AMMINISTRAZIONE_CAUSA)
     const amministrazione = attConcluso.filter((a) => a.causa === AMMINISTRAZIONE_CAUSA)
