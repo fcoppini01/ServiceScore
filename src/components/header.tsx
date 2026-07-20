@@ -27,7 +27,6 @@ const NAV_ITEMS: NavItem[] = [
     sublinks: [
       { href: "/soci", label: "Elenco Generale Soci" },
       { href: "/soci/rapporti", label: "Rapporti Soci" },
-      { href: "/soci/quadri/composizione", label: "Composizione per Club" },
     ],
   },
   {
