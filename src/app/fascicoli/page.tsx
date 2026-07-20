@@ -145,7 +145,6 @@ function SezioneTitolo({ n, title }: { n: string; title: string }) {
 
 // --- Blocco fascicolo di un singolo club ---
 function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub; anniLabel: string; annoNomine: string; primo: boolean }) {
-  const tri = f.triennio
   // Nome club in "Title Case" per adattarsi allo stile della copertina (es. "Pontedera").
   const clubTitolo = f.club.toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase())
   return (
@@ -262,54 +261,6 @@ function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub;
       <div className="mb-4"><AttivitaTable rows={f.service} label="Service" color="border-emerald-400" /></div>
       <div className="mb-2"><TotaliBox label="Subtotale Amministrazione" t={f.totAmm} /></div>
       <div className="mb-2"><AttivitaTable rows={f.amministrazione} label="Amministrazione" color="border-amber-400" /></div>
-
-      {/* Sez. 1 - Riepilogo triennio */}
-      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Riepilogo attività ultimo triennio sociale" />
-      <div className="overflow-x-auto rounded-lg border border-border/50 print:border-black mb-3">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-muted/40 print:bg-transparent text-left">
-              <th className="px-2 py-1.5 print:text-black">Anno sociale</th>
-              <th className="px-2 py-1.5 text-right print:text-black">Fondi raccolti ($)</th>
-              <th className="px-2 py-1.5 text-right print:text-black">Fondi donati ($)</th>
-              <th className="px-2 py-1.5 text-right print:text-black">Attività Amm.</th>
-              <th className="px-2 py-1.5 text-right print:text-black">Attività Service</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tri.anni.map((a) => (
-              <tr key={a.annoStart} className="border-t border-border/40 print:border-black/30">
-                <td className="px-2 py-1 font-medium">{a.label}</td>
-                <td className="px-2 py-1 text-right tabular-nums">{fmt(a.raccolti)}</td>
-                <td className="px-2 py-1 text-right tabular-nums">{fmt(a.donati)}</td>
-                <td className="px-2 py-1 text-right tabular-nums">{a.amm}</td>
-                <td className="px-2 py-1 text-right tabular-nums">{a.service}</td>
-              </tr>
-            ))}
-            <tr className="border-t-2 border-primary/40 print:border-black bg-primary/5 print:bg-transparent font-bold">
-              <td className="px-2 py-1.5 text-primary print:text-black">Media annua triennio</td>
-              <td className="px-2 py-1.5 text-right tabular-nums">{fmt(tri.mediaRaccolti)}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums">{fmt(tri.mediaDonati)}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums">{fmt(tri.mediaAmm, 1)}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums">{fmt(tri.mediaService, 1)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-        <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 print:border-black print:bg-transparent">
-          <span className="text-muted-foreground print:text-black">Media raccolti/anno</span><br /><span className="font-bold tabular-nums">$ {fmt(tri.mediaRaccolti)}</span>
-        </div>
-        <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 print:border-black print:bg-transparent">
-          <span className="text-muted-foreground print:text-black">Media donati/anno</span><br /><span className="font-bold tabular-nums">$ {fmt(tri.mediaDonati)}</span>
-        </div>
-        <div className="rounded-lg border-2 border-primary/30 bg-primary/5 px-3 py-2 print:border-black print:bg-transparent">
-          <span className="text-muted-foreground print:text-black">% copertura (raccolti / donati)</span><br /><span className="font-bold tabular-nums text-primary print:text-black">{tri.mediaDonati > 0 ? `${tri.pctCopertura.toFixed(1)}%` : '—'}</span>
-        </div>
-        <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 print:border-black print:bg-transparent">
-          <span className="text-muted-foreground print:text-black">Media Amm. / Service (n°/anno)</span><br /><span className="font-bold tabular-nums">{fmt(tri.mediaAmm, 1)} / {fmt(tri.mediaService, 1)}</span>
-        </div>
-      </div>
     </section>
   )
 }
@@ -404,7 +355,7 @@ export default function FascicoliPage() {
         Fascicoli per Club
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
-        Genera un fascicolo completo (Mod. 2) per ogni club selezionato: Composizione, Categorie associative, Nomine, Attività Amministrazione/Service e Riepilogo triennio. Un solo comando di stampa produce l&apos;intero fascicolo, con un club per pagina.
+        Genera un fascicolo completo (Mod. 2) per ogni club selezionato: Composizione, Categorie associative, Nomine e Attività Amministrazione/Service. Un solo comando di stampa produce l&apos;intero fascicolo, con un club per pagina.
       </motion.p>
 
       <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">

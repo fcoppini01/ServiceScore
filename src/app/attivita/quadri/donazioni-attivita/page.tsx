@@ -99,10 +99,11 @@ export default function QuadroDonazioniAttivitaPage() {
 
   // Raggruppa per club → Totale/Amm/Service (somma anni) + ripartizione per singolo
   // anno sociale. Ordinato alfabeticamente per nome club.
-  const { blocks, grand } = useMemo(() => {
+  const { blocks, grand, grandPerYear } = useMemo(() => {
     type Acc = ClubBlock & { years: Map<number, { tot: Agg; amm: Agg; srv: Agg }> }
     const map = new Map<string, Acc>()
     const grand = { tot: zero(), amm: zero(), srv: zero() }
+    const grandYears = new Map<number, { tot: Agg; amm: Agg; srv: Agg }>()
     for (const a of activities) {
       const nome = a.sponsor_nome_account || '—'
       if (!map.has(nome)) map.set(nome, { nome, tot: zero(), amm: zero(), srv: zero(), perYear: [], years: new Map() })
@@ -115,6 +116,9 @@ export default function QuadroDonazioniAttivitaPage() {
         if (!b.years.has(ay)) b.years.set(ay, { tot: zero(), amm: zero(), srv: zero() })
         const yb = b.years.get(ay)!
         add(yb.tot, a); add(isAmm ? yb.amm : yb.srv, a)
+        if (!grandYears.has(ay)) grandYears.set(ay, { tot: zero(), amm: zero(), srv: zero() })
+        const gy = grandYears.get(ay)!
+        add(gy.tot, a); add(isAmm ? gy.amm : gy.srv, a)
       }
     }
     const blocks: ClubBlock[] = [...map.values()]
@@ -125,7 +129,10 @@ export default function QuadroDonazioniAttivitaPage() {
           .sort((a, c) => a[0] - c[0])
           .map(([year, v]) => ({ year, label: getAnnoSocialeRange(year).label, tot: v.tot, amm: v.amm, srv: v.srv })),
       }))
-    return { blocks, grand }
+    const grandPerYear: YearBlock[] = [...grandYears.entries()]
+      .sort((a, c) => a[0] - c[0])
+      .map(([year, v]) => ({ year, label: getAnnoSocialeRange(year).label, tot: v.tot, amm: v.amm, srv: v.srv }))
+    return { blocks, grand, grandPerYear }
   }, [activities])
 
   const annoLabel = anniSociali.length
@@ -135,39 +142,47 @@ export default function QuadroDonazioniAttivitaPage() {
 
   function esportaExcel() {
     const rows: any[] = []
-    const push = (area: string, sez: string, a: Agg) => rows.push({
-      area, sez,
-      att: a.att, att_pct: pct(a.att, grand.tot.att),
-      pers: Math.round(a.pers), pers_pct: pct(a.pers, grand.tot.pers),
-      vol: Math.round(a.vol), vol_pct: pct(a.vol, grand.tot.vol),
-      ore: Math.round(a.ore), ore_pct: pct(a.ore, grand.tot.ore),
-      donati: Math.round(a.donati), raccolti: Math.round(a.raccolti),
-      racc_don: sez === 'Totale' ? Math.round(ratio(a.raccolti, a.donati)) : '',
-    })
-    push('TOTALI GENERALI', 'Totale', grand.tot); push('TOTALI GENERALI', 'Amministrazione', grand.amm); push('TOTALI GENERALI', 'Service', grand.srv)
+    // Percentuali sul totale del blocco (base = riga Totale, che resta vuota).
+    const push = (area: string, sez: string, a: Agg, base: Agg) => {
+      const isBase = sez === 'Totale'
+      rows.push({
+        area, sez,
+        att: a.att, att_pct: isBase ? '' : pct(a.att, base.att),
+        pers: Math.round(a.pers), pers_pct: isBase ? '' : pct(a.pers, base.pers),
+        vol: Math.round(a.vol), vol_pct: isBase ? '' : pct(a.vol, base.vol),
+        ore: Math.round(a.ore), ore_pct: isBase ? '' : pct(a.ore, base.ore),
+        donati: Math.round(a.donati), raccolti: Math.round(a.raccolti),
+        racc_don: isBase ? Math.round(ratio(a.raccolti, a.donati)) : '',
+      })
+    }
+    const pushBlock = (area: string, tot: Agg, amm: Agg, srv: Agg) => {
+      push(area, 'Totale', tot, tot); push(area, 'Amministrazione', amm, tot); push(area, 'Service', srv, tot)
+    }
+    pushBlock('TOTALI GENERALI', grand.tot, grand.amm, grand.srv)
+    if (anniSociali.length > 1 && grandPerYear.length > 1) {
+      grandPerYear.forEach((y) => pushBlock(`TOTALI GENERALI · ${y.label}`, y.tot, y.amm, y.srv))
+    }
     blocks.forEach((b) => {
-      push(b.nome, 'Totale', b.tot); push(b.nome, 'Amministrazione', b.amm); push(b.nome, 'Service', b.srv)
+      pushBlock(b.nome, b.tot, b.amm, b.srv)
       if (anniSociali.length > 1 && b.perYear.length > 1) {
-        b.perYear.forEach((y) => {
-          const area = `${b.nome} · ${y.label}`
-          push(area, 'Totale', y.tot); push(area, 'Amministrazione', y.amm); push(area, 'Service', y.srv)
-        })
+        b.perYear.forEach((y) => pushBlock(`${b.nome} · ${y.label}`, y.tot, y.amm, y.srv))
       }
     })
+    const pctCell = (v: any) => (v === '' ? '' : v + '%')
     exportToExcel(rows, [
       { header: 'Area / Club', accessor: (r: any) => r.area },
       { header: 'Sezione', accessor: (r: any) => r.sez },
       { header: 'Attività', accessor: (r: any) => r.att },
-      { header: '% Att.', accessor: (r: any) => r.att_pct + '%' },
+      { header: '% Att.', accessor: (r: any) => pctCell(r.att_pct) },
       { header: 'Persone servite', accessor: (r: any) => r.pers },
-      { header: '% Pers.', accessor: (r: any) => r.pers_pct + '%' },
+      { header: '% Pers.', accessor: (r: any) => pctCell(r.pers_pct) },
       { header: 'Volontari', accessor: (r: any) => r.vol },
-      { header: '% Vol.', accessor: (r: any) => r.vol_pct + '%' },
+      { header: '% Vol.', accessor: (r: any) => pctCell(r.vol_pct) },
       { header: 'Ore volontari', accessor: (r: any) => r.ore },
-      { header: '% Ore', accessor: (r: any) => r.ore_pct + '%' },
+      { header: '% Ore', accessor: (r: any) => pctCell(r.ore_pct) },
       { header: 'Fondi donati (USD)', accessor: (r: any) => r.donati },
       { header: 'Fondi raccolti (USD)', accessor: (r: any) => r.raccolti },
-      { header: '% Racc./Don.', accessor: (r: any) => (r.racc_don === '' ? '' : r.racc_don + '%') },
+      { header: '% Racc./Don.', accessor: (r: any) => pctCell(r.racc_don) },
     ], `donazioni_attivita_${todayStamp()}`, 'Donazioni e attività')
   }
 
@@ -175,17 +190,21 @@ export default function QuadroDonazioniAttivitaPage() {
 
   // Blocco (Totali generali o singolo club): finanziario + tabella attività
   function AreaBlock({ nome, tot, amm, srv, head = false, sub = false }: { nome: string; tot: Agg; amm: Agg; srv: Agg; head?: boolean; sub?: boolean }) {
-    const cell = (v: number, den: number) => `${fmt(v)} (${pct(v, den)}%)`
-    const g = grand.tot
-    const R = (label: string, a: Agg) => (
-      <TableRow className="cv-row print:hover:bg-transparent">
-        <TableCell className="font-medium whitespace-nowrap">{label}</TableCell>
-        <TableCell className="tabular-nums text-right whitespace-nowrap">{cell(a.att, g.att)}</TableCell>
-        <TableCell className="tabular-nums text-right whitespace-nowrap">{cell(a.pers, g.pers)}</TableCell>
-        <TableCell className="tabular-nums text-right whitespace-nowrap">{cell(a.vol, g.vol)}</TableCell>
-        <TableCell className="tabular-nums text-right whitespace-nowrap">{cell(a.ore, g.ore)}</TableCell>
-      </TableRow>
-    )
+    // Le percentuali sono sul totale DI QUESTO blocco (singolo club / singolo anno):
+    // la riga Totale è la base (100%), Amministrazione e Service ne sono le quote.
+    const R = (label: string, a: Agg) => {
+      const isBase = label === 'Totale'
+      const cell = (v: number, den: number) => (isBase ? fmt(v) : `${fmt(v)} (${pct(v, den)}%)`)
+      return (
+        <TableRow className="cv-row print:hover:bg-transparent">
+          <TableCell className="font-medium whitespace-nowrap">{label}</TableCell>
+          <TableCell className="tabular-nums text-right whitespace-nowrap">{cell(a.att, tot.att)}</TableCell>
+          <TableCell className="tabular-nums text-right whitespace-nowrap">{cell(a.pers, tot.pers)}</TableCell>
+          <TableCell className="tabular-nums text-right whitespace-nowrap">{cell(a.vol, tot.vol)}</TableCell>
+          <TableCell className="tabular-nums text-right whitespace-nowrap">{cell(a.ore, tot.ore)}</TableCell>
+        </TableRow>
+      )
+    }
     return (
       <div className={`rounded-lg px-4 py-3 ${head ? 'border-2 border-primary/30 bg-primary/5' : sub ? 'border border-border/40 bg-background/40' : 'border border-border/60 bg-muted/20'} print:border-black print:bg-transparent`}>
         <p className={`font-bold uppercase tracking-wide mb-2 print:text-black ${head ? 'text-primary text-sm' : sub ? 'text-foreground text-xs' : 'text-foreground text-sm'}`}>
@@ -233,7 +252,7 @@ export default function QuadroDonazioniAttivitaPage() {
       </motion.h1>
       <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-6 print:text-black">
         {haSelezione
-          ? <>{filtroDistretto.length > 0 ? 'Tutto il Distretto 108 LA' : club.length > 0 ? `${club.length} club` : filtroZona.length > 0 ? `Zone: ${filtroZona.join(', ')}` : `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`} · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {blocks.length} club · {activities.length} attività · <span className="italic">le percentuali sono sul Totale Generale</span></>
+          ? <>{filtroDistretto.length > 0 ? 'Tutto il Distretto 108 LA' : club.length > 0 ? `${club.length} club` : filtroZona.length > 0 ? `Zone: ${filtroZona.join(', ')}` : `Circoscrizioni: ${filtroCircoscrizione.join(', ')}`} · Anno sociale <strong className="text-foreground print:text-black">{annoLabel}</strong> · {blocks.length} club · {activities.length} attività · <span className="italic">le percentuali (Amm./Service) sono sul totale di ciascun club</span></>
           : 'Seleziona un club, una zona, una circoscrizione o l’intero Distretto per generare il prospetto'}
       </motion.p>
 
@@ -305,6 +324,13 @@ export default function QuadroDonazioniAttivitaPage() {
             ) : (
               <>
                 <AreaBlock nome="Totali Generali" tot={grand.tot} amm={grand.amm} srv={grand.srv} head />
+                {anniSociali.length > 1 && grandPerYear.length > 1 && (
+                  <div className="ml-3 sm:ml-6 pl-3 border-l-2 border-primary/20 space-y-2">
+                    {grandPerYear.map((y) => (
+                      <AreaBlock key={y.year} nome={`Totali Generali · ${y.label}`} tot={y.tot} amm={y.amm} srv={y.srv} sub />
+                    ))}
+                  </div>
+                )}
                 {blocks.map((b) => (
                   <div key={b.nome} className="space-y-2">
                     <AreaBlock nome={b.nome} tot={b.tot} amm={b.amm} srv={b.srv} />
