@@ -36,7 +36,6 @@ const NAV_ITEMS: NavItem[] = [
     sublinks: [
       { href: "/attivita", label: "Storico Attività" },
       { href: "/attivita/rapporti", label: "Rapporti Attività" },
-      { href: "/attivita/quadri/sintesi-club", label: "Sintesi Attività per Club" },
     ],
   },
   {

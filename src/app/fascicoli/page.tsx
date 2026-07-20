@@ -157,7 +157,7 @@ function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub;
         className="relative w-full mx-auto max-w-[620px] rounded-lg overflow-hidden shadow-sm mb-8 [container-type:inline-size] print:shadow-none print:max-w-none print:rounded-none print:mb-0 print:break-after-page"
         style={{ aspectRatio: '1500 / 2167', backgroundColor: '#eceff2', backgroundImage: "url('/copertina-fascicolo.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
-        <span className="absolute left-[11.5%] top-[56.5%] italic font-extrabold text-white text-[4.2cqw] leading-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
+        <span className="absolute left-[11.5%] top-[62.5%] italic font-extrabold text-white text-[4cqw] leading-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
           Lions Club {clubTitolo}
         </span>
       </div>
@@ -340,6 +340,14 @@ export default function FascicoliPage() {
     if (filtroCirc.length) clubs.forEach((c) => { if (filtroCirc.includes(circMap[c])) set.add(c) })
     return [...set].sort((a, b) => a.localeCompare(b, 'it'))
   }, [filtroClub, filtroZona, filtroCirc, filtroDistretto, clubs, zoneMap, circMap])
+
+  // Se cambiano i filtri (club/zone/circoscrizioni/distretto o anni) dopo aver
+  // generato, svuoto i fascicoli mostrati: così è chiaro che vanno rigenerati
+  // con "Genera fascicoli" e non si guardano dati vecchi.
+  useEffect(() => {
+    setFascicoli([])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubSelezionati.join('|'), anniSociali.join(',')])
 
   async function genera() {
     if (clubSelezionati.length === 0) { setFascicoli([]); return }
