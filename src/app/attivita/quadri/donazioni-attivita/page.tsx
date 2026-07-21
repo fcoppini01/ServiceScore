@@ -20,14 +20,30 @@ import { getCurrentAnnoSocialeStart, getAnnoSocialeRange, getAnniSociali } from 
 
 const AMM = 'Amministrazione'
 
-type Agg = { att: number; pers: number; vol: number; ore: number; donati: number; raccolti: number }
-const zero = (): Agg => ({ att: 0, pers: 0, vol: 0, ore: 0, donati: 0, raccolti: 0 })
+type Agg = { att: number; pers: number; vol: number; ore: number; donati: number; raccolti: number; donatiLcif: number }
+const zero = (): Agg => ({ att: 0, pers: 0, vol: 0, ore: 0, donati: 0, raccolti: 0, donatiLcif: 0 })
+
+// Donazione destinata a LCIF (Lions Clubs International Foundation).
+// Nei dati Lions convivono due segnali che spesso non coincidono:
+//  - donazione_lcif: flag 0/1 strutturato del portale;
+//  - organizzazione_beneficiata: testo libero scritto dal club ("LCIF", "lcif"...).
+// Molti club valorizzano solo uno dei due, quindi consideriamo LCIF se c'è
+// ALMENO uno dei segnali. NON usiamo finanziata_lcif: quello indica il flusso
+// opposto (un grant ricevuto DA LCIF), non una donazione fatta dal club.
+function isLcif(r: any): boolean {
+  const flag = Number(r.donazione_lcif) === 1
+  const org = String(r.organizzazione_beneficiata ?? '').toLowerCase()
+  return flag || org.includes('lcif')
+}
+
 function add(a: Agg, r: any) {
   a.att += 1
   a.pers += Number(r.persone_servite_limite) || 0
   a.vol += Number(r.totale_volontari) || 0
   a.ore += Number(r.totale_ore_servizio_capped) || 0
-  a.donati += Number(r.fondi_donati_usd_capped) || 0
+  const don = Number(r.fondi_donati_usd_capped) || 0
+  a.donati += don
+  if (isLcif(r)) a.donatiLcif += don
   a.raccolti += Number(r.fondi_raccolti_usd_capped) || 0
 }
 
@@ -81,7 +97,7 @@ export default function QuadroDonazioniAttivitaPage() {
     setLoading(true); setError(null)
     let q = supabase
       .from('vista_report_ricerca')
-      .select('causa, persone_servite_limite, totale_volontari, totale_ore_servizio_capped, fondi_donati_usd_capped, fondi_raccolti_usd_capped, sponsor_nome_account, sponsor_zona, sponsor_circoscrizione, data_inizio')
+      .select('causa, persone_servite_limite, totale_volontari, totale_ore_servizio_capped, fondi_donati_usd_capped, fondi_raccolti_usd_capped, donazione_lcif, organizzazione_beneficiata, sponsor_nome_account, sponsor_zona, sponsor_circoscrizione, data_inizio')
     if (anniSociali.length) {
       const orExpr = anniSociali.map((y) => { const { from, to } = getAnnoSocialeRange(y); return `and(data_inizio.gte.${from},data_inizio.lte.${to})` }).join(',')
       q = q.or(orExpr)
@@ -186,6 +202,56 @@ export default function QuadroDonazioniAttivitaPage() {
     ], `donazioni_attivita_${todayStamp()}`, 'Donazioni e attività')
   }
 
+  // Excel "Medie": una riga per club con le MEDIE PER ANNO SOCIALE.
+  // Il divisore è il numero di anni in cui il club ha effettivamente avuto
+  // attività (perYear contiene solo quelli): gli anni a zero sono esclusi,
+  // così la media non viene diluita da annate senza dati.
+  // I fondi donati sono spaccati in quota LCIF e quota non-LCIF (vedi isLcif).
+  function esportaExcelMedie() {
+    type Riga = { area: string; anni: number; etichette: string; m: Agg }
+    const medie = (a: Agg, n: number): Agg =>
+      n > 0
+        ? { att: a.att / n, pers: a.pers / n, vol: a.vol / n, ore: a.ore / n, donati: a.donati / n, raccolti: a.raccolti / n, donatiLcif: a.donatiLcif / n }
+        : zero()
+
+    const righe: Riga[] = []
+    if (grandPerYear.length > 0) {
+      righe.push({
+        area: 'TOTALI GENERALI',
+        anni: grandPerYear.length,
+        etichette: grandPerYear.map((y) => y.label).join(', '),
+        m: medie(grand.tot, grandPerYear.length),
+      })
+    }
+    blocks.forEach((b) => {
+      const n = b.perYear.length
+      if (n === 0) return
+      righe.push({ area: b.nome, anni: n, etichette: b.perYear.map((y) => y.label).join(', '), m: medie(b.tot, n) })
+    })
+
+    const r1 = (v: number) => Math.round(v * 10) / 10 // 1 decimale per i conteggi
+    const r0 = (v: number) => Math.round(v)           // interi per gli importi
+    exportToExcel(
+      righe,
+      [
+        { header: 'Club', accessor: (r: Riga) => r.area },
+        { header: 'Anni con attività', accessor: (r: Riga) => r.anni },
+        { header: 'Anni considerati', accessor: (r: Riga) => r.etichette },
+        { header: 'Media attività / anno', accessor: (r: Riga) => r1(r.m.att) },
+        { header: 'Media persone servite / anno', accessor: (r: Riga) => r0(r.m.pers) },
+        { header: 'Media volontari / anno', accessor: (r: Riga) => r0(r.m.vol) },
+        { header: 'Media ore volontari / anno', accessor: (r: Riga) => r0(r.m.ore) },
+        { header: 'Media fondi donati / anno (USD)', accessor: (r: Riga) => r0(r.m.donati) },
+        { header: 'di cui donati a LCIF / anno (USD)', accessor: (r: Riga) => r0(r.m.donatiLcif) },
+        { header: 'di cui donati NON LCIF / anno (USD)', accessor: (r: Riga) => r0(r.m.donati - r.m.donatiLcif) },
+        { header: 'Media fondi raccolti / anno (USD)', accessor: (r: Riga) => r0(r.m.raccolti) },
+        { header: '% Racc./Don.', accessor: (r: Riga) => (r.m.donati > 0 ? Math.round(ratio(r.m.raccolti, r.m.donati)) + '%' : '') },
+      ],
+      `donazioni_attivita_medie_${todayStamp()}`,
+      'Medie per club'
+    )
+  }
+
   if (!isClient) return null
 
   // Blocco (Totali generali o singolo club): finanziario + tabella attività
@@ -259,6 +325,16 @@ export default function QuadroDonazioniAttivitaPage() {
       <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
         <Button variant="outline" onClick={esportaExcel} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
           <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+        </Button>
+        <Button
+          variant="outline"
+          onClick={esportaExcelMedie}
+          size="sm"
+          className="text-xs gap-1.5"
+          disabled={activities.length === 0}
+          title="Una riga per club con le medie per anno sociale (gli anni senza attività non contano nella media)"
+        >
+          <FileSpreadsheet className="h-3.5 w-3.5" /> Excel medie
         </Button>
         <Button onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={activities.length === 0}>
           <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
