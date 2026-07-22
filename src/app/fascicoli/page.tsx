@@ -149,35 +149,22 @@ function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub;
   const clubTitolo = f.club.toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase())
   return (
     <section className={primo ? '' : 'print:break-before-page'}>
-      {/* Copertina del fascicolo (una pagina intera per club). Lo sfondo è il template
-          grafico SENZA nome club; il nome del club viene scritto dinamicamente qui
-          sopra, sotto "Report di Conoscenza (Mod.2)".
-          A SCHERMO: card verticale invariata (copertina-fascicolo.png, portrait).
-          IN STAMPA: la pagina resta A4 landscape (come il resto del fascicolo).
-          Usiamo un asset SEPARATO pre-ruotato di 90° (copertina-fascicolo-landscape.png,
-          generato una volta con Pillow) invece di ruotare via CSS transform il box a
-          schermo intero: un box position:absolute + rotate() dentro l'area di stampa
-          veniva TAGLIATO dal motore di stampa alla larghezza pre-rotazione (bug
-          verificato). Con l'immagine già ruotata basta il sizing statico (altezza +
-          aspect-ratio), stesso schema già affidabile usato per la copertina a schermo.
-          Va girato il foglio per leggerla: comportamento voluto. */}
+      {/* Copertina del fascicolo (una pagina intera per club). Template ufficiale
+          "La Concretezza del Fare" già ORIZZONTALE (A4 landscape),
+          public/copertina-guida-landscape.png — stessa immagine a schermo e in
+          stampa, nessuna rotazione (l'orientamento coincide con la pagina di stampa).
+          Il nome del club è scritto dinamicamente sotto le tre righe di testo
+          ("...tra Distretto e Club"): centrato al 50% della larghezza (come le righe
+          sopra, misurate), stesso font sans e dimensione intermedia tra titolo e
+          sottotitolo. Il box ha lo stesso aspect-ratio dell'immagine, quindi
+          object-cover non taglia nulla. */}
       <div
-        className="relative w-full mx-auto max-w-[620px] rounded-lg overflow-hidden shadow-sm mb-8 bg-[#eceff2] [container-type:inline-size] print:hidden"
-        style={{ aspectRatio: '1728 / 2496' }}
+        className="relative w-full mx-auto max-w-[900px] rounded-lg overflow-hidden shadow-sm mb-8 [container-type:inline-size] print:shadow-none print:rounded-none print:mb-0 print:mx-auto print:max-w-none print:h-[194mm] print:break-after-page"
+        style={{ aspectRatio: '3508 / 2481' }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/copertina-fascicolo.png" alt="Copertina fascicolo di club" className="absolute inset-0 h-full w-full object-cover" />
-        <span className="absolute left-[11.5%] top-[62.5%] italic font-extrabold text-white text-[4cqw] leading-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
-          Lions Club {clubTitolo}
-        </span>
-      </div>
-      <div
-        className="relative hidden print:block print:mb-0 print:mx-auto print:w-auto print:max-w-none print:h-[194mm] print:break-after-page [container-type:inline-size]"
-        style={{ aspectRatio: '2496 / 1728' }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/copertina-fascicolo-landscape.png" alt="Copertina fascicolo di club" className="absolute inset-0 h-full w-full object-cover" />
-        <span className="copertina-print-label absolute italic font-extrabold text-white text-[3.2cqw] leading-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
+        <img src="/copertina-guida-landscape.png" alt="Copertina guida operativa" className="absolute inset-0 h-full w-full object-cover" />
+        <span className="copertina-nome-club absolute left-1/2 top-[72%] -translate-x-1/2 -translate-y-1/2 w-[76%] text-center font-semibold text-white text-[3cqw] leading-tight [font-family:Arial,Helvetica,sans-serif] drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
           Lions Club {clubTitolo}
         </span>
       </div>
