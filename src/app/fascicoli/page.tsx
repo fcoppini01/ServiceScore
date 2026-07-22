@@ -338,13 +338,6 @@ export default function FascicoliPage() {
         </Link>
       </motion.div>
 
-      <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-[#0055ff] bg-clip-text text-transparent print:text-foreground print:bg-none">
-        Fascicoli per Club
-      </motion.h1>
-      <motion.p variants={itemVariants} className="text-sm text-muted-foreground mb-4 print:text-black">
-        Genera un fascicolo completo (Mod. 2) per ogni club selezionato: Composizione, Categorie associative, Nomine e Attività Amministrazione/Service. Un solo comando di stampa produce l&apos;intero fascicolo, con un club per pagina.
-      </motion.p>
-
       <motion.div variants={itemVariants} className="mb-6 flex items-center gap-2 flex-wrap print-hide">
         <Button onClick={genera} size="sm" className="text-xs gap-1.5" disabled={clubSelezionati.length === 0 || loading}>
           <FolderOpen className="h-3.5 w-3.5" /> Genera fascicoli ({clubSelezionati.length})
