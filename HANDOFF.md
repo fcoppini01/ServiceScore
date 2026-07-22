@@ -17,6 +17,47 @@ Stato per riprendere in una nuova sessione. Fase attuale: "accumulo modifiche".
 - **CSV Lions**: ISO-8859-1 (`latin1`), delimitatore `;`. La regola org "ISO-8859-1/try-with-resources/commenti solo .java" vale per i progetti Java, NON per questo JS/TS.
 - **Anno sociale**: 1 lug→30 giu (`src/lib/anno-sociale.ts`). Nei filtri prospetti usare `getAnniSociali()` (2023/24 → prossimo anno); `getRecentAnniSociali` resta per la dashboard.
 
+## 🔐 SICUREZZA — leggere PRIMA di toccare le policy Supabase
+**Cos'è successo (21/07/2026):** l'app esponeva pubblicamente i dati di **2.951 soci**
+(nome, cognome, telefono). Causa: policy RLS `TO anon` con `USING(true)` su `soci`,
+`officer_club`, `club`, `attivita_report`.
+
+**Il redirect al login NON protegge da questo.** La `anon key` è pubblica (sta nel
+bundle JS servito a chiunque): si interroga direttamente
+`<SUPABASE_URL>/rest/v1/<tabella>` saltando UI, middleware e React. L'unica difesa
+reale sono GRANT + policy RLS.
+
+**Fix applicato in produzione:**
+```sql
+revoke all on all tables in schema public from anon;
+revoke all on all sequences in schema public from anon;
+alter default privileges in schema public revoke all on tables from anon;
+grant execute on function public.fn_matricola_esiste(text) to anon; -- serve alla registrazione
+drop policy if exists "Soci visibili a tutti" on public.soci;        -- idem officer_club, club, attivita_report
+alter policy "Utenti possono vedere solo il proprio profilo" on public.utenti to authenticated;
+```
+
+**REGOLE:**
+- ❌ Mai `select` ad `anon` su `soci`, `officer_club`, `club`, `attivita_report` né
+  sulle viste `vista_*`. "anon ha solo SELECT" **non** è minimo privilegio: su dati
+  personali il SELECT *è* il problema (è stato l'errore originale).
+- ✅ `fn_matricola_esiste` deve restare `SECURITY DEFINER` + `execute` ad `anon`:
+  è ciò che tiene viva la registrazione senza esporre la tabella soci.
+- ✅ Serve una pagina pubblica? Esporre **una vista con le sole colonne non
+  personali**, mai la tabella.
+- ⚠️ `categoria_socio_map` resta leggibile da anon: solo mappatura categorie, ok.
+
+**Verifica (rilanciare dopo OGNI modifica alle policy) — atteso 401 ovunque:**
+```bash
+set -a && . ./.env.local; set +a
+for t in soci officer_club club attivita_report vista_soci_ricerca; do
+  curl -s -o /dev/null -w "$t %{http_code}\n" \
+    "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/$t?select=*&limit=1" \
+    -H "apikey: $NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+    -H "Authorization: Bearer $NEXT_PUBLIC_SUPABASE_ANON_KEY"
+done
+```
+
 ## DATABASE (già applicato in produzione)
 - **Reimport completo** dai 3 file in `Dati_Lions/` (soci/officer/service 1782745...). Script `Dati_Lions/reimport_lions.py` (dry-run senza args; `--go` esegue; token da `Dati_Lions/.mgmt_token`, gitignored).
 - Conteggi: club 93 (+1 tecnica ABETONE), soci 2951 (tutti), officer_club 2034 (≥2023-07-01), attivita_report 6861 (≥2023-07-01, tutte `stato_approvazione='approvato'`).

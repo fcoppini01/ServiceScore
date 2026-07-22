@@ -326,6 +326,20 @@ export default function FascicoliPage() {
     : '—'
   const annoNomine = getAnnoSocialeRange(annoRif + 1).label
 
+  // Stampa di UN SINGOLO club come PDF a sé (servono 93 file distinti, uno per
+  // email). Isola il club scelto (renderizzo solo quello), imposto il nome file
+  // suggerito e apro "Salva come PDF"; a stampa finita ripristino vista e titolo.
+  const [printClub, setPrintClub] = useState<string | null>(null)
+  useEffect(() => {
+    if (!printClub) return
+    const prevTitle = document.title
+    document.title = `Fascicolo - ${printClub}`
+    const done = () => { document.title = prevTitle; setPrintClub(null) }
+    window.addEventListener('afterprint', done, { once: true })
+    const t = setTimeout(() => window.print(), 80)
+    return () => { clearTimeout(t); window.removeEventListener('afterprint', done) }
+  }, [printClub])
+
   if (!isClient) return null
 
   return (
@@ -343,7 +357,7 @@ export default function FascicoliPage() {
           <FolderOpen className="h-3.5 w-3.5" /> Genera fascicoli ({clubSelezionati.length})
         </Button>
         <Button variant="outline" onClick={() => window.print()} size="sm" className="text-xs gap-1.5" disabled={fascicoli.length === 0}>
-          <Printer className="h-3.5 w-3.5" /> Stampa / Salva PDF
+          <Printer className="h-3.5 w-3.5" /> Stampa tutti (unico PDF)
         </Button>
       </motion.div>
 
@@ -401,8 +415,15 @@ export default function FascicoliPage() {
         </div>
       ) : (
         <div>
-          {fascicoli.map((f, i) => (
-            <FascicoloBlock key={f.club} f={f} anniLabel={anniLabel} annoNomine={annoNomine} primo={i === 0} />
+          {(printClub ? fascicoli.filter((f) => f.club === printClub) : fascicoli).map((f, i) => (
+            <div key={f.club}>
+              <div className="mb-3 print-hide">
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setPrintClub(f.club)}>
+                  <Printer className="h-3.5 w-3.5" /> Scarica PDF — {f.club}
+                </Button>
+              </div>
+              <FascicoloBlock f={f} anniLabel={anniLabel} annoNomine={annoNomine} primo={printClub ? true : i === 0} />
+            </div>
           ))}
         </div>
       )}
