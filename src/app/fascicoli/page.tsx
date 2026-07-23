@@ -144,9 +144,18 @@ function SezioneTitolo({ n, title }: { n: string; title: string }) {
 }
 
 // --- Blocco fascicolo di un singolo club ---
-function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub; anniLabel: string; annoNomine: string; primo: boolean }) {
+function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: FascicoloClub; zona: string; anniLabel: string; annoNomine: string; primo: boolean }) {
   // Nome club in "Title Case" per adattarsi allo stile della copertina (es. "Pontedera").
   const clubTitolo = f.club.toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase())
+  // Zona depurata dal prefisso "Zone:" del dato Lions (es. "Zone: F" -> "F").
+  const zonaLabel = (zona || '').replace(/^\s*z(ona|one)\s*:?\s*/i, '').trim()
+  // Riepilogo soci raggruppati per Classificazione (categoria associativa): conteggio e % sul totale.
+  const perClass = (() => {
+    const m = new Map<string, number>()
+    for (const s of f.soci) { const k = (s.classificazione || 'N.D.').toString().toUpperCase(); m.set(k, (m.get(k) || 0) + 1) }
+    return [...m.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'it'))
+  })()
+  const totClass = f.soci.length
   return (
     <section className={primo ? '' : 'print:break-before-page'}>
       {/* Copertina del fascicolo (una pagina intera per club). Template ufficiale
@@ -164,30 +173,31 @@ function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub;
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/copertina-guida-landscape.png" alt="Copertina guida operativa" className="absolute inset-0 h-full w-full object-cover" />
-        <span className="copertina-nome-club absolute left-1/2 top-[72%] -translate-x-1/2 -translate-y-1/2 w-[76%] text-center font-semibold text-white text-[3cqw] leading-tight [font-family:Arial,Helvetica,sans-serif] drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
+        <span className="copertina-nome-club absolute left-1/2 top-[78%] -translate-x-1/2 -translate-y-1/2 w-[76%] text-center font-semibold text-white text-[3cqw] leading-tight [font-family:Arial,Helvetica,sans-serif] drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
           Lions Club {clubTitolo}
+        </span>
+        {/* In basso a sinistra: ZONA (sopra) e Mod. 2 - Report di Conoscenza del Club (sotto) */}
+        <span className="copertina-testo absolute left-[4.5%] bottom-[10.5%] text-white font-bold uppercase tracking-wide text-[1.9cqw] [font-family:Arial,Helvetica,sans-serif] drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
+          Zona {zonaLabel}
+        </span>
+        <span className="copertina-testo absolute left-[4.5%] bottom-[4.5%] text-white font-extrabold uppercase text-[2.2cqw] [font-family:Arial,Helvetica,sans-serif] drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
+          Mod. 2 - Report di Conoscenza del Club
         </span>
       </div>
 
+      <div className="mx-auto max-w-[1050px] print:max-w-[250mm]">
       <div className="mt-8 print:mt-0 mb-2 pb-2 border-b-2 border-primary print:border-black">
         <h2 className="text-xl font-bold print:text-black">Fascicolo Club {f.club}</h2>
         <p className="text-xs text-muted-foreground print:text-black">{f.totSoci} soci · Anni sociali {anniLabel} · Nomine anno in corso {annoNomine}</p>
       </div>
 
-      {/* Sez. 1 - Composizione */}
-      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Composizione (anzianità anagrafica e lionistica, genere)" />
-      <FasceTable title="Fasce d'Età" dist={f.eta} accent="bg-emerald-500" />
-      <FasceTable title="Anzianità Lionistica (anni)" dist={f.anz} accent="bg-blue-500" />
-      <FasceTable title="Genere" dist={f.sesso} accent="bg-purple-500" />
-
-      {/* Sez. 1 - Categorie associative */}
+      {/* 1) Sez. 1 - Elenco soci (in cima). Colonne: Codice socio, Cognome, Nome, Email, Telefono. */}
       <SezioneTitolo n="Mod. 2 - Sez. 1" title="Classificazione dei Soci per Categoria Associativa" />
       <div className="overflow-x-auto rounded-lg border border-border/50 print:border-black">
         <table className="w-full text-[11px]">
           <thead>
             <tr className="bg-muted/40 print:bg-transparent text-left">
-              <th className="px-2 py-1.5 print:text-black">Classificazione</th>
-              <th className="px-2 py-1.5 print:text-black">Programma</th>
+              <th className="px-2 py-1.5 print:text-black">Codice socio</th>
               <th className="px-2 py-1.5 print:text-black">Cognome</th>
               <th className="px-2 py-1.5 print:text-black">Nome</th>
               <th className="px-2 py-1.5 print:text-black">Email</th>
@@ -197,14 +207,47 @@ function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub;
           <tbody>
             {f.soci.map((s, i) => (
               <tr key={i} className="border-t border-border/40 print:border-black/30">
-                <td className="px-2 py-1 whitespace-nowrap">{s.classificazione ?? ''}</td>
-                <td className="px-2 py-1 whitespace-nowrap">{s.programma ?? ''}</td>
+                <td className="px-2 py-1 whitespace-nowrap font-mono">{s.matricola ?? ''}</td>
                 <td className="px-2 py-1 whitespace-nowrap font-medium">{s.cognome ?? ''}</td>
                 <td className="px-2 py-1 whitespace-nowrap">{s.nome ?? ''}</td>
                 <td className="px-2 py-1">{s.email ?? ''}</td>
                 <td className="px-2 py-1 whitespace-nowrap font-mono">{s.telefono ?? ''}</td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 2) Sez. 1 - Composizione */}
+      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Composizione (anzianità anagrafica e lionistica, genere)" />
+      <FasceTable title="Fasce d'Età" dist={f.eta} accent="bg-emerald-500" />
+      <FasceTable title="Anzianità Lionistica (anni)" dist={f.anz} accent="bg-blue-500" />
+      <FasceTable title="Genere" dist={f.sesso} accent="bg-purple-500" />
+
+      {/* 3) Sez. 1 - Riepilogo soci per Classificazione (raggruppato, conteggio e % sul totale) */}
+      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Riepilogo Soci per Classificazione" />
+      <div className="overflow-x-auto rounded-lg border border-border/50 print:border-black max-w-[520px]">
+        <table className="w-full text-[11px]">
+          <thead>
+            <tr className="bg-muted/40 print:bg-transparent text-left">
+              <th className="px-2 py-1.5 print:text-black">Classificazione</th>
+              <th className="px-2 py-1.5 text-right print:text-black">N. soci</th>
+              <th className="px-2 py-1.5 text-right print:text-black">% del totale</th>
+            </tr>
+          </thead>
+          <tbody>
+            {perClass.map(([cls, n]) => (
+              <tr key={cls} className="border-t border-border/40 print:border-black/30">
+                <td className="px-2 py-1 whitespace-nowrap">{cls}</td>
+                <td className="px-2 py-1 text-right tabular-nums font-semibold">{n}</td>
+                <td className="px-2 py-1 text-right tabular-nums text-muted-foreground print:text-black">{totClass > 0 ? ((n / totClass) * 100).toFixed(1) : '0.0'}%</td>
+              </tr>
+            ))}
+            <tr className="border-t border-border/50 bg-muted/30 print:bg-transparent font-bold">
+              <td className="px-2 py-1">Totale</td>
+              <td className="px-2 py-1 text-right tabular-nums">{totClass}</td>
+              <td className="px-2 py-1 text-right tabular-nums">100%</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -248,6 +291,7 @@ function FascicoloBlock({ f, anniLabel, annoNomine, primo }: { f: FascicoloClub;
       <div className="mb-4"><AttivitaTable rows={f.service} label="Service" color="border-emerald-400" /></div>
       <div className="mb-2"><TotaliBox label="Subtotale Amministrazione" t={f.totAmm} /></div>
       <div className="mb-2"><AttivitaTable rows={f.amministrazione} label="Amministrazione" color="border-amber-400" /></div>
+      </div>
     </section>
   )
 }
@@ -422,7 +466,7 @@ export default function FascicoliPage() {
                   <Printer className="h-3.5 w-3.5" /> Scarica PDF — {f.club}
                 </Button>
               </div>
-              <FascicoloBlock f={f} anniLabel={anniLabel} annoNomine={annoNomine} primo={printClub ? true : i === 0} />
+              <FascicoloBlock f={f} zona={zoneMap[f.club] ?? ''} anniLabel={anniLabel} annoNomine={annoNomine} primo={printClub ? true : i === 0} />
             </div>
           ))}
         </div>

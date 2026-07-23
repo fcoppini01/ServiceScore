@@ -85,6 +85,7 @@ export type Fascia = { label: string; count: number }
 export type Distribuzione = { fasce: Fascia[]; tot: number }
 
 export type SocioCat = {
+  matricola: string | null
   cognome: string | null
   nome: string | null
   classificazione: string | null
@@ -210,7 +211,7 @@ export async function buildFascicoli(clubs: string[], anniSociali: number[]): Pr
   const [sociRes, offRes, attRes] = await Promise.all([
     supabase
       .from('vista_soci_ricerca')
-      .select('nome_club, eta, anzianita_lionistica, sesso, cognome, nome, categoria_socio, programma, email_effettiva, telefono_cellulare')
+      .select('nome_club, matricola_socio, eta, anzianita_lionistica, sesso, cognome, nome, categoria_socio, programma, email_effettiva, telefono_cellulare')
       .in('nome_club', clubs)
       .range(0, 49999),
     supabase
@@ -245,6 +246,7 @@ export async function buildFascicoli(clubs: string[], anniSociali: number[]): Pr
     const sesso = distribuisciSesso(sociClub.map((s) => s.sesso))
     const soci: SocioCat[] = sociClub
       .map((s) => ({
+        matricola: s.matricola_socio,
         cognome: s.cognome,
         nome: s.nome,
         classificazione: s.categoria_socio,

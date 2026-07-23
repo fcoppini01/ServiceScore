@@ -243,7 +243,8 @@ body:has(.print-landscape) {
      sopra impone color:#000 a TUTTO il testo in stampa; la copertina ha testo
      bianco su sfondo scuro, quindi va forzato il bianco. Posizione/rotazione
      sono gestite inline nel componente (copertina ora nativa landscape). */
-  .print-area .copertina-nome-club {
+  .print-area .copertina-nome-club,
+  .print-area .copertina-testo {
     color: #ffffff !important;
   }
 }
