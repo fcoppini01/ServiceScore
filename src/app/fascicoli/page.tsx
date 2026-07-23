@@ -192,9 +192,9 @@ function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: Fascicol
         <p className="text-xs text-muted-foreground print:text-black">{f.totSoci} soci · Anni sociali {anniLabel} · Nomine anno in corso {annoNomine}</p>
       </div>
 
-      {/* 1) Elenco soci (in cima). Intestazione senza prefisso "Mod. 2 - Sez. 1" e su
-          pagina nuova (dopo il titolo del club). Colonne: Codice socio, Cognome, Nome, Email, Telefono. */}
-      <SezioneTitolo title="Classificazione dei Soci per Categoria Associativa" newPage />
+      {/* 1) Elenco soci (in cima, insieme al titolo del club). Intestazione senza
+          prefisso "Mod. 2 - Sez. 1". Colonne: Codice socio, Cognome, Nome, Email, Telefono. */}
+      <SezioneTitolo title="Classificazione dei Soci per Categoria Associativa" />
       <div className="overflow-x-auto rounded-lg border border-border/50 print:border-black">
         <table className="w-full text-[11px]">
           <thead>
@@ -220,8 +220,8 @@ function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: Fascicol
         </table>
       </div>
 
-      {/* 2) Sez. 1 - Composizione (stessa sezione: niente salto pagina) */}
-      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Composizione (anzianità anagrafica e lionistica, genere)" />
+      {/* 2) Sez. 1 - Composizione: su pagina nuova (salto dopo la tabella Classificazione soci) */}
+      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Composizione (anzianità anagrafica e lionistica, genere)" newPage />
       <FasceTable title="Fasce d'Età" dist={f.eta} accent="bg-emerald-500" />
       <FasceTable title="Anzianità Lionistica (anni)" dist={f.anz} accent="bg-blue-500" />
       <FasceTable title="Genere" dist={f.sesso} accent="bg-purple-500" />
