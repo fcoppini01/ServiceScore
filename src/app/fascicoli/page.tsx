@@ -219,14 +219,14 @@ function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: Fascicol
         </table>
       </div>
 
-      {/* 2) Sez. 1 - Composizione */}
-      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Composizione (anzianità anagrafica e lionistica, genere)" newPage />
+      {/* 2) Sez. 1 - Composizione (stessa sezione: niente salto pagina) */}
+      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Composizione (anzianità anagrafica e lionistica, genere)" />
       <FasceTable title="Fasce d'Età" dist={f.eta} accent="bg-emerald-500" />
       <FasceTable title="Anzianità Lionistica (anni)" dist={f.anz} accent="bg-blue-500" />
       <FasceTable title="Genere" dist={f.sesso} accent="bg-purple-500" />
 
-      {/* 3) Sez. 1 - Riepilogo soci per Classificazione (raggruppato, conteggio e % sul totale) */}
-      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Riepilogo Soci per Classificazione" newPage />
+      {/* 3) Sez. 1 - Riepilogo soci per Classificazione (stessa sezione: niente salto pagina) */}
+      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Riepilogo Soci per Classificazione" />
       <div className="overflow-x-auto rounded-lg border border-border/50 print:border-black max-w-[520px]">
         <table className="w-full text-[11px]">
           <thead>
