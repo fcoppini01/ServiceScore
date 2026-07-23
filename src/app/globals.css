@@ -247,6 +247,14 @@ body:has(.print-landscape) {
   .print-area .copertina-testo {
     color: #ffffff !important;
   }
+  /* Eccezione: le celle con .print-nowrap restano su una sola riga (es. le
+     date e i numeri del fascicolo), nonostante la regola generale che manda a
+     capo tutto. Deve stare DOPO .whitespace-nowrap per vincere per ordine. */
+  .print-area .print-nowrap {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
 }
 
 /* Performance rapporti/stampe con migliaia di righe: a SCHERMO il browser

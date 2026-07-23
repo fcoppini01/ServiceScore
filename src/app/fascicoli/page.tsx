@@ -85,31 +85,31 @@ function AttivitaTable({ rows, label, color }: { rows: Record<string, unknown>[]
       <table className="w-full text-[10px]">
         <thead>
           <tr className="bg-muted/40 print:bg-transparent text-left">
-            <th className="px-1.5 py-1 whitespace-nowrap print:text-black">Data</th>
+            <th className="px-1.5 py-1 whitespace-nowrap print-nowrap print:text-black">Data</th>
             <th className="px-1.5 py-1 print:text-black">Titolo</th>
             <th className="px-1.5 py-1 whitespace-nowrap print:text-black">Causa</th>
             <th className="px-1.5 py-1 whitespace-nowrap print:text-black">Tipo progetto</th>
-            <th className="px-1.5 py-1 text-right whitespace-nowrap print:text-black">Persone</th>
-            <th className="px-1.5 py-1 text-right print:text-black">Volont.</th>
-            <th className="px-1.5 py-1 text-right print:text-black">Ore</th>
-            <th className="px-1.5 py-1 text-right print:text-black">Donati $</th>
+            <th className="px-1.5 py-1 text-right whitespace-nowrap print-nowrap print:text-black">Persone</th>
+            <th className="px-1.5 py-1 text-right print-nowrap print:text-black">Volont.</th>
+            <th className="px-1.5 py-1 text-right print-nowrap print:text-black">Ore</th>
+            <th className="px-1.5 py-1 text-right print-nowrap print:text-black">Donati $</th>
             <th className="px-1.5 py-1 print:text-black">Org. beneficiata</th>
-            <th className="px-1.5 py-1 text-right print:text-black">Raccolti $</th>
+            <th className="px-1.5 py-1 text-right print-nowrap print:text-black">Raccolti $</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((a, i) => (
             <tr key={String(a.id_attivita ?? i)} className="border-t border-border/40 print:border-black/30">
-              <td className="px-1.5 py-1 whitespace-nowrap">{fmtDate(a.data_inizio)}</td>
+              <td className="px-1.5 py-1 whitespace-nowrap print-nowrap">{fmtDate(a.data_inizio)}</td>
               <td className="px-1.5 py-1 font-medium">{String(a.titolo ?? '')}</td>
               <td className="px-1.5 py-1 whitespace-nowrap">{String(a.causa ?? '')}</td>
               <td className="px-1.5 py-1 whitespace-nowrap">{String(a.tipo_progetto ?? '')}</td>
-              <td className="px-1.5 py-1 text-right tabular-nums">{fmt(Number(a.persone_servite_limite) || 0)}</td>
-              <td className="px-1.5 py-1 text-right tabular-nums">{fmt(Number(a.totale_volontari) || 0)}</td>
-              <td className="px-1.5 py-1 text-right tabular-nums">{fmt(Number(a.totale_ore_servizio_capped) || 0)}</td>
-              <td className="px-1.5 py-1 text-right tabular-nums">{fmt(Number(a.fondi_donati_usd_capped) || 0)}</td>
+              <td className="px-1.5 py-1 text-right tabular-nums print-nowrap">{fmt(Number(a.persone_servite_limite) || 0)}</td>
+              <td className="px-1.5 py-1 text-right tabular-nums print-nowrap">{fmt(Number(a.totale_volontari) || 0)}</td>
+              <td className="px-1.5 py-1 text-right tabular-nums print-nowrap">{fmt(Number(a.totale_ore_servizio_capped) || 0)}</td>
+              <td className="px-1.5 py-1 text-right tabular-nums print-nowrap">{fmt(Number(a.fondi_donati_usd_capped) || 0)}</td>
               <td className="px-1.5 py-1">{String(a.organizzazione_beneficiata ?? '')}</td>
-              <td className="px-1.5 py-1 text-right tabular-nums">{fmt(Number(a.fondi_raccolti_usd_capped) || 0)}</td>
+              <td className="px-1.5 py-1 text-right tabular-nums print-nowrap">{fmt(Number(a.fondi_raccolti_usd_capped) || 0)}</td>
             </tr>
           ))}
         </tbody>
@@ -135,9 +135,9 @@ function NomineRows({ rows }: { rows: RenderRow[] }) {
   )
 }
 
-function SezioneTitolo({ n, title }: { n: string; title: string }) {
+function SezioneTitolo({ n, title, newPage = false }: { n: string; title: string; newPage?: boolean }) {
   return (
-    <h3 className="text-sm font-bold mt-6 mb-2 pb-1 border-b border-primary/30 text-primary print:text-black print:border-black break-inside-avoid">
+    <h3 className={`text-sm font-bold mt-6 mb-2 pb-1 border-b border-primary/30 text-primary print:text-black print:border-black break-inside-avoid print:break-after-avoid ${newPage ? 'print:break-before-page' : ''}`}>
       {n} — {title}
     </h3>
   )
@@ -176,12 +176,13 @@ function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: Fascicol
         <span className="copertina-nome-club absolute left-1/2 top-[78%] -translate-x-1/2 -translate-y-1/2 w-[76%] text-center font-semibold text-white text-[3cqw] leading-tight [font-family:Arial,Helvetica,sans-serif] drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
           Lions Club {clubTitolo}
         </span>
-        {/* In basso a sinistra: ZONA (sopra) e Mod. 2 - Report di Conoscenza del Club (sotto) */}
-        <span className="copertina-testo absolute left-[4.5%] bottom-[10.5%] text-white font-bold uppercase tracking-wide text-[1.9cqw] [font-family:Arial,Helvetica,sans-serif] drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
-          Zona {zonaLabel}
-        </span>
+        {/* In basso a sinistra: Mod. 2 - Report di Conoscenza del Club */}
         <span className="copertina-testo absolute left-[4.5%] bottom-[4.5%] text-white font-extrabold uppercase text-[2.2cqw] [font-family:Arial,Helvetica,sans-serif] drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
           Mod. 2 - Report di Conoscenza del Club
+        </span>
+        {/* In basso a destra: ZONA */}
+        <span className="copertina-testo absolute right-[4.5%] bottom-[4.5%] text-white font-bold uppercase tracking-wide text-[1.9cqw] [font-family:Arial,Helvetica,sans-serif] drop-shadow-[0_2px_3px_rgba(0,0,0,0.55)]">
+          Zona {zonaLabel}
         </span>
       </div>
 
@@ -219,13 +220,13 @@ function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: Fascicol
       </div>
 
       {/* 2) Sez. 1 - Composizione */}
-      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Composizione (anzianità anagrafica e lionistica, genere)" />
+      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Composizione (anzianità anagrafica e lionistica, genere)" newPage />
       <FasceTable title="Fasce d'Età" dist={f.eta} accent="bg-emerald-500" />
       <FasceTable title="Anzianità Lionistica (anni)" dist={f.anz} accent="bg-blue-500" />
       <FasceTable title="Genere" dist={f.sesso} accent="bg-purple-500" />
 
       {/* 3) Sez. 1 - Riepilogo soci per Classificazione (raggruppato, conteggio e % sul totale) */}
-      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Riepilogo Soci per Classificazione" />
+      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Riepilogo Soci per Classificazione" newPage />
       <div className="overflow-x-auto rounded-lg border border-border/50 print:border-black max-w-[520px]">
         <table className="w-full text-[11px]">
           <thead>
@@ -253,7 +254,7 @@ function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: Fascicol
       </div>
 
       {/* Sez. 2 - Nomine */}
-      <SezioneTitolo n="Mod. 2 - Sez. 2" title={`Nomine — Ruoli di Leadership del Club (anno in corso ${annoNomine})`} />
+      <SezioneTitolo n="Mod. 2 - Sez. 2" title={`Nomine — Ruoli di Leadership del Club (anno in corso ${annoNomine})`} newPage />
       <div className="overflow-x-auto rounded-lg border border-border/50 print:border-black">
         <table className="w-full text-[11px]">
           <thead>
@@ -284,8 +285,8 @@ function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: Fascicol
         L&apos;Immediato Past Presidente è compilato in automatico con il Presidente del club dell&apos;anno sociale {f.pastAnnoLabel} (regola statutaria LCI).
       </p>
 
-      {/* Sez. 4 - Attività */}
-      <SezioneTitolo n="Mod. 2 - Sez. 4" title={`Attività degli anni sociali ${anniLabel} — Amministrazione vs Service`} />
+      {/* Sez. 3 - Attività */}
+      <SezioneTitolo n="Mod. 2 - Sez. 3" title={`Attività degli anni sociali ${anniLabel} — Amministrazione vs Service`} newPage />
       <div className="mb-3"><TotaliBox label="Totali complessivi (Service + Amministrazione)" t={f.totComplessivi} accent /></div>
       <div className="mb-2"><TotaliBox label="Subtotale Service" t={f.totService} /></div>
       <div className="mb-4"><AttivitaTable rows={f.service} label="Service" color="border-emerald-400" /></div>
@@ -438,7 +439,7 @@ export default function FascicoliPage() {
               </div>
               <div className="flex items-end">
                 <p className="text-[10px] text-muted-foreground italic">
-                  La Sez. 4 (Attività) copre gli anni selezionati <strong>{anniLabel}</strong>. Le Nomine si riferiscono all&apos;anno in corso <strong>{annoNomine}</strong> e il Riepilogo agli ultimi tre anni conclusi rispetto al più recente selezionato.
+                  La Sez. 3 (Attività) copre gli anni selezionati <strong>{anniLabel}</strong>. Le Nomine si riferiscono all&apos;anno in corso <strong>{annoNomine}</strong> (anno più recente selezionato + 1).
                 </p>
               </div>
             </div>
