@@ -208,7 +208,8 @@ export default function QuadroDonazioniAttivitaPage() {
   // così la media non viene diluita da annate senza dati.
   // I fondi donati sono spaccati in quota LCIF e quota non-LCIF (vedi isLcif).
   function esportaExcelMedie() {
-    type Riga = { area: string; anni: number; etichette: string; m: Agg }
+    // m = medie del totale club; mAmm/mSrv = medie delle sole quote Amministrazione/Service.
+    type Riga = { area: string; anni: number; etichette: string; m: Agg; mAmm: Agg; mSrv: Agg }
     const medie = (a: Agg, n: number): Agg =>
       n > 0
         ? { att: a.att / n, pers: a.pers / n, vol: a.vol / n, ore: a.ore / n, donati: a.donati / n, raccolti: a.raccolti / n, donatiLcif: a.donatiLcif / n }
@@ -216,17 +217,18 @@ export default function QuadroDonazioniAttivitaPage() {
 
     const righe: Riga[] = []
     if (grandPerYear.length > 0) {
+      const n = grandPerYear.length
       righe.push({
         area: 'TOTALI GENERALI',
-        anni: grandPerYear.length,
+        anni: n,
         etichette: grandPerYear.map((y) => y.label).join(', '),
-        m: medie(grand.tot, grandPerYear.length),
+        m: medie(grand.tot, n), mAmm: medie(grand.amm, n), mSrv: medie(grand.srv, n),
       })
     }
     blocks.forEach((b) => {
       const n = b.perYear.length
       if (n === 0) return
-      righe.push({ area: b.nome, anni: n, etichette: b.perYear.map((y) => y.label).join(', '), m: medie(b.tot, n) })
+      righe.push({ area: b.nome, anni: n, etichette: b.perYear.map((y) => y.label).join(', '), m: medie(b.tot, n), mAmm: medie(b.amm, n), mSrv: medie(b.srv, n) })
     })
 
     const r1 = (v: number) => Math.round(v * 10) / 10 // 1 decimale per i conteggi
@@ -240,7 +242,11 @@ export default function QuadroDonazioniAttivitaPage() {
         { header: 'Media attività / anno', accessor: (r: Riga) => r1(r.m.att) },
         { header: 'Media persone servite / anno', accessor: (r: Riga) => r0(r.m.pers) },
         { header: 'Media volontari / anno', accessor: (r: Riga) => r0(r.m.vol) },
+        { header: 'di cui volontari Amm. / anno', accessor: (r: Riga) => r0(r.mAmm.vol) },
+        { header: 'di cui volontari Service / anno', accessor: (r: Riga) => r0(r.mSrv.vol) },
         { header: 'Media ore volontari / anno', accessor: (r: Riga) => r0(r.m.ore) },
+        { header: 'di cui ore Amm. / anno', accessor: (r: Riga) => r0(r.mAmm.ore) },
+        { header: 'di cui ore Service / anno', accessor: (r: Riga) => r0(r.mSrv.ore) },
         { header: 'Media fondi donati / anno (USD)', accessor: (r: Riga) => r0(r.m.donati) },
         { header: 'di cui donati a LCIF / anno (USD)', accessor: (r: Riga) => r0(r.m.donatiLcif) },
         { header: 'di cui donati NON LCIF / anno (USD)', accessor: (r: Riga) => r0(r.m.donati - r.m.donatiLcif) },

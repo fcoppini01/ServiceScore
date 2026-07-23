@@ -40,18 +40,18 @@ function FasceTable({ title, dist, accent }: { title: string; dist: Distribuzion
             <tr className="border-t border-border/50">
               <td className="px-2 py-1.5 font-medium text-muted-foreground border-r border-border/50 print:text-black">Quantità</td>
               {dist.fasce.map((f) => (
-                <td key={f.label} className="px-2 py-1.5 text-center tabular-nums font-semibold border-r border-border/50 last:border-r-0">{f.count}</td>
+                <td key={f.label} className="px-2 py-1.5 text-center tabular-nums font-semibold border-r border-border/50 last:border-r-0 print-nowrap">{f.count}</td>
               ))}
-              <td className="px-2 py-1.5 text-center tabular-nums font-bold bg-muted/30">{dist.tot}</td>
+              <td className="px-2 py-1.5 text-center tabular-nums font-bold bg-muted/30 print-nowrap">{dist.tot}</td>
             </tr>
             <tr className="border-t border-border/50 bg-muted/20 print:bg-transparent">
               <td className="px-2 py-1.5 font-medium text-muted-foreground border-r border-border/50 print:text-black">%</td>
               {dist.fasce.map((f) => (
-                <td key={f.label} className="px-2 py-1.5 text-center tabular-nums text-muted-foreground border-r border-border/50 last:border-r-0 print:text-black">
+                <td key={f.label} className="px-2 py-1.5 text-center tabular-nums text-muted-foreground border-r border-border/50 last:border-r-0 print:text-black print-nowrap">
                   {dist.tot > 0 ? `${((f.count / dist.tot) * 100).toFixed(1)}%` : '—'}
                 </td>
               ))}
-              <td className="px-2 py-1.5 text-center tabular-nums font-bold bg-muted/30">100%</td>
+              <td className="px-2 py-1.5 text-center tabular-nums font-bold bg-muted/30 print-nowrap">100%</td>
             </tr>
           </tbody>
         </table>
@@ -135,10 +135,10 @@ function NomineRows({ rows }: { rows: RenderRow[] }) {
   )
 }
 
-function SezioneTitolo({ n, title, newPage = false }: { n: string; title: string; newPage?: boolean }) {
+function SezioneTitolo({ n, title, newPage = false }: { n?: string; title: string; newPage?: boolean }) {
   return (
     <h3 className={`text-sm font-bold mt-6 mb-2 pb-1 border-b border-primary/30 text-primary print:text-black print:border-black break-inside-avoid print:break-after-avoid ${newPage ? 'print:break-before-page' : ''}`}>
-      {n} — {title}
+      {n ? `${n} — ${title}` : title}
     </h3>
   )
 }
@@ -192,8 +192,9 @@ function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: Fascicol
         <p className="text-xs text-muted-foreground print:text-black">{f.totSoci} soci · Anni sociali {anniLabel} · Nomine anno in corso {annoNomine}</p>
       </div>
 
-      {/* 1) Sez. 1 - Elenco soci (in cima). Colonne: Codice socio, Cognome, Nome, Email, Telefono. */}
-      <SezioneTitolo n="Mod. 2 - Sez. 1" title="Classificazione dei Soci per Categoria Associativa" />
+      {/* 1) Elenco soci (in cima). Intestazione senza prefisso "Mod. 2 - Sez. 1" e su
+          pagina nuova (dopo il titolo del club). Colonne: Codice socio, Cognome, Nome, Email, Telefono. */}
+      <SezioneTitolo title="Classificazione dei Soci per Categoria Associativa" newPage />
       <div className="overflow-x-auto rounded-lg border border-border/50 print:border-black">
         <table className="w-full text-[11px]">
           <thead>
@@ -240,8 +241,8 @@ function FascicoloBlock({ f, zona, anniLabel, annoNomine, primo }: { f: Fascicol
             {perClass.map(([cls, n]) => (
               <tr key={cls} className="border-t border-border/40 print:border-black/30">
                 <td className="px-2 py-1 whitespace-nowrap">{cls}</td>
-                <td className="px-2 py-1 text-right tabular-nums font-semibold">{n}</td>
-                <td className="px-2 py-1 text-right tabular-nums text-muted-foreground print:text-black">{totClass > 0 ? ((n / totClass) * 100).toFixed(1) : '0.0'}%</td>
+                <td className="px-2 py-1 text-right tabular-nums font-semibold print-nowrap">{n}</td>
+                <td className="px-2 py-1 text-right tabular-nums text-muted-foreground print:text-black print-nowrap">{totClass > 0 ? ((n / totClass) * 100).toFixed(1) : '0.0'}%</td>
               </tr>
             ))}
             <tr className="border-t border-border/50 bg-muted/30 print:bg-transparent font-bold">
