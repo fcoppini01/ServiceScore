@@ -209,8 +209,7 @@ export default function QuadroDonazioniAttivitaPage() {
   // I fondi donati sono spaccati in quota LCIF e quota non-LCIF (vedi isLcif).
   function esportaExcelMedie() {
     // m = medie del totale club; mAmm/mSrv = medie delle sole quote Amministrazione/Service.
-    // attTot/attSrv/attAmm = NUMERO assoluto di attività (non media) sull'intero periodo.
-    type Riga = { area: string; anni: number; etichette: string; m: Agg; mAmm: Agg; mSrv: Agg; attTot: number; attSrv: number; attAmm: number }
+    type Riga = { area: string; anni: number; etichette: string; m: Agg; mAmm: Agg; mSrv: Agg }
     const medie = (a: Agg, n: number): Agg =>
       n > 0
         ? { att: a.att / n, pers: a.pers / n, vol: a.vol / n, ore: a.ore / n, donati: a.donati / n, raccolti: a.raccolti / n, donatiLcif: a.donatiLcif / n }
@@ -224,13 +223,12 @@ export default function QuadroDonazioniAttivitaPage() {
         anni: n,
         etichette: grandPerYear.map((y) => y.label).join(', '),
         m: medie(grand.tot, n), mAmm: medie(grand.amm, n), mSrv: medie(grand.srv, n),
-        attTot: grand.tot.att, attSrv: grand.srv.att, attAmm: grand.amm.att,
       })
     }
     blocks.forEach((b) => {
       const n = b.perYear.length
       if (n === 0) return
-      righe.push({ area: b.nome, anni: n, etichette: b.perYear.map((y) => y.label).join(', '), m: medie(b.tot, n), mAmm: medie(b.amm, n), mSrv: medie(b.srv, n), attTot: b.tot.att, attSrv: b.srv.att, attAmm: b.amm.att })
+      righe.push({ area: b.nome, anni: n, etichette: b.perYear.map((y) => y.label).join(', '), m: medie(b.tot, n), mAmm: medie(b.amm, n), mSrv: medie(b.srv, n) })
     })
 
     const r1 = (v: number) => Math.round(v * 10) / 10 // 1 decimale per i conteggi
@@ -241,9 +239,6 @@ export default function QuadroDonazioniAttivitaPage() {
         { header: 'Club', accessor: (r: Riga) => r.area },
         { header: 'Anni con dati (divisore medie)', accessor: (r: Riga) => r.anni },
         { header: 'Anni considerati', accessor: (r: Riga) => r.etichette },
-        { header: 'Media attività / anno', accessor: (r: Riga) => r1(r.m.att) },
-        { header: 'di cui attività Amm. / anno', accessor: (r: Riga) => r1(r.mAmm.att) },
-        { header: 'di cui attività Service / anno', accessor: (r: Riga) => r1(r.mSrv.att) },
         { header: 'Media persone servite / anno', accessor: (r: Riga) => r0(r.m.pers) },
         { header: 'di cui persone Amm. / anno', accessor: (r: Riga) => r0(r.mAmm.pers) },
         { header: 'di cui persone Service / anno', accessor: (r: Riga) => r0(r.mSrv.pers) },
@@ -258,9 +253,9 @@ export default function QuadroDonazioniAttivitaPage() {
         { header: 'di cui donati NON LCIF / anno (USD)', accessor: (r: Riga) => r0(r.m.donati - r.m.donatiLcif) },
         { header: 'Media fondi raccolti / anno (USD)', accessor: (r: Riga) => r0(r.m.raccolti) },
         { header: '% Racc./Don.', accessor: (r: Riga) => (r.m.donati > 0 ? Math.round(ratio(r.m.raccolti, r.m.donati)) + '%' : '') },
-        { header: 'N. attività totali (periodo)', accessor: (r: Riga) => r.attTot },
-        { header: 'N. attività Service (periodo)', accessor: (r: Riga) => r.attSrv },
-        { header: 'N. attività Amministrazione (periodo)', accessor: (r: Riga) => r.attAmm },
+        { header: 'Media attività / anno (totale)', accessor: (r: Riga) => r1(r.m.att) },
+        { header: 'Media attività Service / anno', accessor: (r: Riga) => r1(r.mSrv.att) },
+        { header: 'Media attività Amministrazione / anno', accessor: (r: Riga) => r1(r.mAmm.att) },
       ],
       `donazioni_attivita_medie_${todayStamp()}`,
       'Medie per club'
