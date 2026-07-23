@@ -203,9 +203,9 @@ export default function QuadroDonazioniAttivitaPage() {
   }
 
   // Excel "Medie": una riga per club con le MEDIE PER ANNO SOCIALE.
-  // Il divisore è il NUMERO DI ANNI SELEZIONATI nel filtro (es. 2023/24, 2024/25,
-  // 2025/26 -> divide per 3), anche se il club non ha avuto attività in tutti gli
-  // anni: così la media è sempre riferita all'intero periodo scelto.
+  // Il divisore è il numero di anni in cui QUEL club ha effettivamente avuto
+  // attività (perYear contiene solo quelli): club con 3 anni di dati -> /3,
+  // con 2 anni -> /2, con 1 -> /1. È la media sugli anni realmente presenti.
   // I fondi donati sono spaccati in quota LCIF e quota non-LCIF (vedi isLcif).
   function esportaExcelMedie() {
     // m = medie del totale club; mAmm/mSrv = medie delle sole quote Amministrazione/Service.
@@ -215,21 +215,20 @@ export default function QuadroDonazioniAttivitaPage() {
         ? { att: a.att / n, pers: a.pers / n, vol: a.vol / n, ore: a.ore / n, donati: a.donati / n, raccolti: a.raccolti / n, donatiLcif: a.donatiLcif / n }
         : zero()
 
-    // Divisore = numero di anni sociali selezionati; etichette = quegli anni.
-    const divisore = Math.max(1, anniSociali.length)
-    const anniLabels = [...anniSociali].sort((a, b) => a - b).map((y) => getAnnoSocialeRange(y).label).join(', ')
-
     const righe: Riga[] = []
-    if (grand.tot.att > 0) {
+    if (grandPerYear.length > 0) {
+      const n = grandPerYear.length
       righe.push({
         area: 'TOTALI GENERALI',
-        anni: divisore,
-        etichette: anniLabels,
-        m: medie(grand.tot, divisore), mAmm: medie(grand.amm, divisore), mSrv: medie(grand.srv, divisore),
+        anni: n,
+        etichette: grandPerYear.map((y) => y.label).join(', '),
+        m: medie(grand.tot, n), mAmm: medie(grand.amm, n), mSrv: medie(grand.srv, n),
       })
     }
     blocks.forEach((b) => {
-      righe.push({ area: b.nome, anni: divisore, etichette: anniLabels, m: medie(b.tot, divisore), mAmm: medie(b.amm, divisore), mSrv: medie(b.srv, divisore) })
+      const n = b.perYear.length
+      if (n === 0) return
+      righe.push({ area: b.nome, anni: n, etichette: b.perYear.map((y) => y.label).join(', '), m: medie(b.tot, n), mAmm: medie(b.amm, n), mSrv: medie(b.srv, n) })
     })
 
     const r1 = (v: number) => Math.round(v * 10) / 10 // 1 decimale per i conteggi
@@ -238,7 +237,7 @@ export default function QuadroDonazioniAttivitaPage() {
       righe,
       [
         { header: 'Club', accessor: (r: Riga) => r.area },
-        { header: 'N. anni (divisore medie)', accessor: (r: Riga) => r.anni },
+        { header: 'Anni con dati (divisore medie)', accessor: (r: Riga) => r.anni },
         { header: 'Anni considerati', accessor: (r: Riga) => r.etichette },
         { header: 'Media attività / anno', accessor: (r: Riga) => r1(r.m.att) },
         { header: 'Media persone servite / anno', accessor: (r: Riga) => r0(r.m.pers) },
